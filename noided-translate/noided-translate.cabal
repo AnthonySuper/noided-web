@@ -46,7 +46,9 @@ category:           Web
 build-type:         Simple
 
 -- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
-extra-doc-files:    CHANGELOG.md
+extra-doc-files:
+    CHANGELOG.md
+    README.md
 
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
@@ -56,7 +58,7 @@ common warnings
 
 common depends
     build-depends:
-        base >=4.18.3.0 && <=4.20,
+        base >=4.18 && <=4.20,
         text,
         containers,
         unordered-containers,
