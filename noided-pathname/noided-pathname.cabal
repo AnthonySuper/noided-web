@@ -56,7 +56,7 @@ common warnings
 
 common depends
     build-depends:
-        base >=4.18.3.0 && <=4.20,
+        base >=4.18.2.0 && <=4.20,
         http-api-data,
         text,
         bytestring,
@@ -90,11 +90,11 @@ library
 
     -- Modules exported by the library.
     exposed-modules:
+        Noided.Pathname.Internal.PathCaptures
         Noided.Pathname.Internal.PathTemplate
         Noided.Pathname.Internal.PieceTemplate
         Noided.Pathname.Internal.Router
         Noided.Pathname.Internal.RouteParams
-        Noided.Pathname.Internal.PathCaptures
 
         Noided.Pathname
 
