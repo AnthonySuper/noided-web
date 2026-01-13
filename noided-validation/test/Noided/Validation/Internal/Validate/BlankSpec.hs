@@ -35,16 +35,16 @@ spec = do
       case result of
         Left errs -> hasError errs Blank `shouldBe` True
         Right _ -> expectationFailure "Should have failed"
-      
+
     it "accumulates with other errors (non-fatal check)" $ do
       let validation = do
             foldableNonBlank ([] :: [Int])
             foldableNonBlank (Nothing :: Maybe Int)
-      
+
       let result = runValidator validation
       case result of
         Left errs -> do
-          -- Since it's the same error type (Blank), it acts like a Set, 
+          -- Since it's the same error type (Blank), it acts like a Set,
           -- so we really just check Blank is present.
           -- If we wanted to count them, we'd need a different data structure than Set SomeValidationError
           hasError errs Blank `shouldBe` True
