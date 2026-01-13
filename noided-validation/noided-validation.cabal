@@ -53,6 +53,7 @@ test-suite noided-validation-test
     other-modules:
       Noided.Validation.Internal.ValidationErrorSpec
       Noided.Validation.Internal.ValidationErrorsSpec
+      Noided.Validation.Internal.ValidatorSpec
     build-tool-depends: hspec-discover:hspec-discover
     build-depends:
         noided-validation,
