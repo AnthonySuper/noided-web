@@ -43,6 +43,8 @@ library
       Noided.Validation.Internal.ValidationError.FailedValidation
       Noided.Validation.Internal.ValidationError.Blank
       Noided.Validation.Internal.Validate.Blank
+      Noided.Validation.Internal.ValidationError.Size
+      Noided.Validation.Internal.Validate.Size
 
     hs-source-dirs:   lib
     default-language: GHC2021
@@ -58,6 +60,7 @@ test-suite noided-validation-test
       Noided.Validation.Internal.ValidationErrorsSpec
       Noided.Validation.Internal.ValidatorSpec
       Noided.Validation.Internal.Validate.BlankSpec
+      Noided.Validation.Internal.Validate.SizeSpec
     build-tool-depends: hspec-discover:hspec-discover
     build-depends:
         noided-validation,
