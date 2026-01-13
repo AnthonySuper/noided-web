@@ -2,10 +2,12 @@
 
 module Noided.Validation.Internal.ValidationError where
 
+import Data.Aeson
 import Data.Text (Text, pack)
 import Data.Typeable
 import GHC.Generics
 import Noided.Translate
+import Optics.Core
 
 -- | Equivalent of 'Control.Exception.SomeException', but for validation errors.
 data SomeValidationError where
@@ -21,12 +23,26 @@ instance Ord SomeValidationError where
   compare (SomeValidationError (l :: lhsT)) (SomeValidationError (r :: rhsT)) =
     case typeOf l `compare` typeOf r of
       EQ -> case cast r of
-              Just r' -> compare l r'
-              Nothing -> error "SomeValidationError: internal error, type match but cast failed"
+        Just r' -> compare l r'
+        Nothing -> error "SomeValidationError: internal error, type match but cast failed"
       ord -> ord
 
 instance Show SomeValidationError where
-  show (SomeValidationError e) = show e
+  showsPrec p (SomeValidationError e) = showsPrec p e
+
+instance ToJSON SomeValidationError where
+  toEncoding (SomeValidationError e) =
+    pairs $
+      "key" .= validationErrorKey e
+        <> "params" .= validationErrorTranslateParams e
+  toJSON (SomeValidationError e) =
+    object
+      [ "key" .= validationErrorKey e,
+        "params" .= validationErrorTranslateParams e
+      ]
+
+_SomeValidationError :: (ValidationError err) => Prism' SomeValidationError err
+_SomeValidationError = prism' toSomeValidationError fromSomeValidationError
 
 -- | Class for validation errors.
 -- This is very similar to 'Control.Exception.Exception', but with the added ability to

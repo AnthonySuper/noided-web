@@ -38,6 +38,8 @@ library
     import:           warnings, deps, exts
     exposed-modules:
       Noided.Validation.Internal.ValidationError
+      Noided.Validation.Internal.ValidationErrors
+      Noided.Validation.Internal.Validator
 
     hs-source-dirs:   lib
     default-language: GHC2021
@@ -50,6 +52,7 @@ test-suite noided-validation-test
     main-is:          Spec.hs
     other-modules:
       Noided.Validation.Internal.ValidationErrorSpec
+      Noided.Validation.Internal.ValidationErrorsSpec
     build-tool-depends: hspec-discover:hspec-discover
     build-depends:
         noided-validation,
