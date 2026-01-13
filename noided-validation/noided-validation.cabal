@@ -48,6 +48,10 @@ library
       Noided.Validation.Internal.ValidationError.Selection
       Noided.Validation.Internal.Validate.Selection
       Noided.Validation.Internal.Validate.Combinators
+      Noided.Validation.Internal.ValidationError.Text
+      Noided.Validation.Internal.Validate.Text
+      Noided.Validation.Internal.ValidationError.Number
+      Noided.Validation.Internal.Validate.Number
 
     hs-source-dirs:   lib
     default-language: GHC2021
@@ -66,6 +70,8 @@ test-suite noided-validation-test
       Noided.Validation.Internal.Validate.SizeSpec
       Noided.Validation.Internal.Validate.SelectionSpec
       Noided.Validation.Internal.Validate.CombinatorsSpec
+      Noided.Validation.Internal.Validate.TextSpec
+      Noided.Validation.Internal.Validate.NumberSpec
     build-tool-depends: hspec-discover:hspec-discover
     build-depends:
         noided-validation,
