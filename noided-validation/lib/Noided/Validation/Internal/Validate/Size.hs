@@ -1,5 +1,10 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
 module Noided.Validation.Internal.Validate.Size where
 
+import Control.Monad (when)
+import Data.Typeable
+import Noided.Translate
 import Noided.Validation.Internal.ValidationError.Size
 import Noided.Validation.Internal.Validator
 
@@ -7,17 +12,13 @@ import Noided.Validation.Internal.Validator
 lengthAtLeast :: (Monad m, Foldable f) => Int -> f a -> ValidatorT m ()
 lengthAtLeast minLen f =
   let len = length f
-   in if len < minLen
-        then failNonfatal $ TooSmall (toInteger minLen) (toInteger len)
-        else return ()
+   in (when (len < minLen) $ failNonfatal $ TooSmall minLen)
 
 -- | Validate that a foldable has at most the given number of elements.
-lengthAtMost :: (Monad m, Foldable f) => Int -> f a -> ValidatorT m ()
+lengthAtMost :: (Foldable t, Monad m) => Int -> t a -> ValidatorT m ()
 lengthAtMost maxLen f =
   let len = length f
-   in if len > maxLen
-        then failNonfatal $ TooLarge (toInteger maxLen) (toInteger len)
-        else return ()
+   in (when (len > maxLen) $ failNonfatal $ TooLarge maxLen)
 
 -- | Validate that a foldable's length is within the given inclusive range.
 lengthBetween :: (Monad m, Foldable f) => Int -> Int -> f a -> ValidatorT m ()
@@ -26,21 +27,17 @@ lengthBetween minLen maxLen f = do
   lengthAtMost maxLen f
 
 -- | Validate that a value is at least the given minimum.
-valueAtLeast :: (Monad m, Integral a) => a -> a -> ValidatorT m ()
+valueAtLeast :: (Ord a, Typeable a, Show a, AsTranslateParam a, Monad m) => a -> a -> ValidatorT m ()
 valueAtLeast minVal val =
-  if val < minVal
-    then failNonfatal $ TooSmall (toInteger minVal) (toInteger val)
-    else return ()
+  when (val < minVal) $ failNonfatal $ TooSmall minVal
 
 -- | Validate that a value is at most the given maximum.
-valueAtMost :: (Monad m, Integral a) => a -> a -> ValidatorT m ()
+valueAtMost :: (Ord a, Typeable a, Show a, AsTranslateParam a, Monad m) => a -> a -> ValidatorT m ()
 valueAtMost maxVal val =
-  if val > maxVal
-    then failNonfatal $ TooLarge (toInteger maxVal) (toInteger val)
-    else return ()
+  when (val > maxVal) $ failNonfatal $ TooLarge maxVal
 
 -- | Validate that a value is within the given inclusive range.
-valueBetween :: (Monad m, Integral a) => a -> a -> a -> ValidatorT m ()
+valueBetween :: (Ord a, Typeable a, Show a, AsTranslateParam a, Monad m) => a -> a -> a -> ValidatorT m ()
 valueBetween minVal maxVal val = do
   valueAtLeast minVal val
   valueAtMost maxVal val
