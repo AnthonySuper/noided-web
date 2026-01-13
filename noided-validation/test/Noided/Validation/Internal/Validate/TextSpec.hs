@@ -20,7 +20,7 @@ spec = do
         let result = runValidator (startsWith "bye" "hello world")
         result `shouldSatisfy` isLeft
         case result of
-          Left errs -> hasError errs (DoesNotStartWith "bye" "hello world") `shouldBe` True
+          Left errs -> hasError errs (DoesNotStartWith "bye") `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
 
     describe "endsWith" $ do
@@ -31,7 +31,7 @@ spec = do
         let result = runValidator (endsWith "earth" "hello world")
         result `shouldSatisfy` isLeft
         case result of
-          Left errs -> hasError errs (DoesNotEndWith "earth" "hello world") `shouldBe` True
+          Left errs -> hasError errs (DoesNotEndWith "earth") `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
 
     describe "contains" $ do
@@ -42,7 +42,7 @@ spec = do
         let result = runValidator (contains "z" "hello world")
         result `shouldSatisfy` isLeft
         case result of
-          Left errs -> hasError errs (DoesNotContain "z" "hello world") `shouldBe` True
+          Left errs -> hasError errs (DoesNotContain "z") `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
 
     describe "notContains" $ do
@@ -53,5 +53,5 @@ spec = do
         let result = runValidator (notContains "o" "hello world")
         result `shouldSatisfy` isLeft
         case result of
-          Left errs -> hasError errs (Contains "o" "hello world") `shouldBe` True
+          Left errs -> hasError errs (Contains "o") `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
