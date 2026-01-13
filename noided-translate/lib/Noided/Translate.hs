@@ -16,6 +16,7 @@ module Noided.Translate
     TranslateParam (..),
     AsTranslateParam (..),
     TranslateParams (..),
+    GAsTranslateParams,
     gasTranslateParams,
     translateParamsMap,
   )

@@ -1,0 +1,73 @@
+cabal-version:      3.0
+name:               noided-validation
+version:            0.1.0.0
+license:            AGPL-3.0-or-later
+license-file:       LICENSE
+author:             Anthony Super
+maintainer:         anthony@noided.media
+category:           Web
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+common deps
+    build-depends:
+       base >=4.18 && <=4.20,
+       text,
+       optics-core,
+       containers,
+       selective,
+       mtl,
+       transformers,
+       noided-translate,
+       aeson
+
+common exts
+    default-extensions:
+       DataKinds
+       DerivingStrategies
+       DuplicateRecordFields
+       LambdaCase
+       OverloadedRecordDot
+       OverloadedStrings
+       TypeFamilies
+
+library
+    import:           warnings, deps, exts
+    exposed-modules:
+      Noided.Validation.Internal.ValidationError
+      Noided.Validation.Internal.ValidationErrors
+      Noided.Validation.Internal.Validator
+      Noided.Validation.Internal.ValidationError.FailedValidation
+      Noided.Validation.Internal.ValidationError.Blank
+      Noided.Validation.Internal.Validate.Blank
+      Noided.Validation.Internal.ValidationError.Size
+      Noided.Validation.Internal.Validate.Size
+      Noided.Validation.Internal.ValidationError.Selection
+      Noided.Validation.Internal.Validate.Selection
+      Noided.Validation.Internal.Validate.Combinators
+
+    hs-source-dirs:   lib
+    default-language: GHC2021
+
+test-suite noided-validation-test
+    import:           warnings, deps
+    default-language: GHC2021
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    other-modules:
+      Noided.Validation.Internal.ValidationErrorSpec
+      Noided.Validation.Internal.ValidationErrorsSpec
+      Noided.Validation.Internal.ValidatorSpec
+      Noided.Validation.Internal.Validate.BlankSpec
+      Noided.Validation.Internal.Validate.SizeSpec
+      Noided.Validation.Internal.Validate.SelectionSpec
+      Noided.Validation.Internal.Validate.CombinatorsSpec
+    build-tool-depends: hspec-discover:hspec-discover
+    build-depends:
+        noided-validation,
+        hspec,
+        QuickCheck
