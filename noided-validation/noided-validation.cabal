@@ -40,6 +40,7 @@ library
       Noided.Validation.Internal.ValidationError
       Noided.Validation.Internal.ValidationErrors
       Noided.Validation.Internal.Validator
+      Noided.Validation.Internal.ValidationError.FailedValidation
 
     hs-source-dirs:   lib
     default-language: GHC2021

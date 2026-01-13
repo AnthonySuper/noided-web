@@ -77,15 +77,15 @@ spec = do
           Right _ -> expectationFailure "Should have failed"
 
     describe "Alternative instance" $ do
-      it "uses second branch if first fails fatally" $ do
+      it "collects errors from BOTH branches if both fail" $ do
         let validation = do
               failFatal (ErrorA "1") <|> failFatal (ErrorB 2)
-
-        -- ExceptT's Alternative typically tries the second if the first throws an error
-        -- Let's verify our specific behavior
+        
         let result = runValidator validation
-        case result of
-           Left errs -> hasError errs (ErrorB 2) `shouldBe` True
+        case result of 
+           Left errs -> do
+             hasError errs (ErrorA "1") `shouldBe` True
+             hasError errs (ErrorB 2) `shouldBe` True
            Right _ -> expectationFailure "Should have failed"
 
       it "returns first success" $ do
