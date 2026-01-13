@@ -44,6 +44,9 @@ instance AsTranslateParam Integer where
 instance AsTranslateParam Double where
   asTranslateParam = ParamFloat
 
+instance AsTranslateParam Int where
+  asTranslateParam = ParamInt . toInteger
+
 shownParam :: TranslateParam -> Text
 shownParam = \case
   ParamFragment f -> f

@@ -19,7 +19,7 @@ spec = do
       it "fails when value is not in options" $ do
         let res = runValidator (oneOf ["a", "b"] ("c" :: Text))
         case res of
-          Left errs -> hasError errs (InvalidSelection ["a", "b"] ("c" :: Text)) `shouldBe` True
+          Left errs -> hasError errs InvalidSelection `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
 
     describe "noneOf" $ do
@@ -29,5 +29,5 @@ spec = do
       it "fails when value is in forbidden" $ do
         let res = runValidator (noneOf ["bad", "evil"] ("bad" :: Text))
         case res of
-          Left errs -> hasError errs (ForbiddenSelection ["bad", "evil"] ("bad" :: Text)) `shouldBe` True
+          Left errs -> hasError errs ForbiddenSelection `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
