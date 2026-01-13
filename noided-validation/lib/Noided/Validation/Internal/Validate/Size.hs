@@ -1,5 +1,3 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-
 module Noided.Validation.Internal.Validate.Size where
 
 import Control.Monad (when)
