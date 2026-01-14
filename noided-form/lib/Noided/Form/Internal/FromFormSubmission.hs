@@ -7,9 +7,11 @@
 
 module Noided.Form.Internal.FromFormSubmission where
 
+import Data.Foldable (toList)
 import Data.Int
 import Data.Kind (Constraint, Type)
 import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
 import Data.Text (Text, pack)
 import Data.Text.Lazy qualified as LT
 import Data.Time
@@ -23,17 +25,11 @@ import Web.HttpApiData
 type FromFormSubmission :: FormContentType -> Type -> Constraint
 class FromFormSubmission ct a where
   fromFormSubmission :: FormSubmission ct -> Either Text a
-
   default fromFormSubmission ::
     (Generic a, GFromFormSubmission ct (Rep a)) =>
     FormSubmission ct ->
     Either Text a
   fromFormSubmission = gfromFormSubmission
-
--- | Newtype wrapper used with @ -XDerivingVia @ to derive instances of
--- 'FromFormSubmission' for types with an instance of 'FromHttpApiData'.
-newtype ViaHttpParam a = ViaHttpParam {getViaHttpParam :: a}
-  deriving (Show, Read, Eq, Ord, Generic)
 
 parseAtKey' :: Text -> (FormSubmission contentType -> t) -> FormSubmission contentType -> t
 parseAtKey' k f = \case
@@ -49,6 +45,27 @@ instance (FromFormSubmission ct a) => FromFormSubmission ct (Maybe a) where
   fromFormSubmission cs
     | SubmissionEmpty <- cs = Right Nothing
     | otherwise = Just <$> fromFormSubmission cs
+
+instance (FromFormSubmission ct a) => FromFormSubmission ct [a] where
+  fromFormSubmission = \case
+    SubmissionArray arr ->
+      traverse fromFormSubmission (toList arr)
+    SubmissionObject o ->
+      traverse fromFormSubmission (toList o)
+    _ -> Left "expected array-like input"
+
+instance (FromFormSubmission ct a) => FromFormSubmission ct (Seq.Seq a) where
+  fromFormSubmission = fmap Seq.fromList . fromFormSubmission
+
+instance (FromFormSubmission ct a) => FromFormSubmission ct (Map.Map Text a) where
+  fromFormSubmission = \case
+    SubmissionObject o -> traverse fromFormSubmission o
+    _ -> Left "expected a map"
+
+-- | Newtype wrapper used with @ -XDerivingVia @ to derive instances of
+-- 'FromFormSubmission' for types with an instance of 'FromHttpApiData'.
+newtype ViaHttpParam a = ViaHttpParam {getViaHttpParam :: a}
+  deriving (Show, Read, Eq, Ord, Generic)
 
 instance (FromHttpApiData a) => FromFormSubmission ct (ViaHttpParam a) where
   fromFormSubmission =
