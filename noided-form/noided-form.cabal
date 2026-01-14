@@ -129,5 +129,4 @@ test-suite noided-form-test
         QuickCheck,
         containers,
         text,
-        optics-core,
-        generic-lens
+        optics-core
