@@ -3,15 +3,89 @@
 
 module Noided.Form.Internal.ParseSpec where
 
+import Data.Either (isLeft)
 import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
+import Data.Text (Text)
 import Noided.Form.Internal.Parse
 import Noided.Form.Internal.Type.FormInputKey
 import Noided.Form.Internal.Type.FormSubmission
 import Test.Hspec
 
+shouldParseTo :: Text -> FormInputKey -> Expectation
+shouldParseTo k v = parseInputKey k `shouldBe` Right v
+
+shouldFailParse :: Text -> Expectation
+shouldFailParse k = parseInputKey k `shouldSatisfy` isLeft
+
+inputKeySpec :: Spec
+inputKeySpec = describe "parseInputKey" $ do
+  it "can parse an empty key" $
+    "" `shouldParseTo` mempty
+  it "can parse a single key" $
+    "foo" `shouldParseTo` pure (TextPiece "foo")
+  it "can parse single-level nesting" $
+    "foo[bar]" `shouldParseTo` Seq.fromList [TextPiece "foo", TextPiece "bar"]
+  it "can parse array nesting (1-level)" $
+    "foo[]" `shouldParseTo` Seq.fromList [TextPiece "foo", BracesPiece]
+  it "can parse multi-level nesting" $
+    "foo[bar][baz]" `shouldParseTo` Seq.fromList [TextPiece "foo", TextPiece "bar", TextPiece "baz"]
+  it "can parse mixed nesting" $
+    "foo[bar][]" `shouldParseTo` Seq.fromList [TextPiece "foo", TextPiece "bar", BracesPiece]
+  it "fails on initial nesting" $
+    shouldFailParse "[foo]"
+  it "fails on unclosed bracket" $
+    shouldFailParse "foo[bar"
+  it "fails on content after brackets" $
+    shouldFailParse "foo[]bar"
+  it "fails on extra closing bracket" $
+    shouldFailParse "foo[bar]]"
+  it "fails on content after nested key" $
+    shouldFailParse "foo[bar]baz"
+  it "can parse key starting with bracket inside brackets" $
+    "foo[[bar]" `shouldParseTo` Seq.fromList [TextPiece "foo", TextPiece "[bar"]
+
 spec :: Spec
 spec = do
+  inputKeySpec
+  
+  describe "fromTextKeysAndValues" $ do
+    it "parses valid keys and ignores invalid ones" $ do
+      let inputs =
+            [ ("name", Just (TextValue "Alice")),
+              ("invalid[", Just (TextValue "IgnoreMe")),
+              ("age", Just (TextValue "30"))
+            ]
+      let expected =
+            SubmissionObject $
+              Map.fromList
+                [ ("name", SubmissionValue (TextValue "Alice")),
+                  ("age", SubmissionValue (TextValue "30"))
+                ]
+      fromTextKeysAndValues inputs `shouldBe` expected
+
+  describe "fromTextKeysAndValuesStrict" $ do
+    it "parses all valid keys" $ do
+      let inputs =
+            [ ("name", Just (TextValue "Alice")),
+              ("age", Just (TextValue "30"))
+            ]
+      let expected =
+            Right $
+              SubmissionObject $
+                Map.fromList
+                  [ ("name", SubmissionValue (TextValue "Alice")),
+                    ("age", SubmissionValue (TextValue "30"))
+                  ]
+      fromTextKeysAndValuesStrict inputs `shouldBe` expected
+
+    it "fails on invalid key" $ do
+      let inputs =
+            [ ("name", Just (TextValue "Alice")),
+              ("invalid[", Just (TextValue "IgnoreMe"))
+            ]
+      fromTextKeysAndValuesStrict inputs `shouldSatisfy` isLeft
+
   describe "fromKeysAndValues" $ do
     it "parses simple flat keys" $ do
       let inputs =
