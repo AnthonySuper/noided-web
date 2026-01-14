@@ -119,7 +119,7 @@ spec = do
                               ],
                           SubmissionObject $ -- Split happened here because 'tags' existed
                             Map.fromList
-                              [ ("name", SubmissionArray $ Seq.fromList [SubmissionValue (TextValue "Jay")]),
+                              [ ("name", SubmissionValue (TextValue "Jay")),
                                 ("tags", SubmissionArray $ Seq.fromList [SubmissionValue (TextValue "hack")])
                               ]
                         ]

@@ -25,7 +25,10 @@ insertNewPiece submission ik val =
         (at t % non' _SubmissionEmpty %~ (\x -> insertNewPiece x r val)) obj
     (_, TextPiece t Seq.:<| r) ->
       SubmissionObject $ Map.singleton t (insertNewPiece SubmissionEmpty r val)
-    (SubmissionArray arr@(initSeq Seq.:|> obj@(SubmissionObject o)), BracesPiece Seq.:<| restKey@(TextPiece nestedKey Seq.:<| _))
+    (SubmissionArray arr@(initSeq Seq.:|> obj@(SubmissionObject o)), BracesPiece Seq.:<| restKey@(TextPiece nestedKey Seq.:<| afterNested))
+      | Just (SubmissionArray _) <- Map.lookup nestedKey o
+      , BracesPiece Seq.:<| _ <- afterNested ->
+          SubmissionArray $ initSeq Seq.:|> insertNewPiece obj restKey val
       | Map.member nestedKey o -> SubmissionArray $ arr Seq.:|> insertNewPiece SubmissionEmpty restKey val
       | otherwise -> SubmissionArray $ initSeq Seq.:|> insertNewPiece obj restKey val
     (SubmissionArray arr, BracesPiece Seq.:<| rest) ->
