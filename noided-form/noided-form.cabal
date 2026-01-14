@@ -97,7 +97,7 @@ library
 
 test-suite noided-form-test
     -- Import common warning flags.
-    import:           warnings
+    import:           warnings, deps
 
     -- Base language which the package is written in.
     default-language: GHC2021
@@ -123,10 +123,4 @@ test-suite noided-form-test
     -- Test dependencies.
     build-tool-depends: hspec-discover:hspec-discover
     build-depends:
-        base ^>=4.18.3.0,
-        noided-form,
-        hspec,
-        QuickCheck,
-        containers,
-        text,
-        optics-core
+        noided-form, hspec
