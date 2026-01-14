@@ -1,5 +1,5 @@
 # Revision history for noided-form
 
-## 0.1.0.0 -- YYYY-mm-dd
+## 0.1.0.0 -- unreleased
 
 * First version. Released on an unsuspecting world.
