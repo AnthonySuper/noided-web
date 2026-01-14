@@ -13,7 +13,7 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "ixtraverseFormValues" $ do
+  describe "ixFormValues" $ do
     it "correctly traverses a nested submission and generates canonical keys" $ do
       let submission :: FormSubmission 'UrlEncoded
           submission =
