@@ -65,5 +65,4 @@ spec = do
           result :: [(FormCanonicalKey, FormValue 'UrlEncoded)]
           result = itoListOf ixFormValues submission
 
-      -- Actually, result is just a list.
       result `shouldMatchList` expected
