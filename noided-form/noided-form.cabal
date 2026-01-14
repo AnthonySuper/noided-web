@@ -63,7 +63,9 @@ common deps
       containers,
       attoparsec,
       http-api-data,
-      deepseq
+      deepseq,
+      time,
+      uuid-types
 
 library
     -- Import common warning flags.
@@ -77,6 +79,7 @@ library
         Noided.Form.Internal.Type.FormCanonicalKey
         Noided.Form.Internal.Type.FormInputKey
         Noided.Form.Internal.Parse
+        Noided.Form.Internal.FromFormSubmission
 
     -- Modules included in this library but not exported.
     -- other-modules:
