@@ -107,6 +107,7 @@ test-suite noided-form-test
     other-modules:
         Noided.Form.Internal.Type.FormSubmissionSpec
         Noided.Form.Internal.ParseSpec
+        Noided.Form.Internal.FromFormSubmissionSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
