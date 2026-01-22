@@ -4,9 +4,12 @@
 module Noided.Sql.Internal.Class.AsBindParam where
 
 import Data.Functor.Contravariant
+import Data.Int
 import Data.Kind
 import Data.Text (Text, pack)
+import Data.Time
 import Data.Typeable
+import Data.UUID (UUID)
 import Hasql.Encoders qualified as Enc
 import Noided.Sql.Internal.Type.Nullability
 
@@ -59,3 +62,53 @@ instance AsBindParam String where
   type BoundType String = Text
   bindParamEncoder = EncodeNonNull (contramap pack Enc.text)
   bindParamName _ = Just "text"
+
+instance AsBindParam Bool where
+  bindParamEncoder = EncodeNonNull Enc.bool
+  bindParamName _ = Just "bool"
+
+instance AsBindParam Int16 where
+  bindParamEncoder = EncodeNonNull Enc.int2
+  bindParamName _ = Just "int2"
+
+instance AsBindParam Int32 where
+  bindParamEncoder = EncodeNonNull Enc.int4
+  bindParamName _ = Just "int4"
+
+instance AsBindParam Int64 where
+  bindParamEncoder = EncodeNonNull Enc.int8
+  bindParamName _ = Just "int8"
+
+instance AsBindParam Int where
+  type BoundType Int = Int64
+  bindParamEncoder = EncodeNonNull (contramap fromIntegral Enc.int8)
+  bindParamName _ = Just "int8"
+
+instance AsBindParam Float where
+  bindParamEncoder = EncodeNonNull Enc.float4
+  bindParamName _ = Just "float4"
+
+instance AsBindParam Double where
+  bindParamEncoder = EncodeNonNull Enc.float8
+  bindParamName _ = Just "float8"
+
+instance AsBindParam UUID where
+  bindParamEncoder = EncodeNonNull Enc.uuid
+  bindParamName _ = Just "uuid"
+
+instance AsBindParam Day where
+  bindParamEncoder = EncodeNonNull Enc.date
+  bindParamName _ = Just "date"
+
+instance AsBindParam TimeOfDay where
+  bindParamEncoder = EncodeNonNull Enc.time
+  bindParamName _ = Just "time"
+
+instance AsBindParam UTCTime where
+  bindParamEncoder = EncodeNonNull Enc.timestamptz
+  bindParamName _ = Just "timestamptz"
+
+instance AsBindParam LocalTime where
+  bindParamEncoder = EncodeNonNull Enc.timestamp
+  bindParamName _ = Just "timestamp"
+

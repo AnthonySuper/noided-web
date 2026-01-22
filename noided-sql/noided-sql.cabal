@@ -59,7 +59,9 @@ common deps
         base >=4.18 && <=4.20,
         text,
         containers,
-        hasql
+        hasql,
+        time,
+        uuid
 
 common extensions
     default-extensions:
