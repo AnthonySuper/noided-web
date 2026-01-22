@@ -55,7 +55,7 @@ lensSpec = describe "optics lenses" $ do
 eqSpec :: Spec
 eqSpec = describe "equality" $ do
   it "works with empty rows" $ emptyIdentRow `shouldBe` emptyIdentRow
-  it "works with single-ement rows" $
+  it "works with single-element rows" $
     elementIdentRow `shouldBe` elementIdentRow
   it "works with big rows" $
     largerIdentRow `shouldBe` largerIdentRow

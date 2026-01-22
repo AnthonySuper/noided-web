@@ -157,8 +157,8 @@ instance ToJSON (SomeField labels) where
 
 instance (RowKnownFields labels) => FromJSON (SomeField labels) where
   parseJSON v = do
-    (i, s) <- parseJSON v
-    case getFirst (ffoldMap (First . matchLabelPairSomeField i s) (rowKnownFields @labels)) of
+    (label, index) <- parseJSON v
+    case getFirst (ffoldMap (First . matchLabelPairSomeField label index) (rowKnownFields @labels)) of
       Just a -> return a
       Nothing -> fail "not a valid field"
 
