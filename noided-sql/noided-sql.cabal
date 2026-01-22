@@ -63,7 +63,8 @@ common deps
 
 common extensions
     default-extensions:
-      DataKinds
+      DataKinds,
+      TypeFamilies
 
 
 library
@@ -72,6 +73,11 @@ library
 
     -- Modules exported by the library.
     exposed-modules:
+      Noided.Sql.Internal.Type.Nullability
+      Noided.Sql.Internal.Type.SqlType
+      Noided.Sql.Internal.Type.Syntax
+
+      Noided.Sql.Internal.Class.AsBindParam
 
     -- Modules included in this library but not exported.
     -- other-modules:
