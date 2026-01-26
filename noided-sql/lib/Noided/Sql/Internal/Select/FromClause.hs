@@ -33,6 +33,14 @@ writeOnClause (JoinOn f) lhs rhs = do
   writeSyntax (unsafeGetSqlExpr res)
   writeSyntax ")"
 
+-- | A FROM clause that results in a particular select list.
+-- You should build these with helper functions like 'fromBase_', 'innerJoin_', and 'on_',
+-- along with 'Data.Function.(&)' from 'Data.Function'.
+-- Like so:
+--
+-- @
+-- let fromClause = fromBase_ myTable & innerJoin_ otherTable `on_` \x y -> x.teacherId ==. y.id`
+-- @
 data FromClause selectList where
   FromBase ::
     (FromItem fromBase) =>
@@ -51,7 +59,8 @@ data FromFirstItem = IsFirstFromItem | IsNotFirstFromItem
 writeFromClause :: FromFirstItem -> FromClause selectList -> QueryWriter (QueriedRow selectList)
 writeFromClause ff = \case
   FromBase base -> do
-    when (ff == IsNotFirstFromItem && fromItemLateralUsage base == SometimesLateral) $
+    when
+      (ff == IsNotFirstFromItem && fromItemLateralUsage base == SometimesLateral)
       "LATERAL "
     writeFromItem base
     " AS "

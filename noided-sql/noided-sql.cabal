@@ -96,6 +96,7 @@ library
       Noided.Sql.Internal.Class.NamedColumns
 
       Noided.Sql.Internal.SqlExpr.Bind
+      Noided.Sql.Internal.SqlExpr.Bool
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -122,6 +123,7 @@ test-suite noided-sql-test
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Select.SelectMSpec
+      Noided.Sql.Internal.SqlExpr.BoolSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

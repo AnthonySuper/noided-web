@@ -38,7 +38,7 @@ spec = do
       
       let result = toUniqueNames input
       
-      getUniqueColumnName (colA result) `shouldBe` "id"
-      getUniqueColumnName (colB result) `shouldBe` "name"
-      getUniqueColumnName (colC result) `shouldBe` "id_1"
-      getUniqueColumnName (colD result) `shouldBe` "id_2"
+      getUniqueColumnName (colA result) `shouldBe` "\"id\""
+      getUniqueColumnName (colB result) `shouldBe` "\"name\""
+      getUniqueColumnName (colC result) `shouldBe` "\"id_1\""
+      getUniqueColumnName (colD result) `shouldBe` "\"id_2\""
