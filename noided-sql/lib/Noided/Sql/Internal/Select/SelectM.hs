@@ -9,7 +9,6 @@ module Noided.Sql.Internal.Select.SelectM where
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
 import Data.Foldable (for_)
-import Data.Functor
 import Data.HKD
 import Data.Sequence qualified as Seq
 import GHC.Generics
@@ -79,7 +78,7 @@ instance
   fromItemLateralUsage _ = SometimesLateral
   writeFromItem a = do
     "("
-    renderSelectM a
+    _ <- renderSelectM a
     ")"
   fromItemAlias _ = "subq"
   fromItemSelectList _ = namedColumns

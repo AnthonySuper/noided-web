@@ -66,10 +66,10 @@ writeFromClause ff = \case
     " AS "
     writeFromItemAfterAs base
   InnerJoin buildItem oc fromBase -> do
-    selBase <- (writeFromClause ff fromBase)
+    selBase <- writeFromClause ff fromBase
     " INNER JOIN "
     let built = buildItem selBase
-    when (fromItemLateralUsage built == SometimesLateral) $ " LATERAL "
+    when (fromItemLateralUsage built == SometimesLateral) $ "LATERAL "
     writeFromItem built
     " AS "
     joinedItem <- writeFromItemAfterAs built

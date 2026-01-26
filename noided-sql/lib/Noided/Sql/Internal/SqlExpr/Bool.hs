@@ -6,9 +6,17 @@ import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 
+infix 4 ==.
+
 infixr 3 &&.
 
 infixr 2 ||.
+
+(==.) ::
+  SqlExpr scope (SqlT lhsN a) ->
+  SqlExpr scope (SqlT rhsN a) ->
+  SqlExpr scope (SqlT (MostNullable lhsN rhsN) Bool)
+(==.) a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") = (" <> unsafeGetSqlExpr b <> ")")
 
 (&&.),
   (||.) ::
