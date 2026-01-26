@@ -61,7 +61,12 @@ common deps
         containers,
         hasql,
         time,
-        uuid
+        uuid,
+        transformers,
+        hkd,
+        noided-row,
+        optics-core,
+        mtl
 
 common extensions
     default-extensions:
@@ -78,8 +83,17 @@ library
       Noided.Sql.Internal.Type.Nullability
       Noided.Sql.Internal.Type.SqlType
       Noided.Sql.Internal.Type.Syntax
+      Noided.Sql.Internal.Type.SqlExpr
+      Noided.Sql.Internal.Type.ColumnName
+      Noided.Sql.Internal.Type.Tie
+      Noided.Sql.Internal.Type.QueryWriter
+
+      Noided.Sql.Internal.Select.FromClause
+      Noided.Sql.Internal.Select.SelectM
 
       Noided.Sql.Internal.Class.AsBindParam
+      Noided.Sql.Internal.Class.FromItem
+      Noided.Sql.Internal.Class.NamedColumns
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -103,7 +117,8 @@ test-suite noided-sql-test
     default-language: GHC2021
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:
+      Noided.Sql.Internal.Type.ColumnNameSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -123,4 +138,4 @@ test-suite noided-sql-test
     -- Test dependencies.
     build-depends:
         noided-sql,
-        has
+        hspec
