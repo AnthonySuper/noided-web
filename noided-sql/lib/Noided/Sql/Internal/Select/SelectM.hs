@@ -53,6 +53,9 @@ addFrom_ fi = UnsafeMkSelectM $ do
   modify $ \x -> x {fromSyntaxes = fromSyntaxes x Seq.:|> syn}
   return res
 
+select_ :: (FZip t, FTraversable t, NamedColumns t) => t (SqlExpr NormalQuery) -> SelectM (t (SqlExpr NormalQuery))
+select_ = return
+
 renderSelectM :: (FZip t, FTraversable t, NamedColumns t) => SelectM (t (SqlExpr scope)) -> QueryWriter (t (SqlExpr scope))
 renderSelectM a = do
   (result, finalState) <- runStateT (unsafeGetSelectM a) mempty
@@ -74,5 +77,9 @@ instance
   where
   type FromItemSelectList (SelectM (sl wrapper)) = sl
   fromItemLateralUsage _ = SometimesLateral
-  writeFromItem = void . renderSelectM
+  writeFromItem a = do
+    "("
+    renderSelectM a
+    ")"
+  fromItemAlias _ = "subq"
   fromItemSelectList _ = namedColumns

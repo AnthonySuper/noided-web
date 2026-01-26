@@ -95,6 +95,8 @@ library
       Noided.Sql.Internal.Class.FromItem
       Noided.Sql.Internal.Class.NamedColumns
 
+      Noided.Sql.Internal.SqlExpr.Bind
+
     -- Modules included in this library but not exported.
     -- other-modules:
 
@@ -119,6 +121,7 @@ test-suite noided-sql-test
     -- Modules included in this executable, other than Main.
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
+      Noided.Sql.Internal.Select.SelectMSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -138,4 +141,5 @@ test-suite noided-sql-test
     -- Test dependencies.
     build-depends:
         noided-sql,
-        hspec
+        hspec,
+        hspec-golden

@@ -1,1 +1,2 @@
 dist-newstyle/
+noided-sql/.golden/**/actual

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Type.ColumnName
@@ -37,7 +38,7 @@ toUniqueName (MkColumnName name) = do
         if count == 0
           then name
           else name <> pack ("_" <> show count)
-  return (UnsafeMkUniqueColumnName uniqueName)
+  return (UnsafeMkUniqueColumnName $ "\"" <> uniqueName <> "\"")
 
 toUniqueNames :: (FTraversable hkd) => hkd ColumnName -> hkd UniqueColumnName
 toUniqueNames = flip evalState mempty . ftraverse toUniqueName
