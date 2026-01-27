@@ -1,11 +1,13 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Noided.Sql.Internal.Insert.InsertValues
   ( InsertValues (..),
     writeInsertValues,
     InsertForTable,
+    writeColumnListForInsert,
   )
 where
 
@@ -44,6 +46,22 @@ writeInsertValues = \case
       fromCommaSepSyntax $
         foldMap runMap vl
     pure ()
+
+writeColumnListForInsert ::
+  forall colDefs insertedLabels.
+  (AsInsertList colDefs insertedLabels) =>
+  WrappedRow colDefs ColumnName ->
+  InsertValues insertedLabels ->
+  QueryWriter ()
+writeColumnListForInsert colDefs = \case
+  DefaultValues -> pure ()
+  ValuesList _ -> do
+    let cols :: WrappedRow insertedLabels ColumnName
+        cols = insertedColumnsList colDefs
+    let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ "\"" <> syntaxFromText n <> "\"") cols
+    " ("
+    writeSyntax colSyntax
+    ")"
 
 type AsInsertValue :: ColumnType -> MutationType -> Constraint
 class AsInsertValue colType mutationType where

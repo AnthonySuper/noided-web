@@ -71,6 +71,7 @@ writeInsertQuery (Insert td iv qr) = do
   let toUse = qualifyColumnNames ln td.selectedNames
   let returningList = qr toUse
   writeSyntax ln
+  writeColumnListForInsert td.columnNames iv
   " "
   writeInsertValues iv
   " RETURNING "
