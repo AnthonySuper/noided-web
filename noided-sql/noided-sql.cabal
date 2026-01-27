@@ -108,6 +108,8 @@ library
 
       Noided.Sql.Internal.Update.Sets
       Noided.Sql.Internal.Update.Update
+      
+      Noided.Sql.Internal.Delete.Delete
 
       Noided.Sql.Internal.Class.AsBindParam
       Noided.Sql.Internal.Class.AsHaskellValue
@@ -151,6 +153,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Insert.InsertSpec
       Noided.Sql.Internal.Update.SetsSpec
       Noided.Sql.Internal.Update.UpdateSpec
+      Noided.Sql.Internal.Delete.DeleteSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

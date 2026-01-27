@@ -1,0 +1,1 @@
+DELETE FROM "users" AS to_delete USING "other_users" AS "other_users" WHERE ((to_delete."id") = ("other_users"."id")) RETURNING to_delete."id" AS "id", to_delete."name" AS "name", to_delete."email" AS "email", to_delete."score" AS "score"
