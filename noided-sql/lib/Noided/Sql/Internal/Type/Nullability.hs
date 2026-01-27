@@ -6,6 +6,21 @@ import GHC.Generics
 data Nullability = NonNull | Nullable
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
 
+-- | Singleton type for nullabililty
+data NullabilitySing nullability where
+  NonNullSing :: NullabilitySing NonNull
+  NullableSing :: NullabilitySing Nullable
+
+-- | Singleton class for nullability
+class KnownNullability nullability where
+  nullabilityS :: NullabilitySing nullability
+
+instance KnownNullability NonNull where
+  nullabilityS = NonNullSing
+
+instance KnownNullability Nullable where
+  nullabilityS = NullableSing
+
 type MostNullable :: Nullability -> Nullability -> Nullability
 type family MostNullable lhs rhs where
   MostNullable NonNull NonNull = NonNull

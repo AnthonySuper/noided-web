@@ -9,11 +9,16 @@ module Noided.Sql.Internal.Select.SelectM where
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
 import Data.Foldable (for_)
+import Data.Functor
 import Data.HKD
 import Data.Sequence qualified as Seq
 import GHC.Generics
+import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.FromItem
 import Noided.Sql.Internal.Class.NamedColumns
+import Noided.Sql.Internal.Class.Query
+import Noided.Sql.Internal.Class.SelectList
+import Noided.Sql.Internal.Class.UnwrapSelectList
 import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
@@ -71,7 +76,7 @@ renderSelectM a = do
   return result
 
 instance
-  (wrapper ~ SqlExpr NormalQuery, FZip sl, FTraversable sl, NamedColumns sl) =>
+  (wrapper ~ SqlExpr NormalQuery, SelectList sl) =>
   FromItem (SelectM (sl wrapper))
   where
   type FromItemSelectList (SelectM (sl wrapper)) = sl
@@ -82,3 +87,22 @@ instance
     ")"
   fromItemAlias _ = "subq"
   fromItemSelectList _ = namedColumns
+
+instance
+  (wrapper ~ SqlExpr NormalQuery, SelectList selectList) =>
+  Query (SelectM (selectList wrapper))
+  where
+  type QuerySelectList (SelectM (selectList wrapper)) = selectList
+  writeQuerySyntax = void . renderSelectM
+
+instance
+  (wrapper ~ SqlExpr NormalQuery, SelectList selectList) =>
+  SelectQuery (SelectM (selectList wrapper))
+
+instance
+  ( wrapper ~ SqlExpr NormalQuery,
+    SelectList selectList,
+    UnwrapSelectList selectList,
+    DecodeSelectList selectList
+  ) =>
+  ExecutableQuery (SelectM (selectList wrapper))

@@ -59,14 +59,15 @@ common deps
         base >=4.18 && <=4.20,
         text,
         containers,
-        hasql,
+        hasql >= 1.10 && < 1.11,
         time,
         uuid,
         transformers,
         hkd,
         noided-row,
         optics-core,
-        mtl
+        mtl,
+        vector
 
 common extensions
     default-extensions:
@@ -81,19 +82,30 @@ library
     -- Modules exported by the library.
     exposed-modules:
       Noided.Sql.Internal.Type.Nullability
+      Noided.Sql.Internal.Type.PGDecoder
+      Noided.Sql.Internal.Type.HaskellT
       Noided.Sql.Internal.Type.SqlType
       Noided.Sql.Internal.Type.Syntax
       Noided.Sql.Internal.Type.SqlExpr
+      Noided.Sql.Internal.Type.SqlQuery
       Noided.Sql.Internal.Type.ColumnName
       Noided.Sql.Internal.Type.Tie
       Noided.Sql.Internal.Type.QueryWriter
+      Noided.Sql.Internal.Type.TransactM
+      Noided.Sql.Internal.Type.TransactionResult
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
 
       Noided.Sql.Internal.Class.AsBindParam
+      Noided.Sql.Internal.Class.AsHaskellValue
+      Noided.Sql.Internal.Class.DecodeSelectList
       Noided.Sql.Internal.Class.FromItem
       Noided.Sql.Internal.Class.NamedColumns
+      Noided.Sql.Internal.Class.PGType
+      Noided.Sql.Internal.Class.Query
+      Noided.Sql.Internal.Class.SelectList
+      Noided.Sql.Internal.Class.UnwrapSelectList
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool

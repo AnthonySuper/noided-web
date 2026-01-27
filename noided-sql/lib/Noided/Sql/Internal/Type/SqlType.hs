@@ -9,3 +9,11 @@ data SqlType = SqlT Nullability Type
 type NullableT = SqlT Nullable
 
 type NonNullT = SqlT NonNull
+
+type SqlTypeNullability :: SqlType -> Nullability
+type family SqlTypeNullability sqlT where
+  SqlTypeNullability (SqlT n _) = n
+
+type SqlTypePGType :: SqlType -> Type
+type family SqlTypePGType sqlT where
+  SqlTypePGType (SqlT _ pgT) = pgT
