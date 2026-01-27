@@ -37,3 +37,19 @@ spec = describe "Bool Expressions" $ do
     it "associates ||. to the right" $ do
       let c = UnsafeMkSqlExpr "c" :: SqlExpr NormalQuery (NonNullT Bool)
       renderExpr (a ||. b ||. c) `shouldBe` "(a) OR ((b) OR (c))"
+
+  describe "comparison operators" $ do
+    let x = UnsafeMkSqlExpr "x" :: SqlExpr NormalQuery (NonNullT Int)
+    let y = UnsafeMkSqlExpr "y" :: SqlExpr NormalQuery (NonNullT Int)
+
+    it "renders ==." $ renderExpr (x ==. y) `shouldBe` "(x) = (y)"
+    it "renders <." $ renderExpr (x <. y) `shouldBe` "(x) < (y)"
+    it "renders >." $ renderExpr (x >. y) `shouldBe` "(x) > (y)"
+    it "renders <=." $ renderExpr (x <=. y) `shouldBe` "(x) <= (y)"
+    it "renders >=." $ renderExpr (x >=. y) `shouldBe` "(x) >= (y)"
+    it "renders /=." $ renderExpr (x /=. y) `shouldBe` "(x) <> (y)"
+
+  describe "null checks" $ do
+    let n = UnsafeMkSqlExpr "n" :: SqlExpr NormalQuery (NullableT Int)
+    it "renders isNull_" $ renderExpr (isNull_ n) `shouldBe` "(n) IS NULL"
+    it "renders isNotNull_" $ renderExpr (isNotNull_ n) `shouldBe` "(n) IS NOT NULL"
