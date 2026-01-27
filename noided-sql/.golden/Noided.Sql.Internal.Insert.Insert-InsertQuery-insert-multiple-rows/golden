@@ -1,0 +1,1 @@
+INSERT INTO "users" AS to_insert ("id", "name", "email") VALUES (DEFAULT, $1, $2), (DEFAULT, $3, $4) RETURNING to_insert."id" AS "id", to_insert."name" AS "name", to_insert."email" AS "email"

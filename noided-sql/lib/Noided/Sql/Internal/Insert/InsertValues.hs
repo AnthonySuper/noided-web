@@ -83,7 +83,7 @@ instance (n ~ DefaultValue) => AsInsertValue (Column AlwaysDefault a b) n where
 
 instance
   {-# OVERLAPS #-}
-  (CastNullability insertedNull definedNull, a ~ b) =>
+  (CastNullability definedNull insertedNull, a ~ b) =>
   AsInsertValue (Column na insertedNull a) (ActualValue (SqlT definedNull b))
   where
   toInsertValue = coerce

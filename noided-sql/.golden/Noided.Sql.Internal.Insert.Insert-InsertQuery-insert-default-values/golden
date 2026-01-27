@@ -1,0 +1,1 @@
+INSERT INTO "defaults_table" AS to_insert DEFAULT VALUES RETURNING to_insert."id" AS "id", to_insert."created_at" AS "created_at"
