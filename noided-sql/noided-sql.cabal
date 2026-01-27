@@ -155,6 +155,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Update.SetsSpec
       Noided.Sql.Internal.Update.UpdateSpec
       Noided.Sql.Internal.Delete.DeleteSpec
+      Noided.Sql.Internal.Select.CombineSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
