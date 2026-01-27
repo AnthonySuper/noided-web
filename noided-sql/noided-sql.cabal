@@ -102,13 +102,14 @@ library
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
+      Noided.Sql.Internal.Select.Combine
 
       Noided.Sql.Internal.Insert.Insert
       Noided.Sql.Internal.Insert.InsertValues
 
       Noided.Sql.Internal.Update.Sets
       Noided.Sql.Internal.Update.Update
-      
+
       Noided.Sql.Internal.Delete.Delete
 
       Noided.Sql.Internal.Class.AsBindParam
