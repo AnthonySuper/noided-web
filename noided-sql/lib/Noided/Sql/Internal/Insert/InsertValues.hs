@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Noided.Sql.Internal.Insert.InsertValues
   ( InsertValues (..),
@@ -18,6 +19,7 @@ import Data.List.NonEmpty qualified as NE
 import GHC.Records
 import GHC.TypeLits
 import Noided.Row
+import Noided.Sql.Internal.Class.Query (SelectQuery, Query(..))
 import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.MutationExpr
@@ -28,12 +30,25 @@ import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.Syntax
 
+type MapSqlTypeToMutationType :: [RowLabel SqlType] -> [RowLabel MutationType]
+type family MapSqlTypeToMutationType labels where
+  MapSqlTypeToMutationType '[] = '[]
+  MapSqlTypeToMutationType (l :=> t ': rest) =
+    l :=> ActualValue t ': MapSqlTypeToMutationType rest
+
 -- | Insert values, with given labels and names.
 data InsertValues (insertedLabels :: [RowLabel MutationType]) where
   DefaultValues :: InsertValues '[]
   ValuesList ::
     (labels ~ x ': xs) =>
     NE.NonEmpty (WrappedRow labels MutationExpr) ->
+    InsertValues labels
+  InsertSelect ::
+    ( SelectQuery query,
+      QuerySelectList query ~ WrappedRow selectLabels,
+      labels ~ MapSqlTypeToMutationType selectLabels
+    ) =>
+    query ->
     InsertValues labels
 
 writeInsertValues :: InsertValues values -> QueryWriter ()
@@ -46,6 +61,7 @@ writeInsertValues = \case
       fromCommaSepSyntax $
         foldMap runMap vl
     pure ()
+  InsertSelect q -> writeQuerySyntax q
 
 writeColumnListForInsert ::
   forall colDefs insertedLabels.
@@ -56,6 +72,13 @@ writeColumnListForInsert ::
 writeColumnListForInsert colDefs = \case
   DefaultValues -> pure ()
   ValuesList _ -> do
+    let cols :: WrappedRow insertedLabels ColumnName
+        cols = insertedColumnsList colDefs
+    let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ "\"" <> syntaxFromText n <> "\"") cols
+    " ("
+    writeSyntax colSyntax
+    ")"
+  InsertSelect _ -> do
     let cols :: WrappedRow insertedLabels ColumnName
         cols = insertedColumnsList colDefs
     let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ "\"" <> syntaxFromText n <> "\"") cols

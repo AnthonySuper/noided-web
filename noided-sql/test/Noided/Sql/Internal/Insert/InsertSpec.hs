@@ -12,6 +12,7 @@ import Noided.Row
 import Noided.Sql.Internal.Class.Query
 import Noided.Sql.Internal.Insert.Insert
 import Noided.Sql.Internal.Insert.InsertValues
+import Noided.Sql.Internal.Select.SelectM
 import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.ColumnType
@@ -19,6 +20,7 @@ import Noided.Sql.Internal.Type.MutationExpr
 import Noided.Sql.Internal.Type.MutationType
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.QueryWriter
+import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.Syntax
 import Noided.Sql.Internal.Type.TableDefinition
@@ -59,6 +61,11 @@ type FullInsertRow =
 
 type PartialInsertRow =
   '[ "name" :=> ActualValue (SqlT NonNull Text) ]
+
+type SelectedRow =
+  '[ "name" :=> SqlT NonNull Text,
+     "email" :=> SqlT NonNull Text
+   ]
 
 renderGolden ::
   (Query q) =>
@@ -107,3 +114,12 @@ spec = describe "InsertQuery" $ do
            [ MutateVal (bindParam @Text "Charlie")
              :::% EmptyWrappedRow
            ] :: InsertValues PartialInsertRow)
+
+  renderGolden "insert-select" $
+    insertReturningAll userTable $
+      InsertSelect (do
+        return (
+          bindParam @Text "Dave"
+          :::% bindParam @Text "dave@example.com"
+          :::% EmptyWrappedRow
+          ) :: SelectM (WrappedRow SelectedRow (SqlExpr NormalQuery)))
