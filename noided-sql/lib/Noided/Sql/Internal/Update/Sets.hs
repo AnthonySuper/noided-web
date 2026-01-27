@@ -84,7 +84,7 @@ newtype ColumnUpdates labels = ColUpdates {getColUpdates :: NonEmpty (ColumnUpda
 updateSet_, (|=) :: (AsUpdateValue columnType mutationType) => UpdatedColumn tableLabels columnType -> MutationExpr mutationType -> ColumnUpdates tableLabels
 updateSet_ col val = ColUpdates $ NE.singleton $ ColUpdate col val
 
-infix 4 |=
+infix 7 |=
 
 (|=) = updateSet_
 
