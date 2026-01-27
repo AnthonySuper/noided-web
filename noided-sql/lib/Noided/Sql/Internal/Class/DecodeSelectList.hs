@@ -7,7 +7,6 @@ import Data.HKD
 import GHC.Generics
 import Noided.Row
 import Noided.Sql.Internal.Class.AsHaskellValue
-import Noided.Sql.Internal.Class.SelectList
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGDecoder
 import Noided.Sql.Internal.Type.SqlType

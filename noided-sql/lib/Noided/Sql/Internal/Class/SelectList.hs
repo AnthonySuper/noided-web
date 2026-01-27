@@ -1,11 +1,18 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Noided.Sql.Internal.Class.SelectList (SelectList) where
+module Noided.Sql.Internal.Class.SelectList (SelectList, writeSelectList) where
 
+import Control.Arrow
+import Data.Functor.Const
 import Data.HKD
 import Data.Kind
 import Noided.Sql.Internal.Class.NamedColumns
+import Noided.Sql.Internal.Type.ColumnName
+import Noided.Sql.Internal.Type.QueryWriter
+import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
+import Noided.Sql.Internal.Type.Syntax
 
 type SelectList :: ((SqlType -> Type) -> Type) -> Constraint
 
@@ -33,3 +40,15 @@ instance {-# OVERLAPS #-} NamedColumns Opaque where
   namedColumns = error "impossible"
 
 instance {-# OVERLAPS #-} SelectList Opaque
+
+writeSelectList :: (SelectList sl) => sl (SqlExpr scope) -> QueryWriter ()
+writeSelectList =
+  fzipWith
+    ( \uniqueName (UnsafeMkSqlExpr expr) ->
+        Const $
+          expr <> " AS " <> syntaxFromText (getUniqueColumnName uniqueName)
+    )
+    uniqueNamedColumns
+    >>> ffoldMap (Written . getConst)
+    >>> fromCommaSepSyntax
+    >>> writeSyntax

@@ -5,6 +5,7 @@ module Noided.Sql.Internal.Type.QueryWriter
   ( QueryWriter,
     runQueryWriter,
     renderQueryWriter,
+    writeText,
     writeSyntax,
     toUniqueAlias,
     toQuotedUniqueAlias,
@@ -43,6 +44,9 @@ renderQueryWriter = snd . runQueryWriter
 -- | Provided for nicer syntax when writing stuff.
 instance (a ~ ()) => IsString (QueryWriter a) where
   fromString = writeSyntax . fromString
+
+writeText :: Text -> QueryWriter ()
+writeText = writeSyntax . syntaxFromText
 
 -- | Write some syntax to the output buffer.
 writeSyntax :: Syntax -> QueryWriter ()

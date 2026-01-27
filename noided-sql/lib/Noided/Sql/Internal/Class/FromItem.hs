@@ -46,6 +46,12 @@ class (FTraversable (FromItemSelectList item)) => FromItem item where
   -- | Get the select list of a from item
   fromItemSelectList :: item -> FromItemSelectList item ColumnName
 
+qualifyColumnNames :: forall scope hkd. (FTraversable hkd) => Syntax -> hkd ColumnName -> hkd (SqlExpr scope)
+qualifyColumnNames tableSyn = ffmap mapper . toUniqueNames
+  where
+    mapper :: forall t'. UniqueColumnName t' -> SqlExpr scope t'
+    mapper cn = UnsafeMkSqlExpr $ tableSyn <> "." <> syntaxFromText (getUniqueColumnName cn)
+
 -- | Write the part after an AS clause for a from item.
 writeFromItemAfterAs ::
   (FromItem item) =>

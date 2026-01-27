@@ -81,21 +81,30 @@ library
 
     -- Modules exported by the library.
     exposed-modules:
+      Noided.Sql.Internal.Type.Columnar
+      Noided.Sql.Internal.Type.ColumnName
+      Noided.Sql.Internal.Type.ColumnType
+      Noided.Sql.Internal.Type.HaskellT
+      Noided.Sql.Internal.Type.MutationExpr
+      Noided.Sql.Internal.Type.MutationType
       Noided.Sql.Internal.Type.Nullability
       Noided.Sql.Internal.Type.PGDecoder
-      Noided.Sql.Internal.Type.HaskellT
-      Noided.Sql.Internal.Type.SqlType
-      Noided.Sql.Internal.Type.Syntax
+      Noided.Sql.Internal.Type.QueryWriter
       Noided.Sql.Internal.Type.SqlExpr
       Noided.Sql.Internal.Type.SqlQuery
-      Noided.Sql.Internal.Type.ColumnName
+      Noided.Sql.Internal.Type.SqlType
+      Noided.Sql.Internal.Type.Syntax
+      Noided.Sql.Internal.Type.TableDefinition
+      Noided.Sql.Internal.Type.TableName
       Noided.Sql.Internal.Type.Tie
-      Noided.Sql.Internal.Type.QueryWriter
-      Noided.Sql.Internal.Type.TransactM
       Noided.Sql.Internal.Type.TransactionResult
+      Noided.Sql.Internal.Type.TransactM
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
+
+      Noided.Sql.Internal.Insert.Insert
+      Noided.Sql.Internal.Insert.InsertValues
 
       Noided.Sql.Internal.Class.AsBindParam
       Noided.Sql.Internal.Class.AsHaskellValue
