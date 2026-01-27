@@ -145,6 +145,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Select.SelectMSpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
+      Noided.Sql.Internal.Insert.InsertSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
