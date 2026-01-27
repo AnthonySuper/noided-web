@@ -1,0 +1,1 @@
+UPDATE "users" AS to_update SET "score" = $1 WHERE ((to_update."id") = ($2)) RETURNING to_update."id" AS "id"

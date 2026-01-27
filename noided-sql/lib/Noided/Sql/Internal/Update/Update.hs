@@ -57,6 +57,7 @@ writeUpdateQuery (Update td q) = do
   writeTableName td.tableName
   " AS "
   ln <- toUniqueAlias "to_update"
+  writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
   
   -- Run the SelectM action to get updates, returning, and state (FROM/WHERE)

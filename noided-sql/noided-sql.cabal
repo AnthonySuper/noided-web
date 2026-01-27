@@ -150,6 +150,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.SqlExpr.BoolSpec
       Noided.Sql.Internal.Insert.InsertSpec
       Noided.Sql.Internal.Update.SetsSpec
+      Noided.Sql.Internal.Update.UpdateSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

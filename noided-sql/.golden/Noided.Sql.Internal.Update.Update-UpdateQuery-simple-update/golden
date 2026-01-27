@@ -1,0 +1,1 @@
+UPDATE "users" AS to_update SET "name" = $1 RETURNING to_update."id" AS "id", to_update."name" AS "name", to_update."email" AS "email", to_update."score" AS "score"
