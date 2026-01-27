@@ -107,6 +107,7 @@ library
       Noided.Sql.Internal.Insert.InsertValues
 
       Noided.Sql.Internal.Update.Sets
+      Noided.Sql.Internal.Update.Update
 
       Noided.Sql.Internal.Class.AsBindParam
       Noided.Sql.Internal.Class.AsHaskellValue
