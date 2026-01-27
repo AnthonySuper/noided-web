@@ -75,9 +75,14 @@ appendCombined op (CombineBase q) rhs = CombineTie q op rhs
 appendCombined op (CombineTie q op' rest) rhs = CombineTie q op' (appendCombined op rest rhs)
 
 writeCombinedQueries :: CombinedQueries sl -> QueryWriter ()
-writeCombinedQueries (CombineBase q) = writeQuerySyntax q
-writeCombinedQueries (CombineTie q op rest) = do
+writeCombinedQueries (CombineBase q) = do
+  "("
   writeQuerySyntax q
+  ")"
+writeCombinedQueries (CombineTie q op rest) = do
+  "("
+  writeQuerySyntax q
+  ")"
   case op of
     Union -> " UNION "
     Intersect -> " INTERSECT "
