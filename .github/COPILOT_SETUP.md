@@ -16,7 +16,17 @@ This repository contains multiple Haskell packages managed by Cabal:
 Run the automated setup script:
 
 ```bash
+# Make the script executable (if not already)
+chmod +x ./.github/copilot-setup.sh
+
+# Run the setup script
 ./.github/copilot-setup.sh
+```
+
+Alternatively, you can run it without making it executable:
+
+```bash
+bash ./.github/copilot-setup.sh
 ```
 
 This script will:

@@ -29,12 +29,16 @@ command_exists() {
 # Check if ghcup is installed
 if ! command_exists ghcup; then
     echo "Installing ghcup (Haskell toolchain installer)..."
+    export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
     curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
     
     # Source ghcup environment
     export PATH="$HOME/.ghcup/bin:$PATH"
     
     echo "ghcup installed successfully"
+    echo ""
+    echo "NOTE: For persistent PATH changes, you may need to restart your shell"
+    echo "or source the ghcup environment script: source ~/.ghcup/env"
     echo ""
 else
     echo "ghcup is already installed"
@@ -46,7 +50,7 @@ export PATH="$HOME/.ghcup/bin:$PATH"
 
 # Install GHC
 echo "Installing GHC $GHC_VERSION..."
-if ghcup list | grep "ghc.*$GHC_VERSION" | grep -q "installed"; then
+if ghcup whereis ghc "$GHC_VERSION" >/dev/null 2>&1; then
     echo "GHC $GHC_VERSION is already installed"
 else
     ghcup install ghc "$GHC_VERSION"
@@ -57,7 +61,7 @@ echo ""
 
 # Install Cabal
 echo "Installing Cabal $CABAL_VERSION..."
-if ghcup list | grep "cabal.*$CABAL_VERSION" | grep -q "installed"; then
+if ghcup whereis cabal "$CABAL_VERSION" >/dev/null 2>&1; then
     echo "Cabal $CABAL_VERSION is already installed"
 else
     ghcup install cabal "$CABAL_VERSION"
