@@ -7,23 +7,15 @@ name: Copilot Agent Setup Steps
 
 on:
   workflow_dispatch:
-    inputs:
-      ghc-version:
-        description: 'GHC version to use'
-        required: false
-        default: '9.8.2'
-        type: choice
-        options:
-          - '9.6.7'
-          - '9.8.2'
-      cabal-version:
-        description: 'Cabal version to use'
-        required: false
-        default: '3.10'
-        type: string
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
 
 jobs:
-  setup:
+  copilot-setup-steps:
     name: Setup Haskell Environment
     runs-on: ubuntu-latest
     permissions:
@@ -53,7 +45,7 @@ jobs:
       uses: actions/cache/restore@v4
       id: restore-deps-cache
       env:
-        cache-name: cache-cabal
+        cache-name: cache-cabal-copilot
       with:
         path: |
           ~/.cabal/store
@@ -71,7 +63,9 @@ jobs:
       uses: actions/cache/save@v4
       if: steps.restore-deps-cache.outputs.cache-hit != 'true'
       with:
-        path: ${{ steps.setup.outputs.cabal-store }}
+        path: |
+          ~/.cabal/store
+          dist-newstyle
         key: ${{ steps.restore-deps-cache.outputs.cache-primary-key }}
 
     - name: Build all packages
