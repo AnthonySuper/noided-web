@@ -1,2 +1,1 @@
-packages: noided-validation/*.cabal noided-translate/*.cabal
-allow-newer: *:base, *:template-haskell
+packages: */*.cabal
