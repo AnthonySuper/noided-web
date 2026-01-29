@@ -59,12 +59,14 @@ main = do
 
 ### Validation Modules
 
-- `Noided.Validation.Validate.Blank` - Check for empty/blank values
+Each validation module exports both validator functions and their corresponding error types:
+
+- `Noided.Validation.Validate.Blank` - Check for empty/blank values (exports `Blank(..)`)
 - `Noided.Validation.Validate.Combinators` - Validation combinators
-- `Noided.Validation.Validate.Number` - Number validations (odd/even)
-- `Noided.Validation.Validate.Selection` - Membership validations
-- `Noided.Validation.Validate.Size` - Size and range validations
-- `Noided.Validation.Validate.Text` - Text pattern validations
+- `Noided.Validation.Validate.Number` - Number validations (exports `NotOdd(..)`, `NotEven(..)`)
+- `Noided.Validation.Validate.Selection` - Membership validations (exports `InvalidSelection(..)`, `ForbiddenSelection(..)`)
+- `Noided.Validation.Validate.Size` - Size and range validations (exports `TooLarge(..)`, `TooSmall(..)`)
+- `Noided.Validation.Validate.Text` - Text pattern validations (exports `DoesNotStartWith(..)`, `DoesNotEndWith(..)`, `DoesNotContain(..)`, `Contains(..)`)
 
 ## Key Features
 
@@ -92,6 +94,22 @@ startsWith "https://" url  -- Generates DoesNotStartWith error if needed
 ```
 
 These are convenient for common validation patterns, but you can also use `check` with custom errors for full control.
+
+The error types are exported from their respective modules, so you can handle them specifically:
+
+```haskell
+import Noided.Validation
+import Noided.Validation.Validate.Size (TooSmall(..))
+
+validateList :: [a] -> Validator ()
+validateList items = lengthAtLeast 3 items
+
+-- You can pattern match on specific error types
+case runValidator (validateList [1, 2]) of
+  Left errs | hasError errs (TooSmall 3) -> putStrLn "List is too small!"
+  Left errs -> putStrLn "Other validation error"
+  Right _ -> putStrLn "Valid!"
+```
 
 ### Validation Combinators
 
