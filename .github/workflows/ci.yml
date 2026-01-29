@@ -35,7 +35,7 @@ jobs:
         cache-name: cache-cabal
       with:
         path: |
-          ~/.cabal/store
+          ${{ steps.setup.outputs.cabal-store }}
           dist-newstyle
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
         restore-keys: |
@@ -47,7 +47,9 @@ jobs:
     - name: Save dependencies cache
       uses: actions/cache/save@v4
       with:
-        path: ${{ steps.setup.outputs.cabal-store }}
+        path: |
+          ${{ steps.setup.outputs.cabal-store }}
+          dist-newstyle
         key: ${{ steps.restore-deps-cache.outputs.cache-primary-key }}
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
