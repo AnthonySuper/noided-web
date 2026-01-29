@@ -14,7 +14,12 @@ module Noided.Validation.Validate.Size
     valueAtLeast,
     valueAtMost,
     valueBetween,
+
+    -- * Error Types
+    TooLarge (..),
+    TooSmall (..),
   )
 where
 
 import Noided.Validation.Internal.Validate.Size
+import Noided.Validation.Internal.ValidationError.Size
