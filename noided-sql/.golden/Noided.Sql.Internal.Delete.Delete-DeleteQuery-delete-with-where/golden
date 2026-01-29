@@ -1,0 +1,1 @@
+DELETE FROM "users" AS to_delete WHERE ((to_delete."id") = ($1)) RETURNING to_delete."id" AS "id"

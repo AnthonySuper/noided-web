@@ -1,0 +1,1 @@
+SELECT "subq"."id" AS "id", "subq"."val" AS "val", "subq_1"."id" AS "id_1", "subq_1"."ref" AS "ref" FROM (SELECT $1 AS "id", $2 AS "val") AS "subq" INNER JOIN LATERAL (SELECT $3 AS "id", $4 AS "ref") AS "subq_1" ON (("subq"."id") = ("subq_1"."ref"))

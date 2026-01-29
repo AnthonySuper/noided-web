@@ -1,0 +1,1 @@
+SELECT "subq"."e" AS "e", "subq_1"."e" AS "e_1" FROM (SELECT $1 AS "e") AS "subq", LATERAL (SELECT $2 AS "e") AS "subq_1"
