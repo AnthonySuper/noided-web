@@ -56,7 +56,7 @@ common warnings
 
 common deps
     build-depends:
-      base >= 4.18 && <= 4.20,
+      base >= 4.18 && <= 4.23,
       text,
       bytestring,
       optics-core,
@@ -73,6 +73,10 @@ library
 
     -- Modules exported by the library.
     exposed-modules:
+        Noided.Form
+        Noided.Form.Types
+        Noided.Form.Parse
+        Noided.Form.FromFormSubmission
         Noided.Form.Internal.Type.FormContentType
         Noided.Form.Internal.Type.UploadedFile
         Noided.Form.Internal.Type.FormSubmission
