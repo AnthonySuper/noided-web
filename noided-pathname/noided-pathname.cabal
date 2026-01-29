@@ -56,7 +56,7 @@ common warnings
 
 common depends
     build-depends:
-        base >=4.18 && <5,
+        base >=4.18.2.0 && <=4.20,
         http-api-data,
         text,
         bytestring,
