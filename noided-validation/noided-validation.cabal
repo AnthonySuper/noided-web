@@ -75,6 +75,7 @@ test-suite noided-validation-test
     hs-source-dirs:   test
     main-is:          Spec.hs
     other-modules:
+      Noided.Validation.PublicApiSpec
       Noided.Validation.Internal.ValidationErrorSpec
       Noided.Validation.Internal.ValidationErrorsSpec
       Noided.Validation.Internal.ValidatorSpec
