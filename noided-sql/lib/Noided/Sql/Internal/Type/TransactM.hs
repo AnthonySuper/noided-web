@@ -200,7 +200,7 @@ instance IsString SavepointName where
 -- myAction = savepointNamed "foo" performUpdate
 -- @
 savepointNamed :: SavepointName -> TransactM err a -> TransactM err a
-savepointNamed (UnsafeMkSavepoint name) action = do
+savepointNamed (UnsafeMkSavepointName name) action = do
   uniqName <- fromTransformers $ do
     st <- lift $ lift get
     let (uName, newSt) = uniqueSavepointName name st
