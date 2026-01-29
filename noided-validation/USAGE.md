@@ -16,8 +16,7 @@ import GHC.Generics (Generic)
 
 -- Define your custom error types
 data UserError
-  = EmailTooShort
-  | EmailTooLong
+  = InvalidEmail Text
   | AgeTooYoung
   | AgeTooOld
   deriving stock (Show, Eq, Ord, Generic)
@@ -26,9 +25,9 @@ data UserError
 -- Write validation functions
 validateEmail :: Text -> Validator ()
 validateEmail email = do
-  lengthAtLeast 5 email
-  lengthAtMost 100 email
-  contains "@" email
+  check (length email >= 5) (InvalidEmail "Email too short")
+  check (length email <= 100) (InvalidEmail "Email too long")
+  check ("@" `elem` email) (InvalidEmail "Email must contain @")
 
 validateAge :: Int -> Validator ()
 validateAge age = do
@@ -81,6 +80,18 @@ validateInput n = do
   check (n < 100) TooLarge         -- Continues even if too large
   check (n `mod` 2 == 0) NotEven   -- Continues collecting errors
 ```
+
+### Built-in Validators
+
+The library provides built-in validators that generate their own error types:
+
+```haskell
+-- These validators generate appropriate error messages automatically
+lengthAtLeast 5 someList   -- Generates TooSmall error if needed
+startsWith "https://" url  -- Generates DoesNotStartWith error if needed
+```
+
+These are convenient for common validation patterns, but you can also use `check` with custom errors for full control.
 
 ### Validation Combinators
 

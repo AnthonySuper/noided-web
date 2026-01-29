@@ -22,11 +22,19 @@ you to accumulate both fatal and non-fatal validation errors.
 
 @
 import Noided.Validation
+import GHC.Generics (Generic)
 
+-- Define custom error types
+data AgeError = TooYoung | TooOld
+  deriving (Show, Eq, Ord, Generic)
+
+instance ValidationError AgeError
+
+-- Use custom errors in validation
 validateAge :: Int -> Validator ()
 validateAge age = do
-  require (age >= 0) (TooSmall 0)
-  check (age < 150) (TooLarge 150)
+  require (age >= 0) TooYoung
+  check (age < 150) TooOld
 
 result = runValidator (validateAge 25)
 -- result: Right ()
