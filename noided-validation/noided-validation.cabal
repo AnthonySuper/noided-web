@@ -14,7 +14,7 @@ common warnings
 
 common deps
     build-depends:
-       base >=4.18 && <=4.20,
+       base >=4.18 && <5,
        text,
        optics-core,
        containers,
@@ -37,6 +37,18 @@ common exts
 library
     import:           warnings, deps, exts
     exposed-modules:
+      -- Public API
+      Noided.Validation
+      Noided.Validation.Validator
+      Noided.Validation.ValidationError
+      Noided.Validation.ValidationErrors
+      Noided.Validation.Validate.Blank
+      Noided.Validation.Validate.Combinators
+      Noided.Validation.Validate.Number
+      Noided.Validation.Validate.Selection
+      Noided.Validation.Validate.Size
+      Noided.Validation.Validate.Text
+      -- Internal modules (kept for compatibility)
       Noided.Validation.Internal.ValidationError
       Noided.Validation.Internal.ValidationErrors
       Noided.Validation.Internal.Validator
