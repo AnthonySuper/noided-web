@@ -125,21 +125,3 @@ endsWith ".com" domain
 contains "@" email
 notContains "<script>" userInput
 ```
-
-## Migration from Internal Modules
-
-If you were previously importing from `Noided.Validation.Internal.*` modules, you can now import from the public API:
-
-**Before:**
-```haskell
-import Noided.Validation.Internal.Validator
-import Noided.Validation.Internal.ValidationErrors
-import Noided.Validation.Internal.Validate.Text
-```
-
-**After:**
-```haskell
-import Noided.Validation
-```
-
-The internal modules are still available for backwards compatibility, but the public API is recommended for new code.
