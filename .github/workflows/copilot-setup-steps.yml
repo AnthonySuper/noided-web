@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -37,18 +37,18 @@ jobs:
       uses: haskell-actions/setup@v2
       id: setup
       with:
-        ghc-version: ${{ inputs.ghc-version || '9.8.2' }}
-        cabal-version: ${{ inputs.cabal-version || '3.10' }}
-    
+        ghc-version: '9.8.2'
+        cabal-version: '3.10'
+
     - name: Update cabal package list
       run: cabal update
-    
+
     - name: Configure project
       run: cabal configure --enable-tests
-    
+
     - name: Dry run to generate plan.json
       run: cabal build all --dry-run
-    
+
     - name: Restore cached dependencies
       uses: actions/cache/restore@v4
       id: restore-deps-cache
@@ -58,28 +58,28 @@ jobs:
         path: |
           ~/.cabal/store
           dist-newstyle
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ inputs.ghc-version || '9.8.2' }}-${{ hashFiles('**/plan.json') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-9.8.2-${{ hashFiles('**/plan.json') }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-${{ inputs.ghc-version || '9.8.2' }}-
+          ${{ runner.os }}-build-${{ env.cache-name }}-9.8.2-
           ${{ runner.os }}-build-${{ env.cache-name }}-
-    
+
     - name: Install dependencies
       run: |
         cabal build --only-dependencies --enable-tests --enable-benchmarks all
-    
+
     - name: Save dependencies cache
       uses: actions/cache/save@v4
       if: steps.restore-deps-cache.outputs.cache-hit != 'true'
       with:
         path: ${{ steps.setup.outputs.cabal-store }}
         key: ${{ steps.restore-deps-cache.outputs.cache-primary-key }}
-    
+
     - name: Build all packages
       run: cabal build --enable-tests --enable-benchmarks all
 
     - name: Run tests
       run: cabal test all
-    
+
     - name: Setup complete
       run: |
         echo "============================================"
