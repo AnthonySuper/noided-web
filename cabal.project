@@ -1,1 +1,3 @@
 packages: */*.cabal
+allow-newer: *:base, *:template-haskell, *:containers, *:time
+constraints: http-api-data >= 0.6
