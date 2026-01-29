@@ -13,6 +13,14 @@ This repository contains multiple Haskell packages managed by Cabal:
 
 ## Quick Setup
 
+### Option 1: Using GitHub Actions Workflow (Recommended for Copilot Agents)
+
+The setup steps are defined as a GitHub Actions workflow in `.github/workflows/copilot-setup-steps.yml`. This workflow can be used as a reference or run manually via workflow_dispatch.
+
+GitHub Copilot agents can use this workflow to understand the exact setup steps needed.
+
+### Option 2: Using the Setup Script
+
 Run the automated setup script:
 
 ```bash
@@ -38,6 +46,8 @@ This script will:
 6. Install all dependencies
 7. Build all packages
 8. Run all tests
+
+Alternatively, you can reference the GitHub Actions workflow at `.github/workflows/copilot-setup-steps.yml` which contains the same setup steps in a workflow format.
 
 ## Manual Setup
 
