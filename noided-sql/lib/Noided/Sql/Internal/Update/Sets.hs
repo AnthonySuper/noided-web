@@ -1,12 +1,20 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
-module Noided.Sql.Internal.Update.Sets where
+module Noided.Sql.Internal.Update.Sets
+  ( UpdatedColumn (..),
+    AsUpdateValue,
+    ColumnUpdates,
+    updateSet_,
+    (|=),
+    writeUpdateSets,
+  )
+where
 
 import Data.Coerce
 import Data.Kind

@@ -2,7 +2,7 @@ module Noided.Sql.Internal.Type.Nullability where
 
 import GHC.Generics
 
--- | Data kinda used to determine the nullability of an SQL value.
+-- | Data kind used to determine the nullability of an SQL value.
 data Nullability = NonNull | Nullable
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
 

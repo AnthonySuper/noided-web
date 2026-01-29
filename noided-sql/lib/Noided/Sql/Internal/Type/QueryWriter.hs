@@ -57,7 +57,7 @@ toQueryWrite = QueryWrite
 
 -- | Qualify a name to be unique within a given scope.
 -- Note that if the syntax is nested, an appropriate nesting suffix will also be added.
--- Does not modify the query state.
+-- Does not write anything to the query.
 toUniqueAlias :: Text -> QueryWriter Syntax
 toUniqueAlias alias = toQueryWrite $ do
   r <- get

@@ -99,6 +99,7 @@ library
       Noided.Sql.Internal.Type.Tie
       Noided.Sql.Internal.Type.TransactionResult
       Noided.Sql.Internal.Type.TransactM
+      Noided.Sql.Internal.Type.WindowFrame
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
@@ -119,11 +120,14 @@ library
       Noided.Sql.Internal.Class.NamedColumns
       Noided.Sql.Internal.Class.PGType
       Noided.Sql.Internal.Class.Query
+      Noided.Sql.Internal.Class.RangeOffset
       Noided.Sql.Internal.Class.SelectList
       Noided.Sql.Internal.Class.UnwrapSelectList
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
+
+      Noided.Sql.Select
 
     -- Modules included in this library but not exported.
     -- other-modules:

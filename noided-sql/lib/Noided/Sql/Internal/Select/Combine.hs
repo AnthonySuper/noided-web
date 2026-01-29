@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Select.Combine where
 
@@ -106,6 +107,9 @@ instance
 type QueryCombineOf :: CombineType -> ((SqlType -> Type) -> Type) -> Type
 newtype QueryCombineOf combineType selectList = QueryCombineOf (CombinedQueries selectList)
 
+combiningOf :: (SelectQuery a) => a -> QueryCombineOf combineType (QuerySelectList a)
+combiningOf = QueryCombineOf . CombineBase
+
 instance (KnownCombineType combineType, SelectList selectList) => Semigroup (QueryCombineOf combineType selectList) where
   QueryCombineOf lhs <> QueryCombineOf rhs =
     QueryCombineOf $ appendCombined (combineTypeVal (combineTypeS @combineType)) lhs rhs
@@ -124,17 +128,35 @@ instance
 newtype QueryCombineUnion selectList = QueryCombineUnion (QueryCombineOf Union selectList)
   deriving newtype (Semigroup, Query, SelectQuery, ExecutableQuery)
 
+combiningUnion :: (SelectQuery a) => a -> QueryCombineUnion (QuerySelectList a)
+combiningUnion = QueryCombineUnion . combiningOf
+
 newtype QueryCombineIntersect selectList = QueryCombineIntersect (QueryCombineOf Intersect selectList)
   deriving newtype (Semigroup, Query, SelectQuery, ExecutableQuery)
+
+combiningIntersect :: (SelectQuery a) => a -> QueryCombineIntersect (QuerySelectList a)
+combiningIntersect = QueryCombineIntersect . combiningOf
 
 newtype QueryCombineExcept selectList = QueryCombineExcept (QueryCombineOf Except selectList)
   deriving newtype (Semigroup, Query, SelectQuery, ExecutableQuery)
 
+combiningExcept :: (SelectQuery a) => a -> QueryCombineExcept (QuerySelectList a)
+combiningExcept = QueryCombineExcept . combiningOf
+
 newtype QueryCombineUnionAll selectList = QueryCombineUnionAll (QueryCombineOf UnionAll selectList)
   deriving newtype (Semigroup, Query, SelectQuery, ExecutableQuery)
+
+combingingUnionAll :: (SelectQuery a) => a -> QueryCombineUnionAll (QuerySelectList a)
+combingingUnionAll = QueryCombineUnionAll . combiningOf
 
 newtype QueryCombineIntersectAll selectList = QueryCombineIntersectAll (QueryCombineOf IntersectAll selectList)
   deriving newtype (Semigroup, Query, SelectQuery, ExecutableQuery)
 
+combiningIntersectAll :: (SelectQuery a) => a -> QueryCombineIntersectAll (QuerySelectList a)
+combiningIntersectAll = QueryCombineIntersectAll . combiningOf
+
 newtype QueryCombineExceptAll selectList = QueryCombineExceptAll (QueryCombineOf ExceptAll selectList)
   deriving newtype (Semigroup, Query, SelectQuery, ExecutableQuery)
+
+combiningExceptAll :: (SelectQuery a) => a -> QueryCombineExceptAll (QuerySelectList a)
+combiningExceptAll = QueryCombineExceptAll . combiningOf

@@ -10,6 +10,7 @@ import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Data.Function (fix)
 import Data.Map.Strict qualified as Map
+import Data.String
 import Data.Text (Text, pack)
 import Data.Vector (Vector)
 import Hasql.Connection qualified as C
@@ -24,20 +25,22 @@ data StatementCallback where
   AroundStatement ::
     ( forall a b m.
       (Monad m) =>
-      -- \| Analog of `liftIO`
       (forall r. IO r -> m r) ->
-      -- \| Actual query in some type.
-      -- You can use this to inspect the query text or its binds.
       SqlQuery a ->
-      -- \| Function that executes the query and returns some result
       (SqlQuery a -> m b) ->
-      -- \| The actual result.
       m b
     ) ->
     StatementCallback
 
 noStatementCallback :: StatementCallback
 noStatementCallback = AroundStatement $ \_ q b -> b q
+
+-- | Build a statement callback.
+-- A statement callbackk is a function with a Rank-N type that can run around *all queries* in *all monads* that can do some IO.
+-- Note that statement callbacks may be executed an arbitrary number of times per statement, so you should only use this to do something like
+-- logging the query and binds, timing the query, or both.
+statementCallback :: (forall a b m. (Monad m) => (forall r. IO r -> m r) -> SqlQuery a -> (SqlQuery a -> m b) -> m b) -> StatementCallback
+statementCallback = AroundStatement
 
 uniqueSavepointName :: Text -> Map.Map Text Int -> (Text, Map.Map Text Int)
 uniqueSavepointName sv m =
@@ -71,7 +74,7 @@ execQueryRaw query = UnsafeMKTransactM $ do
 -- | A transaction monad, with errors of type 'err'.
 newtype TransactM err a = UnsafeMKTransactM
   { getTransactM ::
-      ReaderT -- note: MonadReader intentionally not dervied as it is an implementation detail
+      ReaderT -- note: MonadReader intentionally not derived as it is an implementation detail
         TransactMEnv
         ( ExceptT
             err
@@ -87,7 +90,7 @@ collapseResult (Right (Left e)) = TransactErr e
 collapseResult (Right (Right r)) = TransactOK r
 
 -- | Transact using the SERIALIZABLE isolation level.
--- Failures due to serialization errors will be retried indefinitely (use a timeout if neccessary to prevent this).
+-- Failures due to serialization errors will be retried indefinitely (use a timeout if necessary to prevent this).
 -- Failures due to using 'throwError' inside the transaction will result in the entire transaction being rolled back.
 --
 -- Queries will be rolled back and retried when needed to
@@ -108,8 +111,8 @@ isSerializationFailure (ScriptSessionError _ s) = isSerializationFailureServer s
 isSerializationFailure (StatementSessionError _ _ _ _ _ (ServerStatementError e)) = isSerializationFailureServer e
 isSerializationFailure _ = False
 
-runTransactMCommiting :: StatementCallback -> TransactM e a -> Session (TransactionResult e a)
-runTransactMCommiting cb action = do
+runTransactMCommitting :: StatementCallback -> TransactM e a -> Session (TransactionResult e a)
+runTransactMCommitting cb action = do
   res <- runTransactM action cb
   case res of
     Left e -> do
@@ -122,7 +125,7 @@ runTransactMCommiting cb action = do
 runSerializedSession :: StatementCallback -> TransactM e a -> Session (TransactionResult e a)
 runSerializedSession cb action = fix $ \retry -> do
   execCommandCallback cb "BEGIN ISOLATION LEVEL serializable;"
-  runTransactMCommiting cb action `catchError` \e ->
+  runTransactMCommitting cb action `catchError` \e ->
     if isSerializationFailure e
       then retry
       else throwError e
@@ -134,7 +137,7 @@ transactRepeatableRead :: StatementCallback -> TransactM e a -> C.Connection -> 
 transactRepeatableRead cb action conn = do
   sessRes <- C.use conn $ do
     execCommandCallback cb "BEGIN ISOLATION LEVEL REPEATABLE READ;"
-    runTransactMCommiting cb action
+    runTransactMCommitting cb action
   case sessRes of
     Left err -> pure $ SessionErr err
     Right res -> pure res
@@ -169,6 +172,15 @@ fromTransformers = UnsafeMKTransactM
 toTransformers :: TransactM err a -> ReaderT TransactMEnv (ExceptT err (StateT TransactMState Session)) a
 toTransformers = getTransactM
 
+-- | An opaque type wrapper for a savepoint.
+-- You should construct this with the IsString instance, and be careful - we don't do *any* escaping here, so
+-- if your savepoint name is invalid, your queries will fail.
+-- In the future we'll likely strip non-ASCII text.
+newtype SavepointName = UnsafeMkSavepointName {getSavepointName :: Text}
+
+instance IsString SavepointName where
+  fromString = UnsafeMkSavepointName . fromString
+
 -- | Create a new savepoint with a given name.
 -- The name will be made unique for this entire transaction.
 --
@@ -187,8 +199,8 @@ toTransformers = getTransactM
 -- @
 -- myAction = savepointNamed "foo" performUpdate
 -- @
-savepointNamed :: Text -> TransactM err a -> TransactM err a
-savepointNamed name action = do
+savepointNamed :: SavepointName -> TransactM err a -> TransactM err a
+savepointNamed (UnsafeMkSavepoint name) action = do
   uniqName <- fromTransformers $ do
     st <- lift $ lift get
     let (uName, newSt) = uniqueSavepointName name st
