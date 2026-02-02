@@ -64,7 +64,8 @@ common deps
       optics-core,
       aeson,
       mmorph,
-      some
+      some,
+      text
 
 common exts
     default-extensions:
@@ -83,6 +84,8 @@ library
         Noided.Form.HKD.Internal.Type.FormInput
         Noided.Form.HKD.Internal.Type.FormValidator
         Noided.Form.HKD.Internal.Type.FormErrors
+        Noided.Form.HKD.Internal.Type.FormResult
+        Noided.Form.HKD.Internal.Type.FormLabel
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -101,13 +104,15 @@ library
 
 test-suite noided-form-hkd-test
     -- Import common warning flags.
-    import:           warnings, deps
+    import:           warnings, deps, exts
 
     -- Base language which the package is written in.
     default-language: GHC2021
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:
+      Noided.Form.HKD.Internal.Type.FormErrorsSpec
+      Noided.Form.HKD.Internal.Type.FormLabelSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

@@ -31,10 +31,7 @@ import Optics.Core
 
 -- | Type of inner, non-base errors of a subform.
 -- Note that there is *no case* for field inputs - all inputs in fields are reported in
---
 -- the 'baseErrs' field of 'FormErrors'.
---
--- TODO: show, eq, ord, instances for these types.
 type FormErrorsInner :: HKDFieldType -> Type
 data FormErrorsInner field where
   -- | Inner errors for a *subform*.
@@ -83,6 +80,7 @@ data FormErrors field
   = OnlyBase ValidationErrors
   | BaseAndInner ValidationErrors !(FormErrorsInner field)
 
+-- | Constructor for errors of input fields.
 pattern InputErrors :: (field ~ InputField a) => ValidationErrors -> FormErrors field
 pattern InputErrors baseErrors = OnlyBase baseErrors
 
@@ -125,6 +123,7 @@ instance (Show (subform FormErrors), Monoid (subform FormErrors), FTraversable s
     showParen (p > 10) $
       showString "SubformErrors " . showsPrec 11 b . showString " " . showsPrec 11 f
 
+-- | Constructor for errors of subform fields.
 pattern SubformErrors ::
   ( Monoid (subform FormErrors),
     FTraversable subform,
@@ -169,6 +168,7 @@ listErrsAsPair = \case
   OnlyBase e -> (e, IM.empty)
   BaseAndInner e (ListErrorsInner se) -> (e, se)
 
+-- | Constructor for errors of list fields.
 pattern ListErrors :: ValidationErrors -> IM.IntMap (FormErrors field) -> FormErrors (ListField field)
 pattern ListErrors be fe <- (listErrsAsPair -> (be, fe))
   where
