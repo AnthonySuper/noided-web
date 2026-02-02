@@ -22,7 +22,8 @@ common deps
        mtl,
        transformers,
        noided-translate,
-       aeson
+       aeson,
+       mmorph
 
 common exts
     default-extensions:

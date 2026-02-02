@@ -4,9 +4,9 @@ module Noided.Validation.Internal.Validator where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.Class
+import Control.Monad.Morph
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Writer.CPS
+import Control.Monad.Trans.Writer.Strict
 import Data.Functor.Identity
 import Noided.Validation.Internal.ValidationError
 import Noided.Validation.Internal.ValidationError.FailedValidation (FailedValidation (FailedValidation))
@@ -32,6 +32,10 @@ instance (Monad m) => Alternative (ValidatorT m) where
 
 instance MonadTrans ValidatorT where
   lift = ValidatorT . lift . lift
+
+instance MFunctor ValidatorT where
+  hoist f (ValidatorT m) =
+    ValidatorT $ hoist (hoist f) m
 
 runValidatorT :: (Monad m) => ValidatorT m a -> m (Either ValidationErrors a)
 runValidatorT v = do
