@@ -6,7 +6,6 @@
 
 module Noided.Web.Html.Internal.Type.FormContext where
 
-import Data.Map qualified as Map
 import Data.Monoid
 import Data.Text (Text)
 import GHC.Generics
@@ -37,8 +36,8 @@ data FieldContext field
   }
   deriving (Generic)
 
-formContextFieldNames :: FieldContext field -> [Text]
-formContextFieldNames =
+fieldContextFieldNames :: FieldContext field -> [Text]
+fieldContextFieldNames =
   toListOf $
     #fieldContext
       % #key
@@ -47,40 +46,40 @@ formContextFieldNames =
       % _2
       % #_CanonicalObjectPiece
 
-formContextModelNames :: FieldContext field -> [Text]
-formContextModelNames = view (#baseContext % #modelNames)
+fieldContextModelNames :: FieldContext field -> [Text]
+fieldContextModelNames = view (#baseContext % #modelNames)
 
 -- | Get paths for a form's fully-qualified attribute path.
 -- So, if this form is for an attribute named @ foo @ of a model named @ User @,
 -- this would return:
 --
 --     * @ form.User.attributes.foo @
-formContextModelAttributePaths :: FieldContext field -> [MessageKey]
-formContextModelAttributePaths ctx = do
-  modelName <- formContextModelNames ctx
-  fieldName <- formContextFieldNames ctx
+fieldContextModelAttributePaths :: FieldContext field -> [MessageKey]
+fieldContextModelAttributePaths ctx = do
+  modelName <- fieldContextModelNames ctx
+  fieldName <- fieldContextFieldNames ctx
   ["form" <> textToMessageKey modelName <> "attributes" <> textToMessageKey fieldName]
-{-# INLINE formContextModelAttributePaths #-}
+{-# INLINE fieldContextModelAttributePaths #-}
 
 -- | Get paths for a form's unqualified attribute path.
 -- So, if this form is for an attribute named @foo@ of a model named @User@, this returns:
 --
 --     * @ form.attributes.foo @
-formContextBaseAttributePaths :: FieldContext field -> [MessageKey]
-formContextBaseAttributePaths ctx = do
-  fieldName <- formContextFieldNames ctx
+fieldContextBaseAttributePaths :: FieldContext field -> [MessageKey]
+fieldContextBaseAttributePaths ctx = do
+  fieldName <- fieldContextFieldNames ctx
   ["form.attributes" <> textToMessageKey fieldName]
 
-formContextAttributePaths :: FieldContext field -> [MessageKey]
-formContextAttributePaths ctx = modelKeys ++ unqualifiedKeys
+fieldContextAttributePrefixes :: FieldContext field -> [MessageKey]
+fieldContextAttributePrefixes ctx = modelKeys ++ unqualifiedKeys
   where
-    unqualifiedKeys = formContextBaseAttributePaths ctx
-    modelKeys = formContextModelAttributePaths ctx
-{-# INLINEABLE formContextAttributePaths #-}
+    unqualifiedKeys = fieldContextBaseAttributePaths ctx
+    modelKeys = fieldContextModelAttributePaths ctx
+{-# INLINEABLE fieldContextAttributePrefixes #-}
 
-formContextAttributeNames :: FieldContext field -> [MessageKey]
-formContextAttributeNames = fmap (<> "name") . formContextAttributePaths
-{-# INLINEABLE formContextAttributeNames #-}
+fieldContextAttributeNameKeys :: FieldContext field -> [MessageKey]
+fieldContextAttributeNameKeys = fmap (<> "name") . fieldContextAttributePrefixes
+{-# INLINEABLE fieldContextAttributeNameKeys #-}
 
 -- | Get translation prefixes to use for an attribute error, on an attribute form.
 -- If this form is for an attribute named @foo@, with a model name of @User@, the following keys will be used as a prefix
@@ -90,8 +89,14 @@ formContextAttributeNames = fmap (<> "name") . formContextAttributePaths
 --     * @ form.User.errors @
 --     * @ form.errors @
 --     * @ errors @
-formContextAttributeErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
-formContextAttributeErrorTranslationPrefixes _ = error "TODO: implement me"
+fieldContextAttributeErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
+fieldContextAttributeErrorTranslationPrefixes ctx =
+  specificKeys ++ modelKeys ++ ["form.errors", "errors"]
+  where
+    specificKeys = fmap (<> "errors") (fieldContextModelAttributePaths ctx)
+    modelKeys = do
+      modelName <- fieldContextModelNames ctx
+      ["form" <> textToMessageKey modelName <> "errors"]
 
 -- | Get translation prefixes to use for a @base@ error on a form.
 -- If this form is for a model named @User@, the following keys will be used as a prefix:
@@ -99,8 +104,13 @@ formContextAttributeErrorTranslationPrefixes _ = error "TODO: implement me"
 --     * @ form.User.base.errors s@
 --     * @ form.errors @
 --     * @ errors @
-formContextBaseErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
-formContextBaseErrorTranslationPrefixes _ = error "TODO: implement me"
+fieldContextBaseErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
+fieldContextBaseErrorTranslationPrefixes ctx =
+  modelKeys ++ ["form.errors", "errors"]
+  where
+    modelKeys = do
+      modelName <- fieldContextModelNames ctx
+      ["form" <> textToMessageKey modelName <> "base" <> "errors"]
 
 -- | Render a name in the form context.
 --
@@ -108,14 +118,14 @@ formContextBaseErrorTranslationPrefixes _ = error "TODO: implement me"
 --
 --     * @ form.User.attributes.foo.name @
 --     * @ form.attributes.foo.name @
-formContextRenderName ::
+fieldContextRenderName ::
   ( FetchMessages m,
     FetchHtmlFormatters m
   ) =>
   FieldContext field ->
   HtmlT m ()
-formContextRenderName ctx =
-  renderTranslated (formContextAttributeNames ctx) mempty
+fieldContextRenderName ctx =
+  renderTranslated (fieldContextAttributeNameKeys ctx) mempty
 
 -- | Render an error using a given form context.
 --
@@ -136,7 +146,7 @@ fieldContextRenderAttributeError ::
   HtmlT m ()
 fieldContextRenderAttributeError ctx =
   renderErrorTranslatedWithPrefixes
-    (formContextAttributeErrorTranslationPrefixes ctx)
+    (fieldContextAttributeErrorTranslationPrefixes ctx)
 
 -- | Render a single base error of a field.
 
@@ -157,7 +167,7 @@ fieldContextRenderBaseError ::
   HtmlT m ()
 fieldContextRenderBaseError ctx =
   renderErrorTranslatedWithPrefixes
-    (formContextBaseErrorTranslationPrefixes ctx)
+    (fieldContextBaseErrorTranslationPrefixes ctx)
 
 -- | Render the /base/ errors of a field.
 --

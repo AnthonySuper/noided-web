@@ -112,4 +112,4 @@ inputAttributes = do
 -- | Renders the (translated) field name of a field as text.
 renderFieldName :: (FetchMessages m, FetchHtmlFormatters m) => HtmlT (FieldRendererT field m) ()
 renderFieldName =
-  htmlFieldContext >>= formContextRenderName
+  htmlFieldContext >>= fieldContextRenderName
