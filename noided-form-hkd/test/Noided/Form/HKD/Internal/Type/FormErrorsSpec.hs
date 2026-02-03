@@ -51,7 +51,7 @@ spec = do
       SubformErrors mempty (mempty :: PersonForm FormErrors) `shouldBe` mempty
     it "works with list errors" $
       ListErrors mempty (IM.empty :: IM.IntMap (FormErrors (InputField Int))) `shouldBe` mempty
-  describe "show instace" $ do
+  describe "show instance" $ do
     it "works with input errors" $
       show (InputErrors mempty) `shouldBe` "InputErrors (fromList [])"
     it "works with subform errors" $

@@ -31,19 +31,19 @@ data HKDFieldTypeSing inputType where
   SubformFieldSing :: TypeRep t -> HKDFieldTypeSing (SubformField t)
   ListFieldSing :: HKDFieldTypeSing inner -> HKDFieldTypeSing (ListField inner)
 
--- TODO: implement instances
+
 type KnownHKDFieldType :: HKDFieldType -> Constraint
 class KnownHKDFieldType hkdType where
-  khdFieldTypeS :: HKDFieldTypeSing hkdType
+  hkdFieldTypeS :: HKDFieldTypeSing hkdType
 
 instance (Typeable t) => KnownHKDFieldType (InputField t) where
-  khdFieldTypeS = InputFieldSing typeRep
+  hkdFieldTypeS = InputFieldSing typeRep
 
 instance (Typeable t) => KnownHKDFieldType (SubformField t) where
-  khdFieldTypeS = SubformFieldSing typeRep
+  hkdFieldTypeS = SubformFieldSing typeRep
 
 instance (KnownHKDFieldType inner) => KnownHKDFieldType (ListField inner) where
-  khdFieldTypeS = ListFieldSing khdFieldTypeS
+  hkdFieldTypeS = ListFieldSing hkdFieldTypeS
 
 instance GEq HKDFieldTypeSing where
   geq (InputFieldSing t1) (InputFieldSing t2) = do

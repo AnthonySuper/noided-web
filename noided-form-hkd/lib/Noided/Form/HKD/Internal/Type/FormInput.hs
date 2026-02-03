@@ -15,7 +15,7 @@ import Noided.Form.Types
 import Optics.Core
 
 -- | The input given to a particular form field.
--- In other to support both actual HTTP forms and JSON with the same types,
+-- In order to support both actual HTTP forms and JSON with the same types,
 -- this can be one of two things.
 data FieldInput a
   = -- | An input value from an actual form.
