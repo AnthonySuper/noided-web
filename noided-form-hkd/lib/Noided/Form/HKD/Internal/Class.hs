@@ -14,6 +14,7 @@ import Data.Text (pack)
 import GHC.Generics
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Noided.Form.HKD.Internal.Type.FormErrors
+import Noided.Form.HKD.Internal.Type.FormInput
 import Noided.Form.HKD.Internal.Type.FormLabel
 import Noided.Form.HKD.Internal.Type.FormLens
 import Noided.Form.HKD.Internal.Type.HKDFieldType
@@ -28,21 +29,37 @@ class
   ) =>
   HKDForm form
   where
+  -- | A form where each field is a self-reflecting lens.
   hkdFormLenses :: form (FormLens form)
   default hkdFormLenses ::
     (Generic (form (FormLens form)), GHKDFormLenses form (Rep (form (FormLens form)))) =>
     form (FormLens form)
   hkdFormLenses = ghkdFormLenses
+
+  -- | A form of label tags.
+  -- This is used to both parse and render forms.
   hkdFormLabels :: form FormLabel
   default hkdFormLabels ::
     (Generic (form FormLabel), GHKDFormLabels (Rep (form FormLabel))) =>
     form FormLabel
   hkdFormLabels = ghkdFormLabels
+
+  -- | Evidence that each field in this form has a properly-structured error type.
+  -- You should generally not implement this yourself.
   hkdFormHasErrors :: form HasErrors
   default hkdFormHasErrors ::
     (Generic (form HasErrors), GHKDFormHasErrors (Rep (form HasErrors))) =>
     form HasErrors
   hkdFormHasErrors = ghkdFormHasErrors
+
+  -- | A totally blank form, sometimes useful for rendering.
+  hkdFormEmpty :: form FormInput
+  default hkdFormEmpty ::
+    ( Generic (form FormInput),
+      GHKDFormEmpty (Rep (form FormInput))
+    ) =>
+    form FormInput
+  hkdFormEmpty = ghkdFormEmpty
 
 class GHKDFormLenses form rep where
   genericHKDFormLenses :: proxy form -> rep ()
@@ -190,3 +207,35 @@ ghkdFormHasErrors ::
   (Generic (form HasErrors), GHKDFormHasErrors (Rep (form HasErrors))) =>
   form HasErrors
 ghkdFormHasErrors = to genericHKDFormHasErrors
+
+class GHKDFormEmpty rep where
+  genericHKDFormEmpty :: rep ()
+
+instance (GHKDFormEmpty l, GHKDFormEmpty r) => GHKDFormEmpty (l :*: r) where
+  genericHKDFormEmpty = genericHKDFormEmpty :*: genericHKDFormEmpty
+
+instance (GHKDFormEmpty i) => GHKDFormEmpty (M1 tag md i) where
+  genericHKDFormEmpty = M1 genericHKDFormEmpty
+
+instance
+  (EmptyInput field) =>
+  GHKDFormEmpty (Rec0 (FormInput field))
+  where
+  genericHKDFormEmpty = K1 emptyInput
+
+class EmptyInput field where
+  emptyInput :: FormInput field
+
+instance EmptyInput (InputField f) where
+  emptyInput = InputInput NotPresent
+
+instance EmptyInput (ListField f) where
+  emptyInput = ListInput mempty
+
+instance (HKDForm form) => EmptyInput (SubformField form) where
+  emptyInput = SubformInput hkdFormEmpty
+
+ghkdFormEmpty ::
+  (Generic (form FormInput), GHKDFormEmpty (Rep (form FormInput))) =>
+  form FormInput
+ghkdFormEmpty = to genericHKDFormEmpty
