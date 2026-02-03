@@ -252,7 +252,7 @@ instance Monoid (FormErrors field) where
   mempty = OnlyBase mempty
 
 onlyBaseErrors :: ValidationErrors -> FormErrors field
-onlyBaseErrors errs = OnlyBase errs
+onlyBaseErrors = OnlyBase
 
 traverseFormErrors :: (Applicative f) => (ValidationErrors -> f ValidationErrors) -> FormErrors field -> f (FormErrors field)
 traverseFormErrors f (BaseAndInner b i) = BaseAndInner <$> f b <*> traverseInnerValidationErrors f i

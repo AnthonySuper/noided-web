@@ -31,15 +31,15 @@ spec :: Spec
 spec = do
   describe "FormLabel" $ do
     it "shows InputLabel correctly" $ do
-      let label = InputLabel "myLabel" :: FormLabel (InputField Int)
-      show label `shouldBe` "InputLabel \"myLabel\""
+      let label = FormLabel "myLabel" InputLabelInner :: FormLabel (InputField Int)
+      show label `shouldBe` "FormLabel \"myLabel\" InputLabelInner"
 
     it "shows SubformLabel correctly" $ do
-      let subContent = MySubform (InputLabel "inner")
-      let label = SubformLabel "mySub" subContent :: FormLabel (SubformField MySubform)
-      show label `shouldBe` "SubformLabel \"mySub\" (MySubform (InputLabel \"inner\"))"
+      let subContent = MySubform "inner"
+      let label = FormLabel "subform" (SubformLabelInner subContent) :: FormLabel (SubformField MySubform)
+      show label `shouldBe` "FormLabel \"subform\" (SubformLabelInner (MySubform (FormLabel \"inner\" InputLabelInner)))"
 
     it "shows ListLabel correctly" $ do
-      let inner = InputLabel "elem" :: FormLabel (InputField Int)
-      let label = ListLabel "myList" inner :: FormLabel (ListField (InputField Int))
-      show label `shouldBe` "ListLabel \"myList\" (InputLabel \"elem\")"
+      let label = FormLabel "myList" (ListLabelInner InputLabelInner) :: FormLabel (ListField (InputField Int))
+      show label `shouldBe`
+        "FormLabel \"myList\" (ListLabelInner InputLabelInner)"
