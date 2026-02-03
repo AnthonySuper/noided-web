@@ -5,9 +5,14 @@ module Noided.Web.Html.Internal.Class.DomId where
 
 import Data.String (IsString (fromString))
 import Data.Text (Text)
+import Lucid (id_)
+import Lucid.Base
 import Noided.Form
 import Noided.Web.Html.Internal.FormKey
 import Noided.Web.Html.Internal.Type.DomIdWriter
+
+idFromDomId :: DomIdWriter -> Attributes
+idFromDomId = id_ . domIdToText
 
 showingDomId :: (Show a) => a -> DomIdWriter
 showingDomId = asDomId . show

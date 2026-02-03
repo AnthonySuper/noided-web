@@ -4,11 +4,8 @@
 module Noided.Web.Html.Internal.Translate
   ( writeHtmlLookup,
     noidedBadTranslation_,
-    renderTranslated',
     renderTranslated,
-    renderErrorTranslatedWithBase',
-    renderErrorTranslatedWithBase,
-    renderErrorTranslated',
+    renderErrorTranslatedWithPrefixes,
     renderErrorTranslated,
   )
 where
@@ -21,13 +18,21 @@ import Lucid.Base
 import Noided.Translate
 import Noided.Translate.Internal.Render (renderViaWriter)
 import Noided.Validation
+import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 import Noided.Web.Html.Internal.Class.FetchMessages
+import Noided.Web.Html.Internal.Type.HtmlFormatter
 
 -- | Write a translation message as HTML.
-writeHtmlLookup :: (Monad m) => Map.Map Text (HtmlT m () -> HtmlT m ()) -> Message -> TranslateParams -> HtmlT m ()
+writeHtmlLookup ::
+  (Monad m) =>
+  Map.Map Text HtmlFormatter ->
+  Message ->
+  TranslateParams ->
+  HtmlT m ()
 writeHtmlLookup m = renderViaWriter format toHtml
   where
-    format t = Map.findWithDefault id t m
+    format t =
+      maybe id useHtmlFormatter (Map.lookup t m)
 
 -- | Tag for the @noided-bad-translation@ custom element.
 --
@@ -44,46 +49,49 @@ toBadAttibutes foldable = fst (foldl' f ([], 1 :: Int) foldable)
         idx + 1
       )
 
--- | Render a translation with the first matching message key.
-renderTranslated :: (FetchMessages m, Foldable t) => t MessageKey -> TranslateParams -> HtmlT m ()
-renderTranslated = renderTranslated' mempty
-
 -- | Render a translation with the first matching message key, with custom formatting.
-renderTranslated' :: (FetchMessages m, Foldable t) => Map.Map Text (HtmlT m () -> HtmlT m ()) -> t MessageKey -> TranslateParams -> HtmlT m ()
-renderTranslated' formatMap msgKey trParams = do
+renderTranslated ::
+  ( FetchMessages m,
+    FetchHtmlFormatters m,
+    Foldable t
+  ) =>
+  t MessageKey ->
+  TranslateParams ->
+  HtmlT m ()
+renderTranslated msgKey trParams = do
   messages <- fetchMessages
+  formatMap <- fetchFormatters
   case firstMessageMatchingFoldable messages msgKey of
     Nothing ->
       noidedBadTranslation_ (toBadAttibutes msgKey) $
         maybe "NO KEY" (toHtml . show) $
           getFirst (foldMap (First . Just) msgKey)
     Just msg -> writeHtmlLookup formatMap msg trParams
+{-# INLINE renderTranslated #-}
 
--- | Render an error trnaslated with a set of base keys (and a format map)
-renderErrorTranslatedWithBase' ::
+-- | Render an error, translated with a base path.
+renderErrorTranslatedWithPrefixes ::
   ( FetchMessages m,
+    FetchHtmlFormatters m,
     Foldable t,
     ValidationError e,
     Functor t
   ) =>
-  Map.Map Text (HtmlT m () -> HtmlT m ()) ->
   t MessageKey ->
   e ->
   HtmlT m ()
-renderErrorTranslatedWithBase' formatMap baseKeys e =
-  renderTranslated'
-    formatMap
+renderErrorTranslatedWithPrefixes baseKeys e =
+  renderTranslated
     (fmap (addMessageKeyPart $ validationErrorKey e) baseKeys)
     (validationErrorTranslateParams e)
 
--- | Render an error trnaslated with a set of base keys
-renderErrorTranslatedWithBase :: (FetchMessages m, Foldable t, ValidationError e, Functor t) => t MessageKey -> e -> HtmlT m ()
-renderErrorTranslatedWithBase = renderErrorTranslatedWithBase' mempty
-
--- | Render an error translated with a format map
-renderErrorTranslated' :: (FetchMessages m, ValidationError e) => Map.Map Text (HtmlT m () -> HtmlT m ()) -> e -> HtmlT m ()
-renderErrorTranslated' formatMap = renderErrorTranslatedWithBase' formatMap []
-
--- | Render an error translated.
-renderErrorTranslated :: (FetchMessages m, ValidationError e) => e -> HtmlT m ()
-renderErrorTranslated = renderErrorTranslated' mempty
+-- | Render a single error, with its key translated.
+-- The translation will be under the root @ errors @ key.
+renderErrorTranslated ::
+  ( FetchMessages m,
+    FetchHtmlFormatters m,
+    ValidationError e
+  ) =>
+  e ->
+  HtmlT m ()
+renderErrorTranslated = renderErrorTranslatedWithPrefixes ["error"]

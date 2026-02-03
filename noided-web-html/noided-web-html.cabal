@@ -77,12 +77,16 @@ library
     exposed-modules:
         Noided.Web.Html.Internal.Type.DomIdWriter
         Noided.Web.Html.Internal.Type.FormContext
+        Noided.Web.Html.Internal.Type.HtmlFormatter
+        Noided.Web.Html.Internal.Type.FormContextT
 
         Noided.Web.Html.Internal.FormKey
         Noided.Web.Html.Internal.Translate
+        Noided.Web.Html.Internal.FormRenderer
 
         Noided.Web.Html.Internal.Class.DomId
         Noided.Web.Html.Internal.Class.FetchMessages
+        Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 
     -- Modules included in this library but not exported.
     -- other-modules:

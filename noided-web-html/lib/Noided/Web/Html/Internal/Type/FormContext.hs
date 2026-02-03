@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -5,6 +7,7 @@
 module Noided.Web.Html.Internal.Type.FormContext where
 
 import Data.Map qualified as Map
+import Data.Monoid
 import Data.Text (Text)
 import GHC.Generics
 import Lucid.Base
@@ -12,21 +15,29 @@ import Noided.Form
 import Noided.Form.HKD
 import Noided.Translate
 import Noided.Validation
+import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.Translate
+import Noided.Web.Html.Internal.Type.DomIdWriter
 import Optics.Core
 
-newtype FormContextBase = FormCtxBase {modelNames :: [Text]}
-  deriving (Show, Generic)
+-- | Overall context for rendering an entire form.
+data FormContext
+  = FormCtxBase
+  { modelNames :: [Text],
+    modifyDomId :: Endo DomIdWriter
+  }
+  deriving (Generic)
+  deriving (Semigroup, Monoid) via (Generically FormContext)
 
-data FormContext field
-  = FormCtx
-  { baseContext :: !FormContextBase,
+data FieldContext field
+  = FieldCtx
+  { baseContext :: !FormContext,
     fieldContext :: RenderingContext field
   }
   deriving (Generic)
 
-formContextFieldNames :: FormContext field -> [Text]
+formContextFieldNames :: FieldContext field -> [Text]
 formContextFieldNames =
   toListOf $
     #fieldContext
@@ -36,76 +47,143 @@ formContextFieldNames =
       % _2
       % #_CanonicalObjectPiece
 
-formContextModelNames :: FormContext field -> [Text]
+formContextModelNames :: FieldContext field -> [Text]
 formContextModelNames = view (#baseContext % #modelNames)
 
-formContextAttributePaths :: FormContext field -> [MessageKey]
+-- | Get paths for a form's fully-qualified attribute path.
+-- So, if this form is for an attribute named @ foo @ of a model named @ User @,
+-- this would return:
+--
+--     * @ form.User.attributes.foo @
+formContextModelAttributePaths :: FieldContext field -> [MessageKey]
+formContextModelAttributePaths ctx = do
+  modelName <- formContextModelNames ctx
+  fieldName <- formContextFieldNames ctx
+  ["form" <> textToMessageKey modelName <> "attributes" <> textToMessageKey fieldName]
+{-# INLINE formContextModelAttributePaths #-}
+
+-- | Get paths for a form's unqualified attribute path.
+-- So, if this form is for an attribute named @foo@ of a model named @User@, this returns:
+--
+--     * @ form.attributes.foo @
+formContextBaseAttributePaths :: FieldContext field -> [MessageKey]
+formContextBaseAttributePaths ctx = do
+  fieldName <- formContextFieldNames ctx
+  ["form.attributes" <> textToMessageKey fieldName]
+
+formContextAttributePaths :: FieldContext field -> [MessageKey]
 formContextAttributePaths ctx = modelKeys ++ unqualifiedKeys
   where
-    unqualifiedKeys = do
-      fieldName <- formContextFieldNames ctx
-      ["form.attributes" <> textToMessageKey fieldName]
-    modelKeys = do
-      modelName <- formContextModelNames ctx
-      fieldName <- formContextFieldNames ctx
-      ["form" <> textToMessageKey modelName <> "attributes" <> textToMessageKey fieldName]
+    unqualifiedKeys = formContextBaseAttributePaths ctx
+    modelKeys = formContextModelAttributePaths ctx
 {-# INLINEABLE formContextAttributePaths #-}
 
-formContextAttributeNames :: FormContext field -> [MessageKey]
+formContextAttributeNames :: FieldContext field -> [MessageKey]
 formContextAttributeNames = fmap (<> "name") . formContextAttributePaths
 {-# INLINEABLE formContextAttributeNames #-}
 
-formContextRenderName' ::
-  (FetchMessages m) =>
-  FormContext field ->
-  Map.Map Text (HtmlT m () -> HtmlT m ()) ->
+-- | Get translation prefixes to use for an attribute error, on an attribute form.
+-- If this form is for an attribute named @foo@, with a model name of @User@, the following keys will be used as a prefix
+-- (in order):
+--
+--     * @ form.User.attributes.foo.errors @
+--     * @ form.User.errors @
+--     * @ form.errors @
+--     * @ errors @
+formContextAttributeErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
+formContextAttributeErrorTranslationPrefixes _ = error "TODO: implement me"
+
+-- | Get translation prefixes to use for a @base@ error on a form.
+-- If this form is for a model named @User@, the following keys will be used as a prefix:
+--
+--     * @ form.User.base.errors s@
+--     * @ form.errors @
+--     * @ errors @
+formContextBaseErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
+formContextBaseErrorTranslationPrefixes _ = error "TODO: implement me"
+
+-- | Render a name in the form context.
+--
+-- Assuming this is a field named @foo@, with a model name of @User@, the following keys will be used to look up:
+--
+--     * @ form.User.attributes.foo.name @
+--     * @ form.attributes.foo.name @
+formContextRenderName ::
+  ( FetchMessages m,
+    FetchHtmlFormatters m
+  ) =>
+  FieldContext field ->
   HtmlT m ()
-formContextRenderName' ctx m =
-  renderTranslated' m (formContextAttributeNames ctx) mempty
+formContextRenderName ctx =
+  renderTranslated (formContextAttributeNames ctx) mempty
 
-formContextRenderName :: (FetchMessages m) => FormContext field -> HtmlT m ()
-formContextRenderName ctx = formContextRenderName' ctx mempty
-
-formContextRenderError' ::
-  (FetchMessages m, ValidationError e) =>
-  Map.Map Text (HtmlT m () -> HtmlT m ()) ->
-  FormContext field ->
+-- | Render an error using a given form context.
+--
+-- Assuming this form context is for a field named @foo@ with a model name of @User@,
+-- the following keys will be used to look up an error with a key of @Error@:
+--
+--     * @ form.User.attributes.foo.error.Error @
+--     * @ form.User.errors.Error @
+--     * @ form.errors.Error @
+--     * @ errors.Error @
+fieldContextRenderAttributeError ::
+  ( FetchMessages m,
+    FetchHtmlFormatters m,
+    ValidationError e
+  ) =>
+  FieldContext field ->
   e ->
   HtmlT m ()
-formContextRenderError' m ctx =
-  renderErrorTranslatedWithBase' m errorKeys
-  where
-    errorKeys = errorCtxKeys ++ errorBaseKeys
-    errorBaseKeys = ["form.errors"]
-    errorCtxKeys =
-      (<> "errors") <$> formContextAttributeNames ctx
+fieldContextRenderAttributeError ctx =
+  renderErrorTranslatedWithPrefixes
+    (formContextAttributeErrorTranslationPrefixes ctx)
 
-formContextRenderErrorsOf ::
-  ( JoinKinds A_Lens l k,
-    Is k A_Fold,
-    FetchMessages m,
-    ValidationError a1,
-    Applicative f
+-- | Render a single base error of a field.
+
+---
+-- Assuming this is a field named @foo@, with a model name of @User@,
+-- the following keys will be used to look up an error named @Error@:
+--
+--     * @ form.User.base.errors.Error @
+--     * @ form.errors.Error @
+--     * @ errors.Error @
+fieldContextRenderBaseError ::
+  ( FetchMessages m,
+    FetchHtmlFormatters m,
+    ValidationError e
   ) =>
-  Optic l is (FormErrors a2) (FormErrors a2) a1 a1 ->
-  Map.Map Text (HtmlT m () -> HtmlT m ()) ->
-  (HtmlT m () -> f r) ->
-  FormContext a2 ->
-  f ()
-formContextRenderErrorsOf l m wrapper ctx =
+  FieldContext field ->
+  e ->
+  HtmlT m ()
+fieldContextRenderBaseError ctx =
+  renderErrorTranslatedWithPrefixes
+    (formContextBaseErrorTranslationPrefixes ctx)
+
+-- | Render the /base/ errors of a field.
+--
+-- These errors will be translated without an attribute name,
+-- via 'fieldContextRenderBaseError'.
+fieldContextRenderBaseErrors ::
+  ( FetchMessages m,
+    FetchHtmlFormatters m
+  ) =>
+  (HtmlT m () -> HtmlT m ()) ->
+  FieldContext a ->
+  HtmlT m ()
+fieldContextRenderBaseErrors wrapper ctx =
   traverseOf_
-    (#fieldContext % #errors % l)
-    (wrapper . formContextRenderError' m ctx)
+    (#fieldContext % #errors % #baseErrors % allErrors)
+    (wrapper . fieldContextRenderBaseError ctx)
     ctx
 
-formContextRenderBaseErrors' :: (FetchMessages m, Applicative f) => Map.Map Text (HtmlT m () -> HtmlT m ()) -> (HtmlT m () -> f r) -> FormContext a2 -> f ()
-formContextRenderBaseErrors' = formContextRenderErrorsOf (#baseErrors % allErrors)
-
-formContextRenderBaseErrors :: (FetchMessages m, Applicative f) => (HtmlT m () -> f r) -> FormContext a2 -> f ()
-formContextRenderBaseErrors = formContextRenderBaseErrors' mempty
-
-formContextRenderAllErrors' :: (FetchMessages m, Applicative f) => Map.Map Text (HtmlT m () -> HtmlT m ()) -> (HtmlT m () -> f r) -> FormContext a2 -> f ()
-formContextRenderAllErrors' = formContextRenderErrorsOf formErrors
-
-formContextRenderAllErrors :: (FetchMessages m, Applicative f) => (HtmlT m () -> f r) -> FormContext a2 -> f ()
-formContextRenderAllErrors = formContextRenderAllErrors' mempty
+-- | Render attribute errors for an input field.
+fieldContextRenderAttributeErrors ::
+  (FetchMessages m, FetchHtmlFormatters m) =>
+  (HtmlT m () -> HtmlT m ()) ->
+  FieldContext (InputField input) ->
+  HtmlT m ()
+fieldContextRenderAttributeErrors wrapper ctx =
+  traverseOf_
+    (#fieldContext % #errors % #baseErrors % allErrors)
+    (wrapper . fieldContextRenderAttributeError ctx)
+    ctx
