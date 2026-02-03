@@ -55,6 +55,8 @@ module Noided.Form
     FormCanonicalPiece (..),
     emptyCanonicalKey,
     appendCanonicalPiece,
+    canonicalKeyToFieldNameBuilder,
+    canonicalKeyToFieldName,
     FormInputKey,
     FormInputPiece (..),
 

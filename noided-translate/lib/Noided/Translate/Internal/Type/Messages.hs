@@ -43,6 +43,9 @@ renderMessageKey = foldl' f mempty . getMessageKey
       | existing == "" = part
       | otherwise = existing <> "." <> part
 
+textToMessageKey :: Text -> MessageKey
+textToMessageKey = MessageK . pure
+
 addMessageKeyPart :: Text -> MessageKey -> MessageKey
 addMessageKeyPart t (MessageK s) = MessageK $ s Seq.:|> t
 {-# INLINE addMessageKeyPart #-}
