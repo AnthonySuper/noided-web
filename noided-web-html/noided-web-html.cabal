@@ -91,7 +91,7 @@ library
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.18.3.0
+    build-depends:
 
     -- Directories containing source files.
     hs-source-dirs:   lib
@@ -126,6 +126,5 @@ test-suite noided-web-html-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.18.3.0,
         noided-web-html,
         hspec
