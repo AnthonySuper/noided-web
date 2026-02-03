@@ -125,6 +125,7 @@ test-suite noided-form-hkd-test
     other-modules:
       Noided.Form.HKD.Internal.Type.FormErrorsSpec
       Noided.Form.HKD.Internal.Type.FormLabelSpec
+      Noided.Form.HKD.IntegrationSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

@@ -48,13 +48,14 @@ class GHKDFormLenses form rep where
   genericHKDFormLenses :: proxy form -> rep ()
 
 instance
-  (Is k A_Lens, forall wrapper. LabelOptic label k (form wrapper) (form wrapper) (wrapper (InputField t)) (wrapper (InputField t))) =>
+  (Is k A_Lens, name ~ label, forall wrapper. LabelOptic label k (form wrapper) (form wrapper) (wrapper (InputField t)) (wrapper (InputField t))) =>
   GHKDFormLenses form (S1 (MetaSel (Just name) su ss dl) (Rec0 (FormLens form (InputField t))))
   where
   genericHKDFormLenses _ = M1 $ K1 $ InputLens (castOptic @A_Lens @k $ labelOptic @label)
 
 instance
   ( Is k A_Lens,
+    name ~ label,
     forall wrapper. LabelOptic label k (form wrapper) (form wrapper) (wrapper (SubformField t)) (wrapper (SubformField t)),
     HKDForm t
   ) =>
@@ -76,6 +77,7 @@ instance (ReflexLens inner) => ReflexLens (ListField inner) where
 
 instance
   ( Is k A_Lens,
+    name ~ label,
     forall wrapper. LabelOptic label k (form wrapper) (form wrapper) (wrapper (ListField t)) (wrapper (ListField t)),
     ReflexLens t
   ) =>
