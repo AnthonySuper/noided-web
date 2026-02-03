@@ -12,5 +12,8 @@ data FormCanonicalPiece = CanonicalObjectPiece Text | CanonicalArrayPiece Int
 newtype FormCanonicalKey = MkFormCanonicalKey {getFormCanonicalKey :: Seq.Seq FormCanonicalPiece}
   deriving (Show, Read, Eq, Ord, Generic)
 
+emptyCanonicalKey :: FormCanonicalKey
+emptyCanonicalKey = MkFormCanonicalKey mempty
+
 appendCanonicalPiece :: FormCanonicalKey -> FormCanonicalPiece -> FormCanonicalKey
 appendCanonicalPiece (MkFormCanonicalKey k) p = MkFormCanonicalKey (k Seq.:|> p)

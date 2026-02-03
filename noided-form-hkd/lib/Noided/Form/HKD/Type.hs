@@ -57,6 +57,14 @@ module Noided.Form.HKD.Type
     subformHasErrors,
     listHasErrors,
     HasErrorEvidence (..),
+
+    -- * Rendering forms
+    FormRenderer,
+    aroundRendering,
+    renderInput,
+    renderSubform,
+    renderList,
+    RenderingContext (..),
   )
 where
 
@@ -67,6 +75,7 @@ import Noided.Form
 import Noided.Form.HKD.Internal.Class
 import Noided.Form.HKD.Internal.Type.FormErrors
 import Noided.Form.HKD.Internal.Type.FormInput
+import Noided.Form.HKD.Internal.Type.FormRenderer
 import Noided.Form.HKD.Internal.Type.FormResult
 import Noided.Form.HKD.Internal.Type.FormValidator
 import Noided.Form.HKD.Internal.Type.HKDFieldType
@@ -124,3 +133,15 @@ validateSubform = SubformValidator
 
 validateList :: FormValidator m subfield -> FormValidator m (ListField subfield)
 validateList = ListValidator
+
+aroundRendering :: (forall a. RenderingContext field -> m a -> m a) -> FormRenderer m field -> FormRenderer m field
+aroundRendering = AroundRendering
+
+renderInput :: (RenderingContext (InputField field) -> m ()) -> FormRenderer m (InputField field)
+renderInput = InputRenderer
+
+renderSubform :: (FTraversable subform, FZip subform, Monoid (subform FormErrors)) => subform (FormRenderer m) -> FormRenderer m (SubformField subform)
+renderSubform = SubformRenderer
+
+renderList :: FormRenderer m field -> FormRenderer m (ListField field)
+renderList = ListRenderer

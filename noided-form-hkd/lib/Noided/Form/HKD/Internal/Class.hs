@@ -4,6 +4,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_HADDOCK not_home #-}
 
 module Noided.Form.HKD.Internal.Class where
 
@@ -18,6 +19,8 @@ import Noided.Form.HKD.Internal.Type.FormLens
 import Noided.Form.HKD.Internal.Type.HKDFieldType
 import Optics.Core hiding (to)
 
+-- | Class describing HKD forms, which work with the machinery in this library.
+-- You should typically not implement this - just use @-XDeriveAnyClass@ and you're good to go.
 class
   ( FTraversable form,
     FRepeat form,
@@ -93,6 +96,7 @@ instance (GHKDFormLenses form inner) => GHKDFormLenses form (C1 md inner) where
 instance (GHKDFormLenses form inner) => GHKDFormLenses form (D1 md inner) where
   genericHKDFormLenses = M1 . genericHKDFormLenses
 
+-- | Use generic machinery to derive field lenses for a form.
 ghkdFormLenses ::
   forall form.
   ( Generic (form (FormLens form)),
@@ -137,6 +141,9 @@ instance
   where
   genericHKDFormLabels = M1 $ K1 $ FormLabel (pack $ symbolVal (Proxy @name)) formLabelInner
 
+-- | Use generic machinery to derive lenses for a form.
+--
+-- You should basically always use this.
 ghkdFormLabels ::
   (Generic (form FormLabel), GHKDFormLabels (Rep (form FormLabel))) =>
   form FormLabel
@@ -174,6 +181,9 @@ instance
   where
   genericHKDFormHasErrors = K1 hasErrors
 
+-- | Use generic machinery to derive HasErrors for a form.
+--
+-- You should basically always use this.
 ghkdFormHasErrors ::
   (Generic (form HasErrors), GHKDFormHasErrors (Rep (form HasErrors))) =>
   form HasErrors

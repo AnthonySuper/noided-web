@@ -27,6 +27,7 @@
 -- > parseUser = fromFormSubmission
 module Noided.Form
   ( -- * Form Types
+
     -- ** Content Types
     FormContentType (..),
 
@@ -52,6 +53,7 @@ module Noided.Form
     -- ** Form Keys
     FormCanonicalKey (..),
     FormCanonicalPiece (..),
+    emptyCanonicalKey,
     appendCanonicalPiece,
     FormInputKey,
     FormInputPiece (..),
