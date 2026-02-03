@@ -67,7 +67,8 @@ common deps
       effectful-core,
       transformers,
       mtl,
-      optics-core
+      optics-core,
+      http-api-data
 
 library
     -- Import common warning flags.

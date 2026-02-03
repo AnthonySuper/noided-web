@@ -89,9 +89,8 @@ deriving instance (Ord (FormInput input)) => Ord (FormInput (ListField input))
 instance (FromJSON (FormInput input)) => FromJSON (FormInput (ListField input)) where
   parseJSON = fmap ListInput . parseJSON
 
-_InputInput :: Prism' (FormInput (InputField a)) (FieldInput a)
-_InputInput = prism' InputInput $ \case
-  InputInput a -> Just a
+_InputInput :: Iso' (FormInput (InputField a)) (FieldInput a)
+_InputInput = iso (\(InputInput a) -> a) InputInput
 
 _SubformInput :: Prism' (FormInput (SubformField subform)) (subform FormInput)
 _SubformInput = prism' SubformInput $ \case
