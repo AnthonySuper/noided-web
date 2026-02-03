@@ -23,7 +23,8 @@ common deps
        transformers,
        noided-translate,
        aeson,
-       mmorph
+       mmorph,
+       these
 
 common exts
     default-extensions:

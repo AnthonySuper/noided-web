@@ -4,16 +4,28 @@
 
 module Noided.Form.HKD.Internal.Type.FormLabelSpec where
 
+import Data.HKD
+import GHC.Generics
 import Noided.Form.HKD.Internal.Type.FormLabel
 import Noided.Form.HKD.Internal.Type.HKDFieldType (HKDFieldType (InputField, ListField, SubformField))
 import Test.Hspec
 
 -- Simple subform for testing
 newtype MySubform f = MySubform (f (InputField Int))
+  deriving (Generic)
 
 deriving instance (Show (f (InputField Int))) => Show (MySubform f)
 
 deriving instance (Eq (f (InputField Int))) => Eq (MySubform f)
+
+instance FFunctor MySubform where
+  ffmap = ffmapDefault
+
+instance FFoldable MySubform where
+  ffoldMap = ffoldMapDefault
+
+instance FTraversable MySubform where
+  ftraverse = gftraverse
 
 spec :: Spec
 spec = do

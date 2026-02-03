@@ -15,9 +15,13 @@ module Noided.Form.HKD.Internal.Type.FormErrors
     subformErrors,
     FormListErrors,
     listErrors,
+    listInnerErrors,
+    onlyBaseErrors,
     traverseFormErrors,
     formErrorSets,
     formErrors,
+    HasErrors (..),
+    emptyErrorsFromEvidence,
   )
 where
 
@@ -234,6 +238,9 @@ instance LabelOptic "innerErrors" A_Lens (FormErrors (ListField field)) (FormErr
       getter' :: FormErrors (ListField field) -> IM.IntMap (FormErrors field)
       getter' (listErrsAsPair -> (_, ie)) = ie
 
+listInnerErrors :: Lens (FormErrors (ListField field)) (FormErrors (ListField field')) (IM.IntMap (FormErrors field)) (IM.IntMap (FormErrors field'))
+listInnerErrors = labelOptic @"innerErrors"
+
 instance Semigroup (FormErrors field) where
   (OnlyBase l) <> (OnlyBase r) = OnlyBase (l <> r)
   (BaseAndInner lbe lse) <> (OnlyBase rbe) = BaseAndInner (lbe <> rbe) lse
@@ -243,6 +250,9 @@ instance Semigroup (FormErrors field) where
 
 instance Monoid (FormErrors field) where
   mempty = OnlyBase mempty
+
+onlyBaseErrors :: ValidationErrors -> FormErrors field
+onlyBaseErrors errs = OnlyBase errs
 
 traverseFormErrors :: (Applicative f) => (ValidationErrors -> f ValidationErrors) -> FormErrors field -> f (FormErrors field)
 traverseFormErrors f (BaseAndInner b i) = BaseAndInner <$> f b <*> traverseInnerValidationErrors f i
@@ -254,3 +264,21 @@ formErrorSets = traversalVL traverseFormErrors
 
 formErrors :: Optic A_Fold '[] (FormErrors field) (FormErrors field) SomeValidationError SomeValidationError
 formErrors = formErrorSets % allErrors
+
+-- | Evidence that a given field has proper error handling.
+type HasErrors :: HKDFieldType -> Type
+data HasErrors field where
+  InputHasErrors :: HasErrors (InputField f)
+  SubformHasErrors ::
+    (FTraversable subform, FRepeat subform, Monoid (subform FormErrors)) =>
+    subform HasErrors ->
+    HasErrors (SubformField subform)
+  ListHasErrors ::
+    HasErrors inner ->
+    HasErrors (ListField inner)
+
+emptyErrorsFromEvidence :: HasErrors field -> FormErrors field
+emptyErrorsFromEvidence = \case
+  InputHasErrors -> mempty
+  SubformHasErrors _ -> mempty
+  ListHasErrors _ -> mempty

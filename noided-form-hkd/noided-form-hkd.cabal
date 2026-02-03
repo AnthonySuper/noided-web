@@ -65,7 +65,8 @@ common deps
       aeson,
       mmorph,
       some,
-      text
+      text,
+      these
 
 common exts
     default-extensions:
@@ -86,6 +87,11 @@ library
         Noided.Form.HKD.Internal.Type.FormErrors
         Noided.Form.HKD.Internal.Type.FormResult
         Noided.Form.HKD.Internal.Type.FormLabel
+        Noided.Form.HKD.Internal.Type.FormLens
+
+        Noided.Form.HKD.Internal.Parse
+        Noided.Form.HKD.Internal.Validate
+        Noided.Form.HKD.Internal.Class
 
     -- Modules included in this library but not exported.
     -- other-modules:

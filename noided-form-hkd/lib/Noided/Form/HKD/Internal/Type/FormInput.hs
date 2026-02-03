@@ -22,6 +22,8 @@ data FieldInput a
     FromForm (FormValue MultipartFormData)
   | -- | An input value from some typed source, such as JSON.
     FromTyped a
+  | -- | An input value was not present.
+    NotPresent
   deriving (Show, Eq, Ord, Functor, Foldable, Traversable, Generic)
 
 instance (FromJSON a) => FromJSON (FieldInput a) where
@@ -31,11 +33,19 @@ _FromForm :: Prism (FieldInput a) (FieldInput a) (FormValue MultipartFormData) (
 _FromForm = prism FromForm $ \case
   FromForm a -> Right a
   FromTyped a -> Left $ FromTyped a
+  NotPresent -> Left NotPresent
 
 _FromTyped :: Prism (FieldInput a) (FieldInput b) a b
 _FromTyped = prism FromTyped $ \case
   FromTyped a -> Right a
   FromForm a -> Left $ FromForm a
+  NotPresent -> Left NotPresent
+
+_NotPresent :: Prism (FieldInput a) (FieldInput a) () ()
+_NotPresent = prism (\() -> NotPresent) $ \case
+  NotPresent -> Right ()
+  FromForm a -> Left (FromForm a)
+  FromTyped a -> Left (FromTyped a)
 
 type FormInput :: HKDFieldType -> Type
 data FormInput fieldType where

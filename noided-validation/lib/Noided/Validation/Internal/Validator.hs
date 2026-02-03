@@ -8,6 +8,7 @@ import Control.Monad.Morph
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Writer.Strict
 import Data.Functor.Identity
+import Data.These
 import Noided.Validation.Internal.ValidationError
 import Noided.Validation.Internal.ValidationError.FailedValidation (FailedValidation (FailedValidation))
 import Noided.Validation.Internal.ValidationErrors
@@ -37,15 +38,24 @@ instance MFunctor ValidatorT where
   hoist f (ValidatorT m) =
     ValidatorT $ hoist (hoist f) m
 
-runValidatorT :: (Monad m) => ValidatorT m a -> m (Either ValidationErrors a)
-runValidatorT v = do
-  (res, acc) <- runWriterT (runExceptT (getValidatorT v))
+runValidatorTThese :: (Monad m) => ValidatorT m a -> m (These ValidationErrors a)
+runValidatorTThese t = do
+  (res, acc) <- runWriterT (runExceptT (getValidatorT t))
   return $
     case res of
       Right good
-        | nullErrors acc -> Right good
-        | otherwise -> Left acc
-      Left fatalError -> Left (acc <> fatalError)
+        | nullErrors acc -> That good
+        | otherwise -> These acc good
+      Left bad -> This (acc <> bad)
+
+runValidatorT :: (Monad m) => ValidatorT m a -> m (Either ValidationErrors a)
+runValidatorT v = do
+  res <- runValidatorTThese v
+  return $
+    case res of
+      This bad -> Left bad
+      That good -> Right good
+      These bad _ -> Left bad
 
 -- | Non-transformer version of 'ValidatorT'.
 type Validator = ValidatorT Identity

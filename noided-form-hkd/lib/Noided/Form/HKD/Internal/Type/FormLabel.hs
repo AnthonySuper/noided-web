@@ -4,6 +4,7 @@
 
 module Noided.Form.HKD.Internal.Type.FormLabel (FormLabel (InputLabel, SubformLabel, ListLabel), FormLabelInner) where
 
+import Data.HKD
 import Data.Kind
 import Data.String
 import Data.Text (Text)
@@ -14,7 +15,9 @@ type FormLabelInner :: HKDFieldType -> Type
 data FormLabelInner field where
   InputLabelInner :: FormLabelInner (InputField f)
   SubformLabelInner ::
-    subform FormLabel -> FormLabelInner (SubformField subform)
+    (FFunctor subform) =>
+    subform FormLabel ->
+    FormLabelInner (SubformField subform)
   ListLabelInner ::
     FormLabel inner -> FormLabelInner (ListField inner)
 
@@ -64,7 +67,7 @@ instance (f ~ InputField t) => IsString (FormLabel f) where
 pattern InputLabel :: () => (field ~ InputField f) => Text -> FormLabel field
 pattern InputLabel t = FormLabel t InputLabelInner
 
-pattern SubformLabel :: () => (field ~ SubformField subform) => Text -> subform FormLabel -> FormLabel field
+pattern SubformLabel :: () => (field ~ SubformField subform, FFunctor subform) => Text -> subform FormLabel -> FormLabel field
 pattern SubformLabel t sf = FormLabel t (SubformLabelInner sf)
 
 pattern ListLabel :: () => (field ~ ListField inner) => Text -> FormLabel inner -> FormLabel field
