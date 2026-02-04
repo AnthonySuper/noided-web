@@ -119,6 +119,7 @@ test-suite noided-web-html-test
     other-modules:
         Noided.Web.Html.Internal.Type.FormContextSpec
         Noided.Web.Html.Internal.Type.DomIdWriterSpec
+        Noided.Web.Html.Internal.Class.DomIdSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
