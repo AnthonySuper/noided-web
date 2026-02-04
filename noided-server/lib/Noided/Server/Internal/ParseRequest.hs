@@ -4,11 +4,13 @@
 module Noided.Server.Internal.ParseRequest (withParsedRequest) where
 
 import Control.Monad.Trans.Resource
+import Data.Aeson (eitherDecode)
 import Data.Bifunctor
 import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy (toStrict)
 import Data.Char (toLower)
 import Data.Map.Strict qualified as Map
+import Data.Text (pack)
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Network.HTTP.Types.URI
 import Network.Wai qualified as Wai
@@ -25,7 +27,7 @@ withParsedRequest ::
   (Request pathParams -> IO a) ->
   IO a
 withParsedRequest pp wr cb =
-  withFormSubmission wr $ \requestBody ->
+  withRequestBody wr $ \requestBody ->
     cb
       ( MkRequest
           pp
@@ -38,20 +40,36 @@ withParsedRequest pp wr cb =
 qsFromRequest :: Wai.Request -> FormSubmission UrlEncoded
 qsFromRequest = fromTextKeysAndValues . fmap (second (TextValue <$>)) . queryToQueryText . Wai.queryString
 
-withFormSubmission ::
+withRequestBody ::
   Wai.Request ->
-  (SomeFormSubmission -> IO a) ->
+  (RequestBody -> IO a) ->
   IO a
-withFormSubmission req cb = do
-  let mContentType = lookup "Content-Type" (Wai.requestHeaders req)
-      (mediaType, _params) =
-        maybe ("application/x-www-form-urlencoded", []) parseContentType mContentType
-  case BS8.map toLower mediaType of
-    "multipart/form-data" ->
-      withParsedMultipartForm req (cb . MultipartFormDataSubmission)
-    _ ->
-      -- default fallback: treat unknown as url-encoded
-      withParsedUrlEncodedForm req (cb . UrlEncodedSubmission)
+withRequestBody req cb = do
+  let len = Wai.requestBodyLength req
+  case len of
+    Wai.KnownLength 0 -> cb NoBody
+    _ -> do
+      let mContentType = lookup "Content-Type" (Wai.requestHeaders req)
+          parsedCT = fmap parseContentType mContentType
+          cleanCT = fmap (first (BS8.map toLower)) parsedCT
+
+      case cleanCT of
+        Just ("application/json", _) -> do
+          body <- Wai.strictRequestBody req
+          case eitherDecode body of
+            Right v -> cb (JSONBody v)
+            Left err -> cb (MalformedBody (pack err))
+        Just ("multipart/form-data", _) ->
+          withParsedMultipartForm req (cb . FormBody . MultipartFormDataSubmission)
+        Just ("application/x-www-form-urlencoded", _) ->
+          withParsedUrlEncodedForm req (cb . FormBody . UrlEncodedSubmission)
+        _ -> do
+          let reader = do
+                chunk <- Wai.getRequestBodyChunk req
+                if BS8.null chunk
+                  then return EndOfInput
+                  else return (ActualChunk chunk)
+          cb (UnknownBody $ ReqBodyUnknown parsedCT reader)
 
 withParsedUrlEncodedForm ::
   Wai.Request ->

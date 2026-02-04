@@ -2,9 +2,9 @@
 
 module Noided.Server.Internal.Type.Action where
 
+import Network.HTTP.Types (StdMethod)
 import Noided.Pathname
 import Noided.Server.Internal.Type.Request
-import Noided.Server.Internal.Type.Verb
 
 -- | An action for some URL with path params.
 newtype Action monad response pathParams = Act {runAct :: Request pathParams -> monad response}
@@ -28,7 +28,7 @@ hoistActionMonad h (Act act) = Act (h . act)
 -- | Some action, at a verb and a path.
 data SomeAction monad response where
   SomeAction ::
-    Verb ->
+    StdMethod ->
     PathTemplate pathParams ->
     Action monad response pathParams ->
     SomeAction monad response

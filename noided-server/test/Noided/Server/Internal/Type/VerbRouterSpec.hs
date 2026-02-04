@@ -2,7 +2,7 @@
 
 module Noided.Server.Internal.Type.VerbRouterSpec (spec) where
 
-import Noided.Server.Internal.Type.Verb
+import Network.HTTP.Types
 import Noided.Server.Internal.Type.VerbRouter
 import Optics.Core
 import Prelude hiding (lookup)

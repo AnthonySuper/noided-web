@@ -6,10 +6,10 @@
 module Noided.Server.Internal.Type.Server where
 
 import Data.Foldable
+import Network.HTTP.Types (StdMethod)
 import Network.Wai qualified as Wai
 import Noided.Pathname
 import Noided.Server.Internal.Type.Action
-import Noided.Server.Internal.Type.Verb
 import Noided.Server.Internal.Type.VerbRouter
 import Optics.Core
 
@@ -40,7 +40,7 @@ hoistServerMonad f (MkServer aa nfa) =
 newtype VerbRouterOf routed path = MkVerbRouterOf {getVerbRouterOf :: VerbRouter (routed path)}
   deriving (Semigroup, Monoid) via (VerbRouter (routed path))
 
-type instance Index (VerbRouterOf routed path) = Verb
+type instance Index (VerbRouterOf routed path) = StdMethod
 
 type instance IxValue (VerbRouterOf routed path) = (routed path)
 

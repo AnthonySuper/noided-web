@@ -67,6 +67,7 @@ common deps
       resourcet,
       deepseq,
       network,
+      aeson,
 
       noided-pathname,
       noided-form
@@ -79,7 +80,6 @@ library
     exposed-modules:
         Noided.Server.Internal.Type.Request
         Noided.Server.Internal.Type.Action
-        Noided.Server.Internal.Type.Verb
         Noided.Server.Internal.Type.VerbRouter
         Noided.Server.Internal.Type.Server
 

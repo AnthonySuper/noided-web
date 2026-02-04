@@ -24,6 +24,8 @@ module Noided.Server
 
     -- * Requests
     Request (..),
+    RequestBody (..),
+    RequestBodyUnknown (..),
   )
 where
 
@@ -31,4 +33,3 @@ import Noided.Server.Internal.Serve
 import Noided.Server.Internal.Type.Action
 import Noided.Server.Internal.Type.Request
 import Noided.Server.Internal.Type.Server
-import Noided.Server.Internal.Type.Verb
