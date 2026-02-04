@@ -96,4 +96,4 @@ renderErrorTranslated ::
   ) =>
   e ->
   HtmlT m ()
-renderErrorTranslated = renderErrorTranslatedWithPrefixes ["error"]
+renderErrorTranslated = renderErrorTranslatedWithPrefixes ["errors"]

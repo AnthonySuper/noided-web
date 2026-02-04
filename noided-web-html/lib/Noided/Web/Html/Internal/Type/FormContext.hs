@@ -101,7 +101,7 @@ fieldContextAttributeErrorTranslationPrefixes ctx =
 -- | Get translation prefixes to use for a @base@ error on a form.
 -- If this form is for a model named @User@, the following keys will be used as a prefix:
 --
---     * @ form.User.base.errors s@
+--     * @ form.User.base.errors @
 --     * @ form.errors @
 --     * @ errors @
 fieldContextBaseErrorTranslationPrefixes :: FieldContext field -> [MessageKey]
@@ -132,7 +132,7 @@ fieldContextRenderName ctx =
 -- Assuming this form context is for a field named @foo@ with a model name of @User@,
 -- the following keys will be used to look up an error with a key of @Error@:
 --
---     * @ form.User.attributes.foo.error.Error @
+--     * @ form.User.attributes.foo.errors.Error @
 --     * @ form.User.errors.Error @
 --     * @ form.errors.Error @
 --     * @ errors.Error @
@@ -149,8 +149,7 @@ fieldContextRenderAttributeError ctx =
     (fieldContextAttributeErrorTranslationPrefixes ctx)
 
 -- | Render a single base error of a field.
-
----
+--
 -- Assuming this is a field named @foo@, with a model name of @User@,
 -- the following keys will be used to look up an error named @Error@:
 --

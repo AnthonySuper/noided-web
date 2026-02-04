@@ -75,7 +75,7 @@ fieldWrapAddToId ::
   HtmlFormRendererT m field
 fieldWrapAddToId comp = wrapField (fieldAddToId comp)
 
--- | Add a suffix to all dom ids generated in in the inner block.
+-- | Add a suffix to all dom ids generated in the inner block.
 -- This is useful if you want to add some kind of \"identifier\" to the dom ids,
 -- for use with something like morphdom.
 fieldAddToId :: (Monad m) => DomIdWriter -> HtmlFieldT field m a -> HtmlFieldT field m a
