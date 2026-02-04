@@ -41,8 +41,8 @@ writeHtmlLookup m = renderViaWriter format toHtml
 noidedBadTranslation_ :: (Monad m) => [Attributes] -> HtmlT m a -> HtmlT m a
 noidedBadTranslation_ = term "noided-bad-translation"
 
-toBadAttibutes :: (Foldable t, Term Text a) => t MessageKey -> [a]
-toBadAttibutes foldable = fst (foldl' f ([], 1 :: Int) foldable)
+toBadAttributes :: (Foldable t, Term Text a) => t MessageKey -> [a]
+toBadAttributes foldable = fst (foldl' f ([], 1 :: Int) foldable)
   where
     f (msgs, idx) (mk :: MessageKey) =
       ( term (pack $ "bad-key-" <> show idx) (pack $ show mk) : msgs,
@@ -65,7 +65,7 @@ renderTranslated msgKey trParams = do
   formatMap <- fetchFormatters
   case firstMessageMatchingFoldable messages msgKey of
     Nothing ->
-      noidedBadTranslation_ (toBadAttibutes msgKey) $
+      noidedBadTranslation_ (toBadAttributes msgKey) $
         maybe "NO KEY" (toHtml . show) $
           getFirst (foldMap (First . Just) msgKey)
     Just msg -> writeHtmlLookup formatMap msg trParams
