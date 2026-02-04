@@ -19,10 +19,14 @@ module Noided.Form.Types
     _SubmissionValue,
     _SubmissionArray,
     _SubmissionObject,
+    urlSubmissionToMultipartSubmission,
+    multipartSubmissionToUrlSubmission,
     ixtraverseFormValues,
     ixFormValues,
     formValues,
     traverseFormValues,
+    SomeFormSubmission (..),
+    multipartFromSomeSubmission,
 
     -- * Form Keys
     FormCanonicalKey (..),

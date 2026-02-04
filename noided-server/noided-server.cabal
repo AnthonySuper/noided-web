@@ -58,14 +58,37 @@ common deps
     build-depends:
       base >= 4.18 && <= 4.20,
       text,
-      containers
+      containers,
+      bytestring,
+      wai,
+      wai-extra,
+      http-types,
+      optics-core,
+      resourcet,
+      deepseq,
+      network,
+
+      noided-pathname,
+      noided-form
 
 library
     -- Import common warning flags.
     import:           warnings, deps
 
     -- Modules exported by the library.
-    exposed-modules:  Noided.Server
+    exposed-modules:
+        Noided.Server.Internal.Type.Request
+        Noided.Server.Internal.Type.Action
+        Noided.Server.Internal.Type.Verb
+        Noided.Server.Internal.Type.VerbRouter
+        Noided.Server.Internal.Type.Server
+
+        Noided.Server.Internal.ParseRequest
+        Noided.Server.Internal.Serve
+
+        Noided.Server
+
+
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -90,7 +113,8 @@ test-suite noided-server-test
     default-language: GHC2021
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:
+      Noided.Server.Internal.Type.VerbRouterSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

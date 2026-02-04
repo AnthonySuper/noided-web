@@ -8,6 +8,7 @@ import Data.Sequence qualified as Seq
 import Noided.Form.Internal.Type.FormCanonicalKey
 import Noided.Form.Internal.Type.FormContentType
 import Noided.Form.Internal.Type.FormSubmission
+import Noided.Form.Internal.Type.UploadedFile
 import Optics.Core (itoListOf)
 import Test.Hspec
 
@@ -66,3 +67,26 @@ spec = do
           result = itoListOf ixFormValues submission
 
       result `shouldMatchList` expected
+
+  describe "urlSubmissionToMultipartSubmission" $ do
+    it "converts losslessy" $ do
+      let input = SubmissionValue (TextValue "foo") :: FormSubmission UrlEncoded
+      let output = urlSubmissionToMultipartSubmission input
+      output `shouldBe` SubmissionValue (TextValue "foo")
+
+  describe "multipartSubmissionToUrlSubmission" $ do
+    it "removes top-level files" $ do
+      let input = SubmissionValue (FileValue (MkUploadedFile "text/plain" "foo.txt" "/tmp/foo"))
+      multipartSubmissionToUrlSubmission input `shouldBe` SubmissionEmpty
+
+    it "removes files from arrays" $ do
+      let file = SubmissionValue (FileValue (MkUploadedFile "text/plain" "foo.txt" "/tmp/foo"))
+          text = SubmissionValue (TextValue "bar")
+          input = SubmissionArray (Seq.fromList [file, text])
+      multipartSubmissionToUrlSubmission input `shouldBe` SubmissionArray (Seq.fromList [SubmissionValue (TextValue "bar")])
+
+    it "removes files from objects" $ do
+      let file = SubmissionValue (FileValue (MkUploadedFile "text/plain" "foo.txt" "/tmp/foo"))
+          text = SubmissionValue (TextValue "bar")
+          input = SubmissionObject (Map.fromList [("f", file), ("t", text)])
+      multipartSubmissionToUrlSubmission input `shouldBe` SubmissionObject (Map.fromList [("t", SubmissionValue (TextValue "bar"))])
