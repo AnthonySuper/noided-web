@@ -69,4 +69,5 @@ import Noided.Web.Html.Internal.Class.DomId
 import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.FormRenderer
+import Noided.Web.Html.Internal.Translate
 import Noided.Web.Html.Internal.Type.FormRendererT

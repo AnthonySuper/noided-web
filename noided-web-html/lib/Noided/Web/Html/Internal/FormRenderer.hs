@@ -31,12 +31,14 @@ type HtmlFieldT field m = HtmlT (FieldRendererT field m)
 
 type HtmlFormT m = HtmlT (FormRendererT m)
 
+type HtmlFormRendererT m = FormRenderer (HtmlFormT m)
+
 -- | Render an HKD form somewhere on the page.
 renderFormT ::
   ( Monad n,
     HKDForm subform
   ) =>
-  FormRenderer (HtmlT (FormRendererT n)) (SubformField subform) ->
+  HtmlFormRendererT n (SubformField subform) ->
   subform FormInput ->
   FormErrors (SubformField subform) ->
   HtmlT n ()
@@ -56,31 +58,31 @@ htmlFieldLocal :: (Monad m) => (FieldContext field -> FieldContext field) -> Htm
 htmlFieldLocal f = hoistHtmlT (localFieldContext f)
 
 -- | Set the model name for all fields rendered in a block.
-fieldModelName :: (Monad m) => Text -> HtmlFieldT a1 m a2 -> HtmlFieldT a1 m a2
+fieldModelName :: (Monad m) => Text -> HtmlFieldT field m a -> HtmlFieldT field m a
 fieldModelName mn = htmlFieldLocal (#baseContext % #modelNames .~ [mn])
 
 fieldWrapModelName ::
   (Monad m) =>
   Text ->
-  FormRenderer (HtmlFormT m) field ->
-  FormRenderer (HtmlFormT m) field
+  HtmlFormRendererT m field ->
+  HtmlFormRendererT m field
 fieldWrapModelName mn = wrapField (fieldModelName mn)
 
 fieldWrapAddToId ::
   (Monad m) =>
-  Text ->
-  FormRenderer (HtmlFormT m) field ->
-  FormRenderer (HtmlFormT m) field
-fieldWrapAddToId mn = wrapField (fieldModelName mn)
+  DomIdWriter ->
+  HtmlFormRendererT m field ->
+  HtmlFormRendererT m field
+fieldWrapAddToId comp = wrapField (fieldAddToId comp)
 
 -- | Add a suffix to all dom ids generated in in the inner block.
 -- This is useful if you want to add some kind of \"identifier\" to the dom ids,
 -- for use with something like morphdom.
-fieldAddToId :: (Monad m) => DomIdWriter -> HtmlFieldT a1 m a2 -> HtmlFieldT a1 m a2
+fieldAddToId :: (Monad m) => DomIdWriter -> HtmlFieldT field m a -> HtmlFieldT field m a
 fieldAddToId comp = htmlFieldLocal (#baseContext % #modifyDomId %~ (<> Endo (<> comp)))
 
 -- | Render an individual field.
-formField :: (Monad m) => HtmlFieldT (InputField field) m () -> FormRenderer (HtmlFormT m) (InputField field)
+formField :: (Monad m) => HtmlFieldT (InputField field) m () -> HtmlFormRendererT m (InputField field)
 formField = renderInput . htmlFieldToHtmlForm
 
 subformField ::
@@ -89,20 +91,20 @@ subformField ::
     Monoid (subform FormErrors),
     Monad m
   ) =>
-  subform (FormRenderer (HtmlFormT m)) ->
-  FormRenderer (HtmlFormT m) (SubformField subform)
+  subform (HtmlFormRendererT m) ->
+  HtmlFormRendererT m (SubformField subform)
 subformField = renderSubform
 
 listField ::
-  FormRenderer (HtmlFormT m) field ->
-  FormRenderer (HtmlFormT m) (ListField field)
+  HtmlFormRendererT m field ->
+  HtmlFormRendererT m (ListField field)
 listField = renderList
 
 wrapField ::
   (Monad m) =>
   (forall a. HtmlFieldT field m a -> HtmlFieldT field m a) ->
-  FormRenderer (HtmlFormT m) field ->
-  FormRenderer (HtmlFormT m) field
+  HtmlFormRendererT m field ->
+  HtmlFormRendererT m field
 wrapField act = aroundRendering $ \ctx b ->
   htmlFieldToHtmlForm (act $ htmlFormToHtmlField b) ctx
 
@@ -120,24 +122,24 @@ renderBaseErrors wrapper = do
 renderFieldErrors ::
   (FetchMessages m, FetchHtmlFormatters m) =>
   -- | Wrap each individual error (probably in a list item)
-  ( HtmlT (FieldRendererT (InputField input) m) () ->
-    HtmlT (FieldRendererT (InputField input) m) ()
+  ( HtmlFieldT (InputField input) m () ->
+    HtmlFieldT (InputField input) m ()
   ) ->
-  HtmlT (FieldRendererT (InputField input) m) ()
+  HtmlFieldT (InputField input) m ()
 renderFieldErrors wrapper = htmlFieldContext >>= fieldContextRenderAttributeErrors wrapper
 
 -- | Get a list of base errors of the field.
-fieldBaseErrors :: (Monad m) => HtmlT (FieldRendererT a m) [SomeValidationError]
+fieldBaseErrors :: (Monad m) => HtmlFieldT a m [SomeValidationError]
 fieldBaseErrors =
   toListOf (#fieldContext % #errors % #baseErrors % allErrors)
     <$> htmlFieldContext
 
 -- | Determine if this field has any errors, recursively.
-fieldHasError :: (Monad m) => HtmlT (FieldRendererT a m) Bool
+fieldHasError :: (Monad m) => HtmlFieldT a m Bool
 fieldHasError = has (#fieldContext % #errors % formErrors) <$> htmlFieldContext
 
 -- | Get a unique ID for this field.
-fieldId :: (Monad m) => HtmlT (FieldRendererT a m) DomIdWriter
+fieldId :: (Monad m) => HtmlFieldT a m DomIdWriter
 fieldId = do
   ctx <- htmlFieldContext
   let baseId = ctx & asDomId . view (#fieldContext % #key)
@@ -145,17 +147,17 @@ fieldId = do
   return transformedId
 
 -- | Get the HTML name for this field.
-fieldName :: (Monad m) => HtmlT (FieldRendererT a m) Text
+fieldName :: (Monad m) => HtmlFieldT a m Text
 fieldName = canonicalKeyToFieldName . view (#fieldContext % #key) <$> htmlFieldContext
 
-inputFieldValue :: (Monad m) => HtmlT (FieldRendererT (InputField a) m) (FieldInput a)
+inputFieldValue :: (Monad m) => HtmlFieldT (InputField a) m (FieldInput a)
 inputFieldValue = view (#fieldContext % #input % _InputInput) <$> htmlFieldContext
 
 -- | Attributes to set on any inputs.
 -- Basically just the @name@ and @id@ attributes.
 inputAttributesBase ::
   (Monad m) =>
-  HtmlT (FieldRendererT (InputField t) m) Attributes
+  HtmlFieldT (InputField t) m Attributes
 inputAttributesBase = do
   fid <- fieldId
   fname <- fieldName
@@ -170,13 +172,16 @@ fieldValueToInputAttributeValue' mapTyped = \case
       TextValue t -> Just t
       _ -> Nothing
 
-inputValueText' :: (Monad m) => (t -> Text) -> HtmlT (FieldRendererT (InputField t) m) (Maybe Text)
+inputValueText' :: (Monad m) => (t -> Text) -> HtmlFieldT (InputField t) m (Maybe Text)
 inputValueText' f = fieldValueToInputAttributeValue' f <$> inputFieldValue
+
+inputValueText :: (Monad m, ToHttpApiData t) => HtmlFieldT (InputField t) m (Maybe Text)
+inputValueText = inputValueText' toQueryParam
 
 inputValueAttribute' ::
   (Monad m) =>
   (t -> Text) ->
-  HtmlT (FieldRendererT (InputField t) m) Attributes
+  HtmlFieldT (InputField t) m Attributes
 inputValueAttribute' mapTyped = do
   foldMap
     value_
@@ -184,30 +189,30 @@ inputValueAttribute' mapTyped = do
 
 inputValueAttribute ::
   (Monad m, ToHttpApiData t) =>
-  HtmlT (FieldRendererT (InputField t) m) Attributes
+  HtmlFieldT (InputField t) m Attributes
 inputValueAttribute = inputValueAttribute' toQueryParam
 
-inputAttributes' :: (Monad m) => (t -> Text) -> HtmlT (FieldRendererT (InputField t) m) Attributes
+inputAttributes' :: (Monad m) => (t -> Text) -> HtmlFieldT (InputField t) m Attributes
 inputAttributes' f = (<>) <$> inputAttributesBase <*> inputValueAttribute' f
 
-inputAttributes :: (Monad m, ToHttpApiData t) => HtmlT (FieldRendererT (InputField t) m) Attributes
+inputAttributes :: (Monad m, ToHttpApiData t) => HtmlFieldT (InputField t) m Attributes
 inputAttributes = inputAttributes' toQueryParam
 
 -- | Attributes to set on any labels.
 -- Sets both a @for@ attribute, and an @id@ attribute (to the field id with "--label" appended)
-labelAttributes :: (Monad m) => HtmlT (FieldRendererT (InputField t) m) Attributes
+labelAttributes :: (Monad m) => HtmlFieldT (InputField t) m Attributes
 labelAttributes = do
   fid <- fieldId
   return $ for_ (domIdToText fid) <> idFromDomId (fid <> "label")
 
 -- | Renders the (translated) field name of a field as text.
-renderFieldName :: (FetchMessages m, FetchHtmlFormatters m) => HtmlT (FieldRendererT field m) ()
+renderFieldName :: (FetchMessages m, FetchHtmlFormatters m) => HtmlFieldT field m ()
 renderFieldName =
   htmlFieldContext >>= fieldContextRenderName
 
 -- | Render a translated label tag, with some base attributes.
 -- You can use these base attributes to set a class on the label, if you want.
-renderLabelTag :: (FetchMessages m, FetchHtmlFormatters m) => [Attributes] -> HtmlT (FieldRendererT (InputField t) m) ()
+renderLabelTag :: (FetchMessages m, FetchHtmlFormatters m) => [Attributes] -> HtmlFieldT (InputField t) m ()
 renderLabelTag attrs = do
   labelAttrs <- labelAttributes
   label_ (attrs <> [labelAttrs]) $
@@ -220,7 +225,7 @@ renderInputTag' ::
   -- | Transform an input value into text, if possible.
   (t -> Text) ->
   [Attributes] ->
-  HtmlT (FieldRendererT (InputField t) m) ()
+  HtmlFieldT (InputField t) m ()
 renderInputTag' f attrs = do
   iattrs <- inputAttributes' f
   input_ $ attrs <> [iattrs]
@@ -229,7 +234,7 @@ renderInputTag ::
   (Monad m, ToHttpApiData t) =>
   -- | Base attributes to add
   [Attributes] ->
-  HtmlT (FieldRendererT (InputField t) m) ()
+  HtmlFieldT (InputField t) m ()
 renderInputTag = renderInputTag' toQueryParam
 
 renderTextareaTag' ::
@@ -238,7 +243,7 @@ renderTextareaTag' ::
   (t -> Text) ->
   -- | Base attributes to add
   [Attributes] ->
-  HtmlT (FieldRendererT (InputField t) m) ()
+  HtmlFieldT (InputField t) m ()
 renderTextareaTag' f attrs = do
   iattrs <- inputAttributesBase
   val <- foldMap id <$> inputValueText' f
@@ -249,5 +254,5 @@ renderTextareaTag ::
   -- | Base attributes to add
   [Attributes] ->
   -- | Rendered textarea
-  HtmlT (FieldRendererT (InputField Text) m) ()
+  HtmlFieldT (InputField Text) m ()
 renderTextareaTag = renderTextareaTag' id
