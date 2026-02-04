@@ -5,7 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-module Noided.Web.Html.Internal.Type.FormContextT where
+module Noided.Web.Html.Internal.Type.FormRendererT where
 
 import Control.Monad.Error.Class
 import Control.Monad.IO.Class
@@ -27,35 +27,35 @@ import Optics.Core
 --
 -- Note that this is a reader monad, but it /does not/ derive @MonadReader@.
 -- This is so it can lift the @MonadReader@ definitions from inner monads.
-type FormContextT :: (Type -> Type) -> Type -> Type
-newtype FormContextT m a
-  = FormContextT {runFormContextT :: FormContext -> m a}
+type FormRendererT :: (Type -> Type) -> Type -> Type
+newtype FormRendererT m a
+  = FormRendererT {runFormRendererT :: FormContext -> m a}
   deriving (Functor, Applicative, Monad) via (ReaderT FormContext m)
   deriving (MonadTrans) via (ReaderT FormContext)
 
-instance (MonadReader r m) => MonadReader r (FormContextT m) where
-  local f (FormContextT m) = FormContextT $ \ctx -> local f (m ctx)
+instance (MonadReader r m) => MonadReader r (FormRendererT m) where
+  local f (FormRendererT m) = FormRendererT $ \ctx -> local f (m ctx)
   ask = lift ask
 
-deriving via (ReaderT FormContext m) instance (MonadState s m) => MonadState s (FormContextT m)
-deriving via (ReaderT FormContext m) instance (MonadError e m) => MonadError e (FormContextT m)
-deriving via (ReaderT FormContext m) instance (MonadIO m) => MonadIO (FormContextT m)
-deriving via (ReaderT FormContext m) instance (MonadWriter w m) => MonadWriter w (FormContextT m)
+deriving via (ReaderT FormContext m) instance (MonadState s m) => MonadState s (FormRendererT m)
+deriving via (ReaderT FormContext m) instance (MonadError e m) => MonadError e (FormRendererT m)
+deriving via (ReaderT FormContext m) instance (MonadIO m) => MonadIO (FormRendererT m)
+deriving via (ReaderT FormContext m) instance (MonadWriter w m) => MonadWriter w (FormRendererT m)
 
-instance (FetchMessages m) => FetchMessages (FormContextT m) where
+instance (FetchMessages m) => FetchMessages (FormRendererT m) where
   fetchMessages = lift fetchMessages
 
-instance (FetchHtmlFormatters m) => FetchHtmlFormatters (FormContextT m) where
+instance (FetchHtmlFormatters m) => FetchHtmlFormatters (FormRendererT m) where
   fetchFormatters = lift fetchFormatters
 
-runForm :: (Monad n) => HtmlT (FormContextT n) b -> HtmlT n b
-runForm = hoistHtmlT (`runFormContextT` mempty)
+runForm :: (Monad n) => HtmlT (FormRendererT n) b -> HtmlT n b
+runForm = hoistHtmlT (`runFormRendererT` mempty)
 
-askFormContext :: (Applicative m) => FormContextT m FormContext
-askFormContext = FormContextT pure
+askFormContext :: (Applicative m) => FormRendererT m FormContext
+askFormContext = FormRendererT pure
 
-localFormContext :: (FormContext -> FormContext) -> FormContextT m a -> FormContextT m a
-localFormContext f fr = FormContextT (runFormContextT fr . f)
+localFormContext :: (FormContext -> FormContext) -> FormRendererT m a -> FormRendererT m a
+localFormContext f fr = FormRendererT (runFormRendererT fr . f)
 
 -- | Monad transformer to render fields.
 --
@@ -93,11 +93,11 @@ localFieldContext ::
   FieldRendererT field m a
 localFieldContext f act = FieldRendererT $ runFieldRendererT act . f
 
-fieldRendererToForm :: RenderingContext field -> FieldRendererT field m a -> FormContextT m a
-fieldRendererToForm fieldCtx fr = FormContextT $ \formCtx -> do
+fieldRendererToForm :: RenderingContext field -> FieldRendererT field m a -> FormRendererT m a
+fieldRendererToForm fieldCtx fr = FormRendererT $ \formCtx -> do
   let fieldContext = FieldCtx formCtx fieldCtx
   runFieldRendererT fr fieldContext
 
-formRendererToField :: FormContextT m a -> FieldRendererT field m a
+formRendererToField :: FormRendererT m a -> FieldRendererT field m a
 formRendererToField act = FieldRendererT $ \formCtx ->
-  runFormContextT act (formCtx ^. #baseContext)
+  runFormRendererT act (formCtx ^. #baseContext)

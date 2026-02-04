@@ -22,13 +22,13 @@ import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.Type.DomIdWriter
 import Noided.Web.Html.Internal.Type.FormContext
-import Noided.Web.Html.Internal.Type.FormContextT
+import Noided.Web.Html.Internal.Type.FormRendererT
 import Optics.Core
 import Web.HttpApiData
 
 type HtmlFieldT field m = HtmlT (FieldRendererT field m)
 
-type HtmlFormT m = HtmlT (FormContextT m)
+type HtmlFormT m = HtmlT (FormRendererT m)
 
 htmlFieldToHtmlForm :: (Monad m) => HtmlFieldT field m a -> RenderingContext field -> HtmlFormT m a
 htmlFieldToHtmlForm act ctx = hoistHtmlT (fieldRendererToForm ctx) act

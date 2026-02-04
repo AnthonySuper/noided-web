@@ -79,7 +79,7 @@ library
         Noided.Web.Html.Internal.Type.DomIdWriter
         Noided.Web.Html.Internal.Type.FormContext
         Noided.Web.Html.Internal.Type.HtmlFormatter
-        Noided.Web.Html.Internal.Type.FormContextT
+        Noided.Web.Html.Internal.Type.FormRendererT
         Noided.Web.Html.Internal.Type.TranslationT
 
         Noided.Web.Html.Internal.FormKey
@@ -89,6 +89,8 @@ library
         Noided.Web.Html.Internal.Class.DomId
         Noided.Web.Html.Internal.Class.FetchMessages
         Noided.Web.Html.Internal.Class.FetchHtmlFormatters
+
+        Noided.Web.Html
 
     -- Modules included in this library but not exported.
     -- other-modules:
