@@ -23,7 +23,10 @@ import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.Type.FormContext
 import Optics.Core
 
--- | Monad transformer to render forms.
+-- | Monad transformer to help with rendering forms with some common contextual information.
+-- This should not be confused with 'Noided.Form.HKD.FormRenderer', which is a type wrapper
+-- for rendering fields of a form. Instead, this is a monad transformer to make constructing
+-- values of that other type easier.
 --
 -- Note that this is a reader monad, but it /does not/ derive @MonadReader@.
 -- This is so it can lift the @MonadReader@ definitions from inner monads.
@@ -38,8 +41,11 @@ instance (MonadReader r m) => MonadReader r (FormRendererT m) where
   ask = lift ask
 
 deriving via (ReaderT FormContext m) instance (MonadState s m) => MonadState s (FormRendererT m)
+
 deriving via (ReaderT FormContext m) instance (MonadError e m) => MonadError e (FormRendererT m)
+
 deriving via (ReaderT FormContext m) instance (MonadIO m) => MonadIO (FormRendererT m)
+
 deriving via (ReaderT FormContext m) instance (MonadWriter w m) => MonadWriter w (FormRendererT m)
 
 instance (FetchMessages m) => FetchMessages (FormRendererT m) where
@@ -48,8 +54,9 @@ instance (FetchMessages m) => FetchMessages (FormRendererT m) where
 instance (FetchHtmlFormatters m) => FetchHtmlFormatters (FormRendererT m) where
   fetchFormatters = lift fetchFormatters
 
-runForm :: (Monad n) => HtmlT (FormRendererT n) b -> HtmlT n b
-runForm = hoistHtmlT (`runFormRendererT` mempty)
+-- | Run a form, rendering it somewhere on the page.
+runFormT :: (Monad n) => HtmlT (FormRendererT n) b -> HtmlT n b
+runFormT = hoistHtmlT (`runFormRendererT` mempty)
 
 askFormContext :: (Applicative m) => FormRendererT m FormContext
 askFormContext = FormRendererT pure
@@ -57,12 +64,11 @@ askFormContext = FormRendererT pure
 localFormContext :: (FormContext -> FormContext) -> FormRendererT m a -> FormRendererT m a
 localFormContext f fr = FormRendererT (runFormRendererT fr . f)
 
--- | Monad transformer to render fields.
+-- | Monad transformer to render the insides of form fields.
 --
 -- Note that this is a reader monad, but it /does not/ derive @MonadReader@.
 -- This is so it can lift the @MonadReader@ definitions from inner monads, as the user will often
 -- want to render in some reader monad that has context like the current user and such.
---
 type FieldRendererT :: HKDFieldType -> (Type -> Type) -> Type -> Type
 newtype FieldRendererT field m a
   = FieldRendererT {runFieldRendererT :: FieldContext field -> m a}
@@ -74,8 +80,11 @@ instance (MonadReader r m) => MonadReader r (FieldRendererT field m) where
   ask = lift ask
 
 deriving via (ReaderT (FieldContext field) m) instance (MonadState s m) => MonadState s (FieldRendererT field m)
+
 deriving via (ReaderT (FieldContext field) m) instance (MonadError e m) => MonadError e (FieldRendererT field m)
+
 deriving via (ReaderT (FieldContext field) m) instance (MonadIO m) => MonadIO (FieldRendererT field m)
+
 deriving via (ReaderT (FieldContext field) m) instance (MonadWriter w m) => MonadWriter w (FieldRendererT field m)
 
 instance (FetchMessages m) => FetchMessages (FieldRendererT field m) where

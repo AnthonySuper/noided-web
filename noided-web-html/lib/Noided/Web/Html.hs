@@ -4,7 +4,50 @@ module Noided.Web.Html
     showingDomId,
     idFromDomId,
 
-    -- * Form utilities
+    -- * Help rendering a form
+    FormRendererT,
+    FieldRendererT,
+    runFormT,
+    renderFormT,
+
+    -- ** Building renderers
+    formField,
+    subformField,
+    listField,
+
+    -- *** Mapping/Transforming Renderers
+    wrapField,
+    fieldWrapModelName,
+    fieldWrapAddToId,
+    fieldModelName,
+    fieldAddToId,
+
+    -- *** Rendering Components of a Field
+    renderBaseErrors,
+    renderFieldErrors,
+    renderInputTag,
+    renderInputTag',
+    renderTextareaTag,
+    renderTextareaTag',
+    renderLabelTag,
+    renderFieldName,
+
+    -- **** Attributes for components of a field
+    fieldId,
+    fieldName,
+    fieldHasError,
+    fieldBaseErrors,
+    inputFieldValue,
+    inputValueText,
+    inputValueAttribute,
+    inputAttributes',
+    inputAttributes,
+    labelAttributes,
+
+    -- * Translating while rendering
+    renderTranslated,
+    renderErrorTranslatedWithPrefixes,
+    renderErrorTranslated,
 
     -- * Utility classes for rendering
 

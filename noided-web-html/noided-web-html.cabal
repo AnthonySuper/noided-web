@@ -68,7 +68,8 @@ common deps
       transformers,
       mtl,
       optics-core,
-      http-api-data
+      http-api-data,
+      hkd
 
 library
     -- Import common warning flags.

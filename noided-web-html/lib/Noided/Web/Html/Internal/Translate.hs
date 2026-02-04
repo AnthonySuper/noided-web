@@ -50,6 +50,8 @@ toBadAttibutes foldable = fst (foldl' f ([], 1 :: Int) foldable)
       )
 
 -- | Render a translation with the first matching message key, with custom formatting.
+--
+-- If a message with the given key is not found, an element of type @<noided-bad-translation>@ will be rendered.
 renderTranslated ::
   ( FetchMessages m,
     FetchHtmlFormatters m,

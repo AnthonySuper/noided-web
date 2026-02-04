@@ -10,6 +10,7 @@
 module Noided.Web.Html.Internal.FormRenderer where
 
 import Control.Monad.Trans.Class
+import Data.HKD
 import Data.Semigroup
 import Data.Text (Text)
 import Lucid
@@ -30,6 +31,18 @@ type HtmlFieldT field m = HtmlT (FieldRendererT field m)
 
 type HtmlFormT m = HtmlT (FormRendererT m)
 
+-- | Render an HKD form somewhere on the page.
+renderFormT ::
+  ( Monad n,
+    HKDForm subform
+  ) =>
+  FormRenderer (HtmlT (FormRendererT n)) (SubformField subform) ->
+  subform FormInput ->
+  FormErrors (SubformField subform) ->
+  HtmlT n ()
+renderFormT fr sf =
+  runFormT . renderForm fr sf
+
 htmlFieldToHtmlForm :: (Monad m) => HtmlFieldT field m a -> RenderingContext field -> HtmlFormT m a
 htmlFieldToHtmlForm act ctx = hoistHtmlT (fieldRendererToForm ctx) act
 
@@ -42,8 +55,23 @@ htmlFieldContext = lift askFieldContext
 htmlFieldLocal :: (Monad m) => (FieldContext field -> FieldContext field) -> HtmlFieldT field m a -> HtmlFieldT field m a
 htmlFieldLocal f = hoistHtmlT (localFieldContext f)
 
+-- | Set the model name for all fields rendered in a block.
 fieldModelName :: (Monad m) => Text -> HtmlFieldT a1 m a2 -> HtmlFieldT a1 m a2
 fieldModelName mn = htmlFieldLocal (#baseContext % #modelNames .~ [mn])
+
+fieldWrapModelName ::
+  (Monad m) =>
+  Text ->
+  FormRenderer (HtmlFormT m) field ->
+  FormRenderer (HtmlFormT m) field
+fieldWrapModelName mn = wrapField (fieldModelName mn)
+
+fieldWrapAddToId ::
+  (Monad m) =>
+  Text ->
+  FormRenderer (HtmlFormT m) field ->
+  FormRenderer (HtmlFormT m) field
+fieldWrapAddToId mn = wrapField (fieldModelName mn)
 
 -- | Add a suffix to all dom ids generated in in the inner block.
 -- This is useful if you want to add some kind of \"identifier\" to the dom ids,
@@ -54,6 +82,21 @@ fieldAddToId comp = htmlFieldLocal (#baseContext % #modifyDomId %~ (<> Endo (<> 
 -- | Render an individual field.
 formField :: (Monad m) => HtmlFieldT (InputField field) m () -> FormRenderer (HtmlFormT m) (InputField field)
 formField = renderInput . htmlFieldToHtmlForm
+
+subformField ::
+  ( FTraversable subform,
+    FZip subform,
+    Monoid (subform FormErrors),
+    Monad m
+  ) =>
+  subform (FormRenderer (HtmlFormT m)) ->
+  FormRenderer (HtmlFormT m) (SubformField subform)
+subformField = renderSubform
+
+listField ::
+  FormRenderer (HtmlFormT m) field ->
+  FormRenderer (HtmlFormT m) (ListField field)
+listField = renderList
 
 wrapField ::
   (Monad m) =>
