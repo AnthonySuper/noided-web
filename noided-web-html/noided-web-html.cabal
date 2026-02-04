@@ -80,6 +80,7 @@ library
         Noided.Web.Html.Internal.Type.FormContext
         Noided.Web.Html.Internal.Type.HtmlFormatter
         Noided.Web.Html.Internal.Type.FormContextT
+        Noided.Web.Html.Internal.Type.TranslationT
 
         Noided.Web.Html.Internal.FormKey
         Noided.Web.Html.Internal.Translate
