@@ -26,6 +26,7 @@ module Noided.Server
     Request (..),
     RequestBody (..),
     RequestBodyUnknown (..),
+    RequestChunk (..),
   )
 where
 
