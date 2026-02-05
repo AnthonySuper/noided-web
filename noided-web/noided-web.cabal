@@ -27,7 +27,8 @@ common deps
        bytestring,
        cryptohash-sha512,
        base64-bytestring,
-       memory
+       memory,
+       cookie
 
 common exts
     default-extensions:
@@ -53,6 +54,7 @@ library
       Noided.Web.Internal.Effect.WriteHeader
 
       Noided.Web.Internal.Type.SignedMessage
+      Noided.Web.Internal.Type.SecureCookie
 
     hs-source-dirs:   lib
     default-language: GHC2021
