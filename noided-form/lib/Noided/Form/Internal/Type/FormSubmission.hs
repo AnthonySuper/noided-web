@@ -6,8 +6,10 @@
 module Noided.Form.Internal.Type.FormSubmission where
 
 import Control.DeepSeq
+import Data.Foldable (toList)
 import Data.Kind (Type)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Sequence qualified as Seq
 import Data.Text (Text)
 import GHC.Generics
@@ -99,6 +101,33 @@ _SubmissionObject = prism' SubmissionObject $ \case
   SubmissionObject o -> Just o
   _ -> Nothing
 
+-- | Convert a URL encoded submission to a multipart submission.
+-- This conversion is lossless.
+urlSubmissionToMultipartSubmission :: FormSubmission UrlEncoded -> FormSubmission MultipartFormData
+urlSubmissionToMultipartSubmission = \case
+  SubmissionEmpty -> SubmissionEmpty
+  SubmissionValue (TextValue t) -> SubmissionValue (TextValue t)
+  SubmissionArray arr -> SubmissionArray (fmap urlSubmissionToMultipartSubmission arr)
+  SubmissionObject obj -> SubmissionObject (fmap urlSubmissionToMultipartSubmission obj)
+
+-- | Convert a multipart submission to a url encoded submission.
+-- 'FileValue' values are removed from objects and lists, or replaced with 'SubmissionEmpty'
+-- if they occur at a place where that cannot be done.
+multipartSubmissionToUrlSubmission :: FormSubmission MultipartFormData -> FormSubmission UrlEncoded
+multipartSubmissionToUrlSubmission = \case
+  SubmissionEmpty -> SubmissionEmpty
+  SubmissionValue (TextValue t) -> SubmissionValue (TextValue t)
+  SubmissionValue (FileValue _) -> SubmissionEmpty
+  SubmissionArray arr ->
+    SubmissionArray $ Seq.fromList $ mapMaybe toMaybe (toList arr)
+  SubmissionObject obj ->
+    SubmissionObject $ Map.mapMaybe toMaybe obj
+  where
+    toMaybe :: FormSubmission MultipartFormData -> Maybe (FormSubmission UrlEncoded)
+    toMaybe = \case
+      SubmissionValue (FileValue _) -> Nothing
+      other -> Just (multipartSubmissionToUrlSubmission other)
+
 ixtraverseFormValues ::
   forall contentType contentType' f.
   (Applicative f) =>
@@ -133,3 +162,15 @@ traverseFormValues ::
   FormSubmission contentType ->
   f (FormSubmission contentType')
 traverseFormValues = traverseOf formValues
+
+data SomeFormSubmission
+  = UrlEncodedSubmission (FormSubmission UrlEncoded)
+  | MultipartFormDataSubmission (FormSubmission MultipartFormData)
+  deriving (Show, Eq, Ord, Generic)
+
+instance NFData SomeFormSubmission
+
+multipartFromSomeSubmission :: SomeFormSubmission -> FormSubmission MultipartFormData
+multipartFromSomeSubmission = \case
+  UrlEncodedSubmission s -> urlSubmissionToMultipartSubmission s
+  MultipartFormDataSubmission s -> s
