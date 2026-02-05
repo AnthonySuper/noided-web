@@ -68,6 +68,7 @@ common deps
       deepseq,
       network,
       aeson,
+      some,
 
       noided-pathname,
       noided-form

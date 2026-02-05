@@ -28,7 +28,11 @@ common deps
        cryptohash-sha512,
        base64-bytestring,
        memory,
-       cookie
+       cookie,
+       some,
+
+       noided-server,
+       noided-form
 
 common exts
     default-extensions:
@@ -54,6 +58,8 @@ library
       Noided.Web.Internal.Effect.Log
       Noided.Web.Internal.Effect.Signing
       Noided.Web.Internal.Effect.WriteHeader
+      Noided.Web.Internal.Effect.SomeRequest
+      Noided.Web.Internal.Effect.GetCookies
 
       Noided.Web.Internal.Type.SignedMessage
       Noided.Web.Internal.Type.SecureCookie
