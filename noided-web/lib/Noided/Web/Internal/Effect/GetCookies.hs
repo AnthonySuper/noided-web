@@ -18,7 +18,7 @@ getCookies = send GetCookies
 
 -- | Run without any cookies.
 runWithoutCookies :: Eff (GetCookies : es) a -> Eff es a
-runWithoutCookies = runWithCookies mempty
+runWithoutCookies = runWithStaticCookies mempty
 
 -- | Run with the given static set of cookies.
 runWithStaticCookies :: SecureCookies -> Eff (GetCookies : es) a -> Eff es a
