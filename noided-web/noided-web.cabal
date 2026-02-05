@@ -20,7 +20,11 @@ common deps
        containers,
        optics-core,
        effectful-core,
-       aeson
+       effectful,
+       aeson,
+       uuid,
+       http-types,
+       bytestring
 
 common exts
     default-extensions:
@@ -37,9 +41,13 @@ library
     exposed-modules:
       Noided.Web
 
+      Noided.Web.Effect.Log
+
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
+      Noided.Web.Internal.Effect.RequestId
       Noided.Web.Internal.Effect.Log
+      Noided.Web.Internal.Effect.WriteHeader
 
     hs-source-dirs:   lib
     default-language: GHC2021
