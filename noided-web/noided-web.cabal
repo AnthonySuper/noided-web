@@ -46,11 +46,13 @@ library
       Noided.Web
 
       Noided.Web.Effect.Log
+      Noided.Web.Effect.Signing
 
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
       Noided.Web.Internal.Effect.RequestId
       Noided.Web.Internal.Effect.Log
+      Noided.Web.Internal.Effect.Signing
       Noided.Web.Internal.Effect.WriteHeader
 
       Noided.Web.Internal.Type.SignedMessage
