@@ -24,7 +24,10 @@ common deps
        aeson,
        uuid,
        http-types,
-       bytestring
+       bytestring,
+       cryptohash-sha512,
+       base64-bytestring,
+       memory
 
 common exts
     default-extensions:
@@ -48,6 +51,8 @@ library
       Noided.Web.Internal.Effect.RequestId
       Noided.Web.Internal.Effect.Log
       Noided.Web.Internal.Effect.WriteHeader
+
+      Noided.Web.Internal.Type.SignedMessage
 
     hs-source-dirs:   lib
     default-language: GHC2021
