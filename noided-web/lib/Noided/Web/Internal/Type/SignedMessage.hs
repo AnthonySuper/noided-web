@@ -15,8 +15,10 @@ module Noided.Web.Internal.Type.SignedMessage
     signMessagePurpose,
 
     -- * Result of signed messages
-    SignedValue (getSignedValue),
+    SignedValue,
+    getSignedValue,
     verifyMessage,
+    SignedMessageFailure (..),
   )
 where
 
@@ -35,8 +37,11 @@ import Data.Time
 import GHC.Generics
 
 -- | A value that we know was signed.
-newtype SignedValue a = UnsafeMkSignedValue {getSignedValue :: a}
+newtype SignedValue a = UnsafeMkSignedValue a
   deriving (Show, Eq, Ord)
+
+getSignedValue :: SignedValue a -> a
+getSignedValue (UnsafeMkSignedValue a) = a
 
 data SignableMessage a
   = SignableMessage
@@ -137,7 +142,7 @@ splitSignatureBytes _signer msg = do
   let (payloadWithSplitter, signature) = Text.breakOnEnd splitter msg
   when (Text.null payloadWithSplitter) $ Left SplitterNotFound
   let payload = Text.dropEnd 1 payloadWithSplitter
-  let signatureBytes = B64.decodeLenient $ TEnc.encodeUtf8 signature
+  signatureBytes <- first SignatureNotBase64 $ B64.decodePadded $ TEnc.encodeUtf8 signature
   return (payload, signatureBytes)
 
 data Signer

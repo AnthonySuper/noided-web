@@ -63,5 +63,10 @@ test-suite noided-web-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Spec.hs
+    other-modules:
+       Noided.Web.Internal.Type.SignedMessageSpec
+
+    build-tool-depends: hspec-discover:hspec-discover
     build-depends:
-        noided-web
+        noided-web,
+        hspec
