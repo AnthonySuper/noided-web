@@ -6,16 +6,15 @@
 
 module Noided.Web.Internal.Type.Application where
 
-import Data.Dependent.Map qualified as DMap
-import Data.Foldable
 import Data.Functor.Identity
 import Effectful
 import Effectful.Error.Static
 import GHC.Generics
-import Noided.Server.Internal.Type.VerbRouter
+import Noided.Server.Internal.Type.Request
 import Noided.Web.Internal.Type.Endpoint
 import Noided.Web.Internal.Type.ErrorRenderer
 import Noided.Web.Internal.Type.PageAction
+import Noided.Web.Internal.Type.Response
 import Optics.Core
 import Type.Reflection
 
@@ -45,8 +44,36 @@ withErrorHandlers p = mempty & #errorHandlers .~ p
 --
 -- This internally uses a 'Data.Dependent.Map' along with a 'Noided.Web.Internal.Type.VerbRouter' to
 -- ensure that page routes and verb routes are modeled as much as possible.
-configToApplication :: ApplicationRouteConfig m -> Application m
-configToApplication = error "not sure"
+configToApplication :: (Monad m) => ApplicationRouteConfig m -> Application m
+configToApplication (MkApplicationRouteConfig pages misc errs) =
+  MkApplication
+    (cleanupSomeEndpoints $ pagesToSomeEndpoints pages <> misc)
+    errs
+
+pagesToSomeEndpoints :: (Monad m) => PageRoutes Identity m -> SomeEndpoints m
+pagesToSomeEndpoints (MkPageRoutes routes) =
+  MkSomeEndpoints $ fmap pageToSomeEndpoint routes
+
+pageToSomeEndpoint :: (Monad m) => SomePageAction Identity m -> SomeEndpoint m
+pageToSomeEndpoint (SomePageAction method pt act) =
+  SomeEndpoint method pt (pageActionToEndpoint act)
+
+pageActionToEndpoint :: (Monad m) => PageAction Identity m pathParams -> Endpoint m pathParams
+pageActionToEndpoint (PageAct act) =
+  MkEndpoint
+    [ ( "text/html",
+        \req -> do
+          pageResp <- act req.urlParams
+          resp <- pure $ runIdentity $ pageResponseToResponse FullPage pageResp
+          pure (Right resp)
+      ),
+      ( "application/vnd.noided-fragment",
+        \req -> do
+          pageResp <- act req.urlParams
+          resp <- pure $ runIdentity $ pageResponseToResponse Fragment pageResp
+          pure (Right resp)
+      )
+    ]
 
 -- | An application in some monad.
 data Application m
@@ -59,13 +86,14 @@ applicationAroundAll ::
   (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) ->
   Application monad ->
   Application monad'
-applicationAroundAll _ = error "TODO: implement me"
+applicationAroundAll f (MkApplication eps errs) =
+  MkApplication (aroundSomeEndpointActions f eps) errs
 
 applicationHoistM ::
   (forall a. monad a -> monad' a) ->
   Application monad ->
   Application monad'
-applicationHoistM _ = error "TODO: implement me"
+applicationHoistM f = applicationAroundAll (\action request -> f (action request))
 
 applicationHandleAsServerError' ::
   forall err es.
@@ -73,7 +101,8 @@ applicationHandleAsServerError' ::
   (err -> String) ->
   Application (Eff (Error err : es)) ->
   Application (Eff es)
-applicationHandleAsServerError' = error "TODO: implement me"
+applicationHandleAsServerError' display (MkApplication eps errs) =
+  MkApplication (someEndpointsHandleAsServerError' display eps) errs
 
 applicationHandleAsServerError ::
   (Typeable err, Show err) =>

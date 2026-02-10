@@ -2,14 +2,20 @@
 
 module Noided.Web.Internal.Type.Endpoint where
 
+import Control.Arrow
+import Data.Dependent.Map qualified as DMap
+import Data.Foldable
 import Effectful
 import Effectful.Error.Static
 import Network.HTTP.Media
 import Network.HTTP.Types (StdMethod (GET))
 import Noided.Pathname (PathTemplate)
 import Noided.Server
+import Noided.Server.Internal.Type.Server
+import Noided.Server.Internal.Type.VerbRouter qualified as VR
 import Noided.Web.Internal.Type.Response
 import Noided.Web.Internal.Type.ServerError
+import Optics.Core
 import Type.Reflection
 
 -- | And endpoint either returns a 'Response', or a dynamically-typed 'SomeServerError'.
@@ -22,6 +28,12 @@ type EndpointAction monad pathParams = Request pathParams -> monad EndpointRespo
 
 newtype Endpoint monad pathParams = MkEndpoint {endpointRoutes :: [(MediaType, EndpointAction monad pathParams)]}
   deriving newtype (Semigroup, Monoid)
+
+_EmptyEndpoint :: Prism (Endpoint monad pathParams) (Endpoint monad pathParams) () b
+_EmptyEndpoint = prism' (const mempty) $ \a ->
+  case a of
+    MkEndpoint [] -> Just ()
+    _ -> Nothing
 
 data SomeEndpoint monad where
   SomeEndpoint ::
@@ -38,8 +50,30 @@ newtype SomeEndpoints monad
   = MkSomeEndpoints {getSomeEndpoints :: [SomeEndpoint monad]}
   deriving newtype (Semigroup, Monoid)
 
+-- | Cleans up 'SomeEndpoints' values by merging endpoints with the same method and path template.
+cleanupSomeEndpoints :: forall monad. SomeEndpoints monad -> SomeEndpoints monad
+cleanupSomeEndpoints =
+  getSomeEndpoints
+    >>> foldl' f DMap.empty
+    >>> DMap.foldrWithKey back []
+    >>> MkSomeEndpoints
+  where
+    back :: forall v. PathTemplate v -> VerbRouterOf (Endpoint monad) v -> [SomeEndpoint monad] -> [SomeEndpoint monad]
+    back pt (MkVerbRouterOf vr) base = VR.foldrWithKey (\verb ep -> (SomeEndpoint verb pt ep :)) base vr
+    f :: DMap.DMap PathTemplate (VerbRouterOf (Endpoint monad)) -> SomeEndpoint monad -> DMap.DMap PathTemplate (VerbRouterOf (Endpoint monad))
+    f dm (SomeEndpoint meth pt ep) =
+      dm
+        & lensVL (DMap.alterF pt)
+        % non' _EmptyVerbRouterOf
+        % at meth
+        % non' _EmptyEndpoint
+        %~ (<> ep)
+
 aroundSomeEndpointActions :: (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> SomeEndpoints monad -> SomeEndpoints monad'
-aroundSomeEndpointActions _ = error "TODO: implement me"
+aroundSomeEndpointActions f (MkSomeEndpoints eps) = MkSomeEndpoints $ fmap (aroundSomeEndpoint f) eps
+  where
+    aroundSomeEndpoint :: (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> SomeEndpoint monad -> SomeEndpoint monad'
+    aroundSomeEndpoint f' (SomeEndpoint method pt ep) = SomeEndpoint method pt (aroundEndpoint f' ep)
 
 someEndpointsHandleAsServerError' ::
   forall err es.
@@ -47,7 +81,14 @@ someEndpointsHandleAsServerError' ::
   (err -> String) ->
   SomeEndpoints (Eff (Error err : es)) ->
   SomeEndpoints (Eff es)
-someEndpointsHandleAsServerError' = error "TODO: implement me"
+someEndpointsHandleAsServerError' display = aroundSomeEndpointActions transform
+  where
+    transform :: forall pathParams. EndpointAction (Eff (Error err : es)) pathParams -> EndpointAction (Eff es) pathParams
+    transform action request = do
+      res <- runError (action request)
+      case res of
+        Left (cs, err) -> pure . Left $ SomeServerError (display err) (Just cs) err
+        Right endpointRes -> pure endpointRes
 
 someEndpointsHandleAsServerError ::
   forall err es.
