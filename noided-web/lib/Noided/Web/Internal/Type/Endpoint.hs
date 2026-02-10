@@ -33,6 +33,7 @@ transformResponse f = aroundEndpoint (\action request -> f (action request))
 
 -- | Handle an 'Effectful.Error.Static.Error' as a server error.
 endpointHandleAsServerError' ::
+  forall err es pathParams.
   (Typeable err) =>
   (err -> String) ->
   Endpoint (Eff (Error err : es)) pathParams ->
@@ -46,6 +47,7 @@ endpointHandleAsServerError' display = aroundEndpoint transform
         Right endpointRes -> pure endpointRes
 
 endpointHandleAsServerError ::
+  forall err es pathParams.
   (Show err, Typeable err) =>
   Endpoint (Eff (Error err : es)) pathParams ->
   Endpoint (Eff es) pathParams

@@ -37,6 +37,9 @@ common deps
        lucid2,
        hasql,
        resource-pool,
+       yaml,
+       directory,
+       filepath,
 
        noided-server,
        noided-form,
@@ -86,6 +89,7 @@ library
       Noided.Web.Internal.Type.PageAction
       Noided.Web.Internal.Type.Response
       Noided.Web.Internal.Type.ServerError
+      Noided.Web.Internal.Type.ErrorRenderer
 
       Noided.Web.Internal.PageAction
 

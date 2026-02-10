@@ -129,34 +129,6 @@ pageResponseToResponse type_ = \case
       FullPage -> "text/html; charset=utf-8"
       Fragment -> "application/vnd.noided-fragment; charset=utf-8"
 
--- | Old function to render a page response to a response.
-pageResponseToResponseOld :: PageResponse Identity -> Response
-pageResponseToResponseOld = \case
-  RespondPage s html ->
-    Response
-      { status = s,
-        headers = [("Content-Type", "text/html; charset=utf-8")],
-        body = LazyByteStringBody (renderBS html)
-      }
-  RespondFormErrors layout inner ->
-    Response
-      { status = badRequest400,
-        headers = [("Content-Type", "text/html; charset=utf-8")],
-        body = LazyByteStringBody (renderBS (layout inner))
-      }
-  RespondRedirect type_ loc ->
-    let s = case type_ of
-          RedirectMovedPermanently -> movedPermanently301
-          RedirectFound -> found302
-          RedirectSeeOther -> seeOther303
-          RedirectTemporary -> temporaryRedirect307
-          RedirectPermanent -> permanentRedirect308
-     in Response
-          { status = s,
-            headers = [("Location", encodeUtf8 loc)],
-            body = ByteStringBody ""
-          }
-
 -- | A web response of some variety.
 data Response
   = Response

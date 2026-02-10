@@ -1,15 +1,18 @@
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Web.Internal.Type.PageAction where
 
 import Data.Sequence qualified as Seq
+import GHC.Generics
 import Network.HTTP.Types.Method
 import Noided.Pathname
 import Noided.Web.Internal.Type.Response
 import Noided.Web.Internal.Type.ServerError
+import Optics.Core
 
 -- | A page action, in some rendering monad, with some response.
-newtype PageAction actionM renderM pathParams
+newtype PageAction renderM actionM pathParams
   = PageAct
   { runPageAct ::
       RouteParams pathParams ->
@@ -23,60 +26,39 @@ aroundPageAction ::
     RouteParams pathParams2 ->
     actionM2 (Either SomeServerError (PageResponse renderM2))
   ) ->
-  PageAction actionM1 renderM1 pathParams1 ->
-  PageAction actionM2 renderM2 pathParams2
+  PageAction renderM1 actionM1 pathParams1 ->
+  PageAction renderM2 actionM2 pathParams2
 aroundPageAction f (PageAct act) = PageAct (f act)
 
 hoistPageActionMonad ::
   (forall a. actionM1 a -> actionM2 a) ->
-  PageAction actionM1 renderM pathParams ->
-  PageAction actionM2 renderM pathParams
+  PageAction renderM actionM1 pathParams ->
+  PageAction renderM actionM2 pathParams
 hoistPageActionMonad f (PageAct act) = PageAct (f . act)
 
--- | Some page action at a known pathname.
-data SomePageAction actionM renderM where
-  SomePageAct ::
+data SomePageAction renderM actionM where
+  SomePageAction ::
     StdMethod ->
     PathTemplate pathParams ->
-    PageAction actionM renderM pathParams ->
-    SomePageAction actionM renderM
+    PageAction renderM actionM pathParams ->
+    SomePageAction renderM actionM
 
--- | Wrapper for a list of page actions.
-newtype PageActions actionM renderM
-  = MkPageActions
-  { getPageActions :: Seq.Seq (SomePageAction actionM renderM)
+-- | Type of declared page routes.
+data PageRoutes renderM actionM
+  = MkPageRoutes
+  { routes :: [SomePageAction renderM actionM]
   }
-  deriving newtype (Semigroup, Monoid)
+  deriving (Generic)
 
-hoistSomePageActionMonad ::
-  (forall a. actionM1 a -> actionM2 a) ->
-  SomePageAction actionM1 renderM ->
-  SomePageAction actionM2 renderM
-hoistSomePageActionMonad f (SomePageAct method path action) =
-  SomePageAct method path (hoistPageActionMonad f action)
+instance Semigroup (PageRoutes renderM actionM) where
+  (MkPageRoutes a) <> (MkPageRoutes b) =
+    MkPageRoutes (a <> b)
 
-pageAction ::
-  StdMethod ->
-  PathTemplate pathParams ->
-  ( RouteParams pathParams ->
-    actionM (Either SomeServerError (PageResponse renderM))
-  ) ->
-  PageActions actionM renderM
-pageAction verb pt act =
-  MkPageActions
-    ( pure $ SomePageAct verb pt (PageAct act)
-    )
+instance Monoid (PageRoutes renderM actionM) where
+  mempty = MkPageRoutes mempty
 
-actionGet,
-  actionPost,
-  actionPut,
-  actionPatch,
-  actionDelete ::
-    PathTemplate pathParams ->
-    (RouteParams pathParams -> actionM (Either SomeServerError (PageResponse renderM))) ->
-    PageActions actionM renderM
-actionGet = pageAction GET
-actionPost = pageAction POST
-actionPut = pageAction PUT
-actionPatch = pageAction PATCH
-actionDelete = pageAction DELETE
+actionRoute :: (Monad actionM) => StdMethod -> PathTemplate pathParams -> (RouteParams pathParams -> actionM (PageResponse renderM)) -> PageRoutes renderM actionM
+actionRoute method template act =
+  mempty
+    & #routes
+    .~ [SomePageAction method template (PageAct $ fmap Right . act)]

@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Web.Effect.GetCookies
