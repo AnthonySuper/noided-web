@@ -65,17 +65,19 @@ library
       Noided.Web.Effect.RunTransaction
       Noided.Web.Effect.GetCookies
       Noided.Web.Effect.Translate
+      Noided.Web.Effect.WriteCookie
 
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
       Noided.Web.Internal.Effect.RequestId
       Noided.Web.Internal.Effect.Log
       Noided.Web.Internal.Effect.Signing
-      Noided.Web.Internal.Effect.WriteHeader
       Noided.Web.Internal.Effect.SomeRequest
       Noided.Web.Internal.Effect.GetCookies
       Noided.Web.Internal.Effect.RunTransaction
       Noided.Web.Internal.Effect.Translate
+      Noided.Web.Internal.Effect.WriteHeader
+      Noided.Web.Internal.Effect.WriteCookie
 
       Noided.Web.Internal.Type.SignedMessage
       Noided.Web.Internal.Type.Endpoint
