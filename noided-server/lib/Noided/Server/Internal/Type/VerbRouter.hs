@@ -8,6 +8,7 @@ module Noided.Server.Internal.Type.VerbRouter
     _EmptyVerbRouter,
     lookup,
     singleton,
+    unionWith,
   )
 where
 
@@ -79,3 +80,6 @@ lookup v = view (at v)
 
 singleton :: StdMethod -> routed -> VerbRouter routed
 singleton v r = mempty & at v ?~ r
+
+unionWith :: (routed -> routed -> routed) -> VerbRouter routed -> VerbRouter routed -> VerbRouter routed
+unionWith = error "TODO: implement me"

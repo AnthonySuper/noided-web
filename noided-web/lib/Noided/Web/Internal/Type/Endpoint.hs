@@ -5,6 +5,8 @@ module Noided.Web.Internal.Type.Endpoint where
 import Effectful
 import Effectful.Error.Static
 import Network.HTTP.Media
+import Network.HTTP.Types (StdMethod (GET))
+import Noided.Pathname (PathTemplate)
 import Noided.Server
 import Noided.Web.Internal.Type.Response
 import Noided.Web.Internal.Type.ServerError
@@ -20,6 +22,55 @@ type EndpointAction monad pathParams = Request pathParams -> monad EndpointRespo
 
 newtype Endpoint monad pathParams = MkEndpoint {endpointRoutes :: [(MediaType, EndpointAction monad pathParams)]}
   deriving newtype (Semigroup, Monoid)
+
+data SomeEndpoint monad where
+  SomeEndpoint ::
+    StdMethod ->
+    PathTemplate pathParams ->
+    Endpoint monad pathParams ->
+    SomeEndpoint monad
+
+-- | Generic endpoints, that do not render pages or JSON or anything.
+--
+-- Useful if you want to add some kinds of /generic/ API endpoints,
+-- like rendering preview images or something.
+newtype SomeEndpoints monad
+  = MkSomeEndpoints {getSomeEndpoints :: [SomeEndpoint monad]}
+  deriving newtype (Semigroup, Monoid)
+
+aroundSomeEndpointActions :: (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> SomeEndpoints monad -> SomeEndpoints monad'
+aroundSomeEndpointActions _ = error "TODO: implement me"
+
+someEndpointsHandleAsServerError' ::
+  forall err es.
+  (Typeable err) =>
+  (err -> String) ->
+  SomeEndpoints (Eff (Error err : es)) ->
+  SomeEndpoints (Eff es)
+someEndpointsHandleAsServerError' = error "TODO: implement me"
+
+someEndpointsHandleAsServerError ::
+  forall err es.
+  (Typeable err, Show err) =>
+  SomeEndpoints (Eff (Error err : es)) ->
+  SomeEndpoints (Eff es)
+someEndpointsHandleAsServerError = someEndpointsHandleAsServerError' show
+
+endpointOf ::
+  StdMethod ->
+  PathTemplate pathParams ->
+  [(MediaType, EndpointAction monad pathParams)] ->
+  SomeEndpoints monad
+endpointOf method pt acts =
+  MkSomeEndpoints
+    [SomeEndpoint method pt (MkEndpoint acts)]
+
+-- | A GET endpoint that returns in the given path.
+endpointGet ::
+  PathTemplate pathParams ->
+  [(MediaType, EndpointAction monad pathParams)] ->
+  SomeEndpoints monad
+endpointGet = endpointOf GET
 
 -- | Run a function around an entire endpoint.
 aroundEndpoint :: (EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> Endpoint monad pathParams -> Endpoint monad' pathParams

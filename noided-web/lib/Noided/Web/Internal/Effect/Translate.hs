@@ -12,7 +12,6 @@ import Noided.Translate
 import Noided.Web.Internal.Effect.Log
 import System.Directory (doesDirectoryExist, listDirectory)
 import System.FilePath (takeExtension, (</>))
-import System.IO
 
 -- | Monad for performing translations.
 data HasTranslations :: Effect where

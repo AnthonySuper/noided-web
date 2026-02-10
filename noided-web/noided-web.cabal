@@ -40,6 +40,7 @@ common deps
        yaml,
        directory,
        filepath,
+       wai,
 
        noided-server,
        noided-form,
@@ -62,6 +63,8 @@ library
     import:           warnings, deps, exts
     exposed-modules:
       Noided.Web
+
+      Noided.Web.Application
 
       Noided.Web.Effect.Log
       Noided.Web.Effect.Signing
@@ -90,6 +93,7 @@ library
       Noided.Web.Internal.Type.Response
       Noided.Web.Internal.Type.ServerError
       Noided.Web.Internal.Type.ErrorRenderer
+      Noided.Web.Internal.Type.Application
 
       Noided.Web.Internal.PageAction
 

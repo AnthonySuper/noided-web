@@ -16,53 +16,49 @@ import Noided.Web.Internal.Type.ServerError
 import Type.Reflection
 
 -- | An error renderer for a given monad and state.
-newtype ErrorRenderer m err
-  = RenderError {runErrorRenderer :: err -> [(MediaType, m ByteString)]}
+newtype ErrorRenderer err
+  = RenderError {runErrorRenderer :: Maybe CallStack -> err -> [(MediaType, ByteString)]}
   deriving newtype (Semigroup, Monoid)
 
 -- | A container for multiple error renderers.
 -- This is used to handle \"generic\" server errors where no meaningful user remedy is possible, such as
 -- not being able to connect to a database.
-newtype ErrorRenderers m = MkErrorRenderers {getErrorRenderers :: DMap.DMap TypeRep (ErrorRenderer m)}
+newtype ErrorRenderers = MkErrorRenderers {getErrorRenderers :: DMap.DMap TypeRep (ErrorRenderer)}
 
-instance Semigroup (ErrorRenderers m) where
+instance Semigroup ErrorRenderers where
   (MkErrorRenderers a) <> (MkErrorRenderers b) = MkErrorRenderers $ DMap.unionWithKey (\_ x y -> x <> y) a b
 
-instance Monoid (ErrorRenderers m) where
+instance Monoid ErrorRenderers where
   mempty = MkErrorRenderers mempty
 
 -- | Lookup a generic @SomeServerError@ and render an appropriate error page, if possible.
 -- If there is not an error renderer for this content type/renderer pair, we will use the fallback value.
 useErrorRenderersWith ::
-  forall m.
-  (Monad m) =>
   -- | Default renderer to use if no media-type-specific renderer is found.
-  (SomeServerError -> (MediaType, m ByteString)) ->
+  (SomeServerError -> (MediaType, ByteString)) ->
   -- | Library of error renderers to use.
-  ErrorRenderers m ->
+  ErrorRenderers ->
   -- | The actual server error to be rendered
   SomeServerError ->
   -- | Client-side @Accept@ header value
   SBS.ByteString ->
   -- | Renderered response.
-  m Response
-useErrorRenderersWith fallback renderers sse@(SomeServerError _ _ err) acceptHeader =
+  Response
+useErrorRenderersWith fallback renderers sse@(SomeServerError _ mStack err) acceptHeader =
   toResp $ fromMaybe (fallback sse) fromRenderers
   where
-    fromRenderers :: Maybe (MediaType, m ByteString)
+    fromRenderers :: Maybe (MediaType, ByteString)
     fromRenderers = do
       let tr = typeOf err
       res <- DMap.lookup tr (getErrorRenderers renderers)
-      mapAccept [(media, (media, resp)) | (media, resp) <- runErrorRenderer res err] acceptHeader
-    toResp :: (MediaType, m ByteString) -> m Response
-    toResp (media, mBody) = do
-      body <- mBody
-      pure
-        Response
-          { status = internalServerError500,
-            headers = [("Content-Type", renderHeader media)],
-            body = LazyByteStringBody body
-          }
+      mapAccept [(media, (media, resp)) | (media, resp) <- runErrorRenderer res mStack err] acceptHeader
+    toResp :: (MediaType, ByteString) -> Response
+    toResp (media, body) =
+      Response
+        { status = internalServerError500,
+          headers = [("Content-Type", renderHeader media)],
+          body = LazyByteStringBody body
+        }
 
 -- | Use error renderers, displaying a debug page if no specific renderer is found.
 -- This debug page will be an HTML5 webpage including:
@@ -75,10 +71,10 @@ useErrorRenderersWith fallback renderers sse@(SomeServerError _ _ err) acceptHea
 --
 -- As this page \"leaks\" information about the structure of your code (via the backtrace)
 -- it should only be used in debug mode.
-useErrorRenderersDebug :: forall m. (Monad m) => ErrorRenderers m -> SomeServerError -> SBS.ByteString -> m Response
+useErrorRenderersDebug :: ErrorRenderers -> SomeServerError -> SBS.ByteString -> Response
 useErrorRenderersDebug = useErrorRenderersWith $ \(SomeServerError msg mStack _) ->
   ( "text/html; charset=utf-8",
-    renderBST $ do
+    renderBS $ do
       doctype_
       html_ $ do
         head_ $ title_ "Server Error"
@@ -95,7 +91,7 @@ useErrorRenderersDebug = useErrorRenderersWith $ \(SomeServerError msg mStack _)
                 traverse_ (li_ [] . renderEntry) (getCallStack stack)
   )
   where
-    renderEntry :: (String, SrcLoc) -> HtmlT m ()
+    renderEntry :: (String, SrcLoc) -> Html ()
     renderEntry (fn, loc) = do
       span_ [style_ "color: #999;"] $ do
         toHtml (srcLocPackage loc)
@@ -114,5 +110,5 @@ useErrorRenderersDebug = useErrorRenderersWith $ \(SomeServerError msg mStack _)
 
 -- | Use an error renderer that displays a generic "something went wrong" page.
 -- Said page is the first argument.
-useErrorRenderersAnonymous :: (Monad m) => Html () -> ErrorRenderers m -> SomeServerError -> SBS.ByteString -> m Response
-useErrorRenderersAnonymous page = useErrorRenderersWith $ \_ -> ("text/html; charset=utf-8", return $ renderBS page)
+useErrorRenderersAnonymous :: Html () -> ErrorRenderers -> SomeServerError -> SBS.ByteString -> Response
+useErrorRenderersAnonymous page = useErrorRenderersWith $ \_ -> ("text/html; charset=utf-8", renderBS page)
