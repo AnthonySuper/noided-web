@@ -9,10 +9,12 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Data.Function (fix)
+import Data.Kind
 import Data.Map.Strict qualified as Map
 import Data.String
 import Data.Text (Text, pack)
 import Data.Vector (Vector)
+import GHC.Generics
 import Hasql.Connection qualified as C
 import Hasql.Errors
 import Hasql.Session
@@ -24,8 +26,7 @@ data StatementCallback where
   -- | Do something around every statement.
   AroundStatement ::
     ( forall a b m.
-      (Monad m) =>
-      (forall r. IO r -> m r) ->
+      (MonadIO m) =>
       SqlQuery a ->
       (SqlQuery a -> m b) ->
       m b
@@ -33,13 +34,10 @@ data StatementCallback where
     StatementCallback
 
 noStatementCallback :: StatementCallback
-noStatementCallback = AroundStatement $ \_ q b -> b q
+noStatementCallback = AroundStatement $ \q b -> b q
 
 -- | Build a statement callback.
--- A statement callbackk is a function with a Rank-N type that can run around *all queries* in *all monads* that can do some IO.
--- Note that statement callbacks may be executed an arbitrary number of times per statement, so you should only use this to do something like
--- logging the query and binds, timing the query, or both.
-statementCallback :: (forall a b m. (Monad m) => (forall r. IO r -> m r) -> SqlQuery a -> (SqlQuery a -> m b) -> m b) -> StatementCallback
+statementCallback :: (forall a b (m :: Type -> Type). (MonadIO m) => SqlQuery a -> (SqlQuery a -> m b) -> m b) -> StatementCallback
 statementCallback = AroundStatement
 
 uniqueSavepointName :: Text -> Map.Map Text Int -> (Text, Map.Map Text Int)
@@ -59,7 +57,7 @@ type TransactMState = Map.Map Text Int
 execQueryCallback :: StatementCallback -> SqlQuery b -> Session b
 execQueryCallback cb query = do
   let AroundStatement f = cb
-  f liftIO query sqlQueryToHasqlSession
+  f query sqlQueryToHasqlSession
 
 execCommandCallback :: StatementCallback -> Text -> Session ()
 execCommandCallback cb = execQueryCallback cb . unsafeQueryFromScript
@@ -89,19 +87,37 @@ collapseResult (Left s) = SessionErr s
 collapseResult (Right (Left e)) = TransactErr e
 collapseResult (Right (Right r)) = TransactOK r
 
+runSessionWithIsolation :: StatementCallback -> TransactionIsolation -> TransactM e a -> Session (TransactionResult e a)
+runSessionWithIsolation cb iso action = fix $ \retry -> do
+  let isoText = case iso of
+        ReadCommitted -> "READ COMMITTED"
+        RepeatableRead -> "REPEATABLE READ"
+        Serializable -> "SERIALIZABLE"
+  execCommandCallback cb ("BEGIN ISOLATION LEVEL " <> isoText <> ";")
+  runTransactMCommitting cb action `catchError` \e ->
+    if iso == Serializable && isSerializationFailure e
+      then retry
+      else throwError e
+
+transactWithIsolation :: StatementCallback -> C.Connection -> TransactionIsolation -> TransactM e a -> IO (TransactionResult e a)
+transactWithIsolation cb conn iso action = loop
+  where
+    loop = do
+      sessRes <- C.use conn (runSessionWithIsolation cb iso action)
+      case sessRes of
+        Left err ->
+          if iso == Serializable && isSerializationFailure err
+            then loop
+            else pure $ SessionErr err
+        Right res -> pure res
+
 -- | Transact using the SERIALIZABLE isolation level.
 -- Failures due to serialization errors will be retried indefinitely (use a timeout if necessary to prevent this).
 -- Failures due to using 'throwError' inside the transaction will result in the entire transaction being rolled back.
 --
 -- Queries will be rolled back and retried when needed to
 transactSerialized :: StatementCallback -> TransactM e a -> C.Connection -> IO (TransactionResult e a)
-transactSerialized cb action conn = loop
-  where
-    loop = do
-      sessRes <- C.use conn (runSerializedSession cb action)
-      case sessRes of
-        Left err -> if isSerializationFailure err then loop else pure $ SessionErr err
-        Right res -> pure res
+transactSerialized cb action conn = transactWithIsolation cb conn Serializable action
 
 isSerializationFailureServer :: ServerError -> Bool
 isSerializationFailureServer (ServerError sqlState _ _ _ _) = sqlState == "40001"
@@ -122,25 +138,17 @@ runTransactMCommitting cb action = do
       execCommandCallback cb "COMMIT;"
       pure $ TransactOK a
 
+data TransactionIsolation = ReadCommitted | RepeatableRead | Serializable
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
+
 runSerializedSession :: StatementCallback -> TransactM e a -> Session (TransactionResult e a)
-runSerializedSession cb action = fix $ \retry -> do
-  execCommandCallback cb "BEGIN ISOLATION LEVEL serializable;"
-  runTransactMCommitting cb action `catchError` \e ->
-    if isSerializationFailure e
-      then retry
-      else throwError e
+runSerializedSession cb action = runSessionWithIsolation cb Serializable action
 
 -- | Transact using the REPEATABLE READ isolation level.
 -- Failures will not be retried for any reason.
 -- If the transaction terminates early with 'throwError' it will be rolled back.
 transactRepeatableRead :: StatementCallback -> TransactM e a -> C.Connection -> IO (TransactionResult e a)
-transactRepeatableRead cb action conn = do
-  sessRes <- C.use conn $ do
-    execCommandCallback cb "BEGIN ISOLATION LEVEL REPEATABLE READ;"
-    runTransactMCommitting cb action
-  case sessRes of
-    Left err -> pure $ SessionErr err
-    Right res -> pure res
+transactRepeatableRead cb action conn = transactWithIsolation cb conn RepeatableRead action
 
 -- | Dry-run a transaction.
 -- Uses the REPEATABLE READ isolation level, but *always rolls back* upon completion, regardless of success or not.

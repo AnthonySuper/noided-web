@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Web.Internal.Effect.TimeEvent where
@@ -28,6 +29,7 @@ data TimeEvent :: Effect where
     TimedEventName ->
     m a ->
     TimeEvent m a
+  RecordStaticTime :: TimedEventName -> NominalDiffTime -> TimeEvent m ()
 
 type instance DispatchOf TimeEvent = Dynamic
 
@@ -36,10 +38,15 @@ type instance DispatchOf TimeEvent = Dynamic
 recordEventTime :: (TimeEvent :> es) => TimedEventName -> Eff es a -> Eff es a
 recordEventTime name = send . RecordEventTime name
 
+recordStaticTime :: (TimeEvent :> es) => TimedEventName -> NominalDiffTime -> Eff es ()
+recordStaticTime name = send . RecordStaticTime name
+
 -- | Ignore event timings.
 runIgnoringEventTimings :: Eff (TimeEvent : es) a -> Eff es a
-runIgnoringEventTimings = interpret $ \env (RecordEventTime _ act) ->
-  localSeqUnlift env $ \lift -> lift act
+runIgnoringEventTimings = interpret $ \env -> \case
+  (RecordEventTime _ act) ->
+    localSeqUnlift env $ \lift -> lift act
+  RecordStaticTime _ _ -> return ()
 
 type TimingMap = Map TimedEventName NominalDiffTime
 
@@ -47,13 +54,17 @@ type TimingMap = Map TimedEventName NominalDiffTime
 --
 -- You can log this map to some metrics system, or possibly use it as the @Server-Timing@ header.
 runRecordingEventTimings :: (CurrentTime :> es) => Eff (TimeEvent : es) a -> Eff es (a, TimingMap)
-runRecordingEventTimings = reinterpret (runState @TimingMap mempty) $ \env (RecordEventTime t act) -> do
-  -- record the duration before here, so we don't double-record an event if
-  -- the same event name is nested
-  durationBefore <- view (at t % non 0) <$> get @TimingMap
-  timeBefore <- getCurrentTime
-  (localSeqUnlift env $ \lift -> lift act) `finally` do
-    timeAfter <- getCurrentTime
-    let elapsedTime = timeBefore `diffUTCTime` timeAfter
-    let newDuration = durationBefore + elapsedTime
-    modify @TimingMap (at t ?~ newDuration)
+runRecordingEventTimings = reinterpret (runState @TimingMap mempty) $ \env -> \case
+  (RecordEventTime t act) -> do
+    -- record the duration before here, so we don't double-record an event if
+    -- the same event name is nested
+    durationBefore <- view (at t % non 0) <$> get @TimingMap
+    timeBefore <- getCurrentTime
+    localSeqUnlift env (\lift -> lift act) `finally` do
+      timeAfter <- getCurrentTime
+      let elapsedTime = timeBefore `diffUTCTime` timeAfter
+      let newDuration = durationBefore + elapsedTime
+      modify @TimingMap (at t ?~ newDuration)
+  RecordStaticTime name time -> do
+    modify @TimingMap (at name % non 0 %~ (+ time))
+    return ()

@@ -18,6 +18,8 @@ common deps
        text,
        time,
        containers,
+       transformers,
+       mtl,
        optics-core,
        effectful-core,
        effectful,
@@ -30,9 +32,18 @@ common deps
        memory,
        cookie,
        some,
+       http-media,
+       dependent-map,
+       lucid2,
+       hasql,
+       resource-pool,
 
        noided-server,
-       noided-form
+       noided-form,
+       noided-pathname,
+       noided-sql,
+       noided-web-html,
+       noided-translate
 
 common exts
     default-extensions:
@@ -51,6 +62,9 @@ library
 
       Noided.Web.Effect.Log
       Noided.Web.Effect.Signing
+      Noided.Web.Effect.RunTransaction
+      Noided.Web.Effect.GetCookies
+      Noided.Web.Effect.Translate
 
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
@@ -60,9 +74,21 @@ library
       Noided.Web.Internal.Effect.WriteHeader
       Noided.Web.Internal.Effect.SomeRequest
       Noided.Web.Internal.Effect.GetCookies
+      Noided.Web.Internal.Effect.RunTransaction
+      Noided.Web.Internal.Effect.Translate
 
       Noided.Web.Internal.Type.SignedMessage
+      Noided.Web.Internal.Type.Endpoint
       Noided.Web.Internal.Type.SecureCookie
+      Noided.Web.Internal.Type.JSONResponse
+      Noided.Web.Internal.Type.PageAction
+      Noided.Web.Internal.Type.Response
+      Noided.Web.Internal.Type.ServerError
+
+      Noided.Web.Internal.PageAction
+
+      Noided.Web.Internal.Class.Endpoint
+
 
     hs-source-dirs:   lib
     default-language: GHC2021

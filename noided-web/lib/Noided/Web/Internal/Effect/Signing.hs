@@ -19,7 +19,11 @@ mainSigner = send MainSigner
 fallbackSigners :: (Signing :> es) => Eff es [Signer]
 fallbackSigners = send FallbackSigners
 
-runWithMainSignerAndFallbacks :: Signer -> [Signer] -> Eff (Signing : es) a -> Eff es a
+runWithMainSignerAndFallbacks ::
+  Signer ->
+  [Signer] ->
+  Eff (Signing : es) a ->
+  Eff es a
 runWithMainSignerAndFallbacks main fallbacks = interpret $ \_ -> \case
   MainSigner -> return main
   FallbackSigners -> return fallbacks
