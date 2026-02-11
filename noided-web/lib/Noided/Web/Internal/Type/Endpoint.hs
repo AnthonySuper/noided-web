@@ -2,9 +2,7 @@
 
 module Noided.Web.Internal.Type.Endpoint where
 
-import Control.Arrow
 import Data.Dependent.Map qualified as DMap
-import Data.Foldable
 import Effectful
 import Effectful.Error.Static
 import Network.HTTP.Media
@@ -46,34 +44,32 @@ data SomeEndpoint monad where
 --
 -- Useful if you want to add some kinds of /generic/ API endpoints,
 -- like rendering preview images or something.
+--
+-- Internally uses a 'DMap' to efficiently merge endpoints with the same
+-- path template and HTTP method.
 newtype SomeEndpoints monad
-  = MkSomeEndpoints {getSomeEndpoints :: [SomeEndpoint monad]}
-  deriving newtype (Semigroup, Monoid)
+  = MkSomeEndpoints {getSomeEndpointsMap :: DMap.DMap PathTemplate (VerbRouterOf (Endpoint monad))}
 
--- | Cleans up 'SomeEndpoints' values by merging endpoints with the same method and path template.
-cleanupSomeEndpoints :: forall monad. SomeEndpoints monad -> SomeEndpoints monad
-cleanupSomeEndpoints =
-  getSomeEndpoints
-    >>> foldl' f DMap.empty
-    >>> DMap.foldrWithKey back []
-    >>> MkSomeEndpoints
-  where
-    back :: forall v. PathTemplate v -> VerbRouterOf (Endpoint monad) v -> [SomeEndpoint monad] -> [SomeEndpoint monad]
-    back pt (MkVerbRouterOf vr) base = VR.foldrWithKey (\verb ep -> (SomeEndpoint verb pt ep :)) base vr
-    f :: DMap.DMap PathTemplate (VerbRouterOf (Endpoint monad)) -> SomeEndpoint monad -> DMap.DMap PathTemplate (VerbRouterOf (Endpoint monad))
-    f dm (SomeEndpoint meth pt ep) =
-      dm
-        & lensVL (DMap.alterF pt)
-        % non' _EmptyVerbRouterOf
-        % at meth
-        % non' _EmptyEndpoint
-        %~ (<> ep)
+-- | Semigroup instance merges endpoints by combining verb routers at the same path.
+-- When both sides have an endpoint for the same path and method, their Endpoint values
+-- are merged using the Endpoint's Semigroup instance.
+instance Semigroup (SomeEndpoints monad) where
+  MkSomeEndpoints a <> MkSomeEndpoints b =
+    MkSomeEndpoints $ DMap.unionWithKey (\_ (MkVerbRouterOf vr1) (MkVerbRouterOf vr2) -> MkVerbRouterOf (VR.unionWith (<>) vr1 vr2)) a b
+
+-- | Monoid instance with empty endpoint map.
+instance Monoid (SomeEndpoints monad) where
+  mempty = MkSomeEndpoints DMap.empty
+
+-- | Get the list representation of endpoints.
+-- This converts the internal map representation to a list of 'SomeEndpoint' values.
+getSomeEndpoints :: SomeEndpoints monad -> [SomeEndpoint monad]
+getSomeEndpoints (MkSomeEndpoints dm) =
+  DMap.foldrWithKey (\pt (MkVerbRouterOf vr) acc -> VR.foldrWithKey (\verb ep -> (SomeEndpoint verb pt ep :)) acc vr) [] dm
 
 aroundSomeEndpointActions :: (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> SomeEndpoints monad -> SomeEndpoints monad'
-aroundSomeEndpointActions f (MkSomeEndpoints eps) = MkSomeEndpoints $ fmap (aroundSomeEndpoint f) eps
-  where
-    aroundSomeEndpoint :: (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> SomeEndpoint monad -> SomeEndpoint monad'
-    aroundSomeEndpoint f' (SomeEndpoint method pt ep) = SomeEndpoint method pt (aroundEndpoint f' ep)
+aroundSomeEndpointActions f (MkSomeEndpoints dm) =
+  MkSomeEndpoints $ DMap.map (\(MkVerbRouterOf vr) -> MkVerbRouterOf (fmap (aroundEndpoint f) vr)) dm
 
 someEndpointsHandleAsServerError' ::
   forall err es.
@@ -103,8 +99,8 @@ endpointOf ::
   [(MediaType, EndpointAction monad pathParams)] ->
   SomeEndpoints monad
 endpointOf method pt acts =
-  MkSomeEndpoints
-    [SomeEndpoint method pt (MkEndpoint acts)]
+  MkSomeEndpoints $
+    DMap.singleton pt (MkVerbRouterOf $ VR.singleton method (MkEndpoint acts))
 
 -- | A GET endpoint that returns in the given path.
 endpointGet ::
