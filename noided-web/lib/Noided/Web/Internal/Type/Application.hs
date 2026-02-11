@@ -55,10 +55,10 @@ configToApplication (MkApplicationRouteConfig pages misc errs) =
 
 pagesToSomeEndpoints :: (Monad m) => PageRoutes Identity m -> SomeEndpoints m
 pagesToSomeEndpoints (MkPageRoutes routes) =
-  foldMap (pageToSomeEndpoints . pageToSomeEndpoint) routes
+  foldMap (singletonSomeEndpoints . pageToSomeEndpoint) routes
 
-pageToSomeEndpoints :: SomeEndpoint m -> SomeEndpoints m
-pageToSomeEndpoints (SomeEndpoint method pt ep) =
+singletonSomeEndpoints :: SomeEndpoint m -> SomeEndpoints m
+singletonSomeEndpoints (SomeEndpoint method pt ep) =
   MkSomeEndpoints $ DMap.singleton pt (MkVerbRouterOf $ VR.singleton method ep)
 
 pageToSomeEndpoint :: (Monad m) => SomePageAction Identity m -> SomeEndpoint m
