@@ -41,6 +41,7 @@ common deps
        directory,
        filepath,
        wai,
+       stm,
 
        noided-server,
        noided-form,
@@ -95,6 +96,7 @@ library
       Noided.Web.Internal.Type.ServerError
       Noided.Web.Internal.Type.ErrorRenderer
       Noided.Web.Internal.Type.Application
+      Noided.Web.Internal.Type.Logger
 
       Noided.Web.Internal.PageAction
 
