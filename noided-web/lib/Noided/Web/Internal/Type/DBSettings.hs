@@ -22,7 +22,7 @@ import Hasql.Connection.Settings
 --    - @dbname@ (a text value)
 --    - @applicationName@ (a text value)
 --
--- None of these values are required when parsing JSON, but ommitting some
+-- None of these values are required when parsing JSON, but omitting some
 -- /may/ cause connecting to fail.
 --
 -- Any other keys will be mapped with the @other@ function from Hasql.
