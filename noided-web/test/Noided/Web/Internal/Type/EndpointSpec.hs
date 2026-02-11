@@ -1,7 +1,9 @@
 module Noided.Web.Internal.Type.EndpointSpec (spec) where
 
+import Data.ByteString qualified as BS
 import Data.Functor.Identity
 import Data.List (sortOn)
+import Network.HTTP.Media ((//))
 import Network.HTTP.Types (StdMethod (..))
 import Noided.Pathname (PathTemplate (..))
 import Noided.Pathname.Internal.PieceTemplate (PieceTemplate (..))
@@ -12,11 +14,23 @@ import Test.Hspec
 mkTestEndpoint :: StdMethod -> PathTemplate pathParams -> SomeEndpoints Identity
 mkTestEndpoint method pt = endpointOf method pt []
 
+-- Helper to create an endpoint with specific media types
+mkTestEndpointWithMedia :: StdMethod -> PathTemplate pathParams -> [BS.ByteString] -> SomeEndpoints Identity
+mkTestEndpointWithMedia method pt mediaTypes =
+  endpointOf method pt [(mt // "*", \_ -> pure (Right undefined)) | mt <- mediaTypes]
+
 -- Helper to extract method/path pairs from endpoints
 extractMethodPaths :: SomeEndpoints monad -> [(StdMethod, String)]
 extractMethodPaths eps = sortOn snd $ map extract (getSomeEndpoints eps)
   where
     extract (SomeEndpoint method pt _) = (method, show pt)
+
+-- Helper to count media types for a specific method and path
+countMediaTypesFor :: StdMethod -> String -> SomeEndpoints monad -> Int
+countMediaTypesFor method pathStr eps =
+  case [ep | ep@(SomeEndpoint m pt _) <- getSomeEndpoints eps, m == method, show pt == pathStr] of
+    [SomeEndpoint _ _ (MkEndpoint routes)] -> length routes
+    _ -> 0
 
 spec :: Spec
 spec = do
@@ -28,6 +42,14 @@ spec = do
         let ep2 = mkTestEndpoint GET path
         let merged = ep1 <> ep2
         length (getSomeEndpoints merged) `shouldBe` 1
+
+      it "merges endpoint actions when path and method match" $ do
+        let path = StaticPiece "test" :/ PathEnd
+        let ep1 = mkTestEndpointWithMedia GET path ["text"]
+        let ep2 = mkTestEndpointWithMedia GET path ["json"]
+        let merged = ep1 <> ep2
+        -- Both media types should be present after merge
+        countMediaTypesFor GET (show path) merged `shouldBe` 2
 
       it "preserves endpoints with different paths" $ do
         let path1 = StaticPiece "test1" :/ PathEnd
@@ -77,18 +99,3 @@ spec = do
         let ep3 = mkTestEndpoint GET path2
         let merged = ep1 <> ep2 <> ep3
         length (getSomeEndpoints merged) `shouldBe` 3
-
-    describe "cleanupSomeEndpoints" $ do
-      it "is now a no-op (backwards compatibility)" $ do
-        let path = StaticPiece "test" :/ PathEnd
-        let ep = mkTestEndpoint GET path
-        extractMethodPaths (cleanupSomeEndpoints ep) `shouldBe` extractMethodPaths ep
-
-      it "endpoints are already merged" $ do
-        let path = StaticPiece "test" :/ PathEnd
-        let ep1 = mkTestEndpoint GET path
-        let ep2 = mkTestEndpoint GET path
-        let merged = ep1 <> ep2
-        -- Should already be merged without needing cleanup
-        length (getSomeEndpoints merged) `shouldBe` 1
-        length (getSomeEndpoints (cleanupSomeEndpoints merged)) `shouldBe` 1

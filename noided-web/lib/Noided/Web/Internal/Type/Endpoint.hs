@@ -51,9 +51,11 @@ newtype SomeEndpoints monad
   = MkSomeEndpoints {getSomeEndpointsMap :: DMap.DMap PathTemplate (VerbRouterOf (Endpoint monad))}
 
 -- | Semigroup instance merges endpoints by combining verb routers at the same path.
+-- When both sides have an endpoint for the same path and method, their Endpoint values
+-- are merged using the Endpoint's Semigroup instance.
 instance Semigroup (SomeEndpoints monad) where
   MkSomeEndpoints a <> MkSomeEndpoints b =
-    MkSomeEndpoints $ DMap.unionWithKey (\_ -> (<>)) a b
+    MkSomeEndpoints $ DMap.unionWithKey (\_ (MkVerbRouterOf vr1) (MkVerbRouterOf vr2) -> MkVerbRouterOf (VR.unionWith (<>) vr1 vr2)) a b
 
 -- | Monoid instance with empty endpoint map.
 instance Monoid (SomeEndpoints monad) where
@@ -64,13 +66,6 @@ instance Monoid (SomeEndpoints monad) where
 getSomeEndpoints :: SomeEndpoints monad -> [SomeEndpoint monad]
 getSomeEndpoints (MkSomeEndpoints dm) =
   DMap.foldrWithKey (\pt (MkVerbRouterOf vr) acc -> VR.foldrWithKey (\verb ep -> (SomeEndpoint verb pt ep :)) acc vr) [] dm
-
--- | Cleans up 'SomeEndpoints' values by merging endpoints with the same method and path template.
---
--- Note: This function is now a no-op since 'SomeEndpoints' uses a map representation internally,
--- which automatically ensures endpoints are merged. This is kept for backwards compatibility.
-cleanupSomeEndpoints :: forall monad. SomeEndpoints monad -> SomeEndpoints monad
-cleanupSomeEndpoints = id
 
 aroundSomeEndpointActions :: (forall pathParams. EndpointAction monad pathParams -> EndpointAction monad' pathParams) -> SomeEndpoints monad -> SomeEndpoints monad'
 aroundSomeEndpointActions f (MkSomeEndpoints dm) =

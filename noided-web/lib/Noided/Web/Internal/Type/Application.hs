@@ -50,7 +50,7 @@ withErrorHandlers p = mempty & #errorHandlers .~ p
 configToApplication :: (Monad m) => ApplicationRouteConfig m -> Application m
 configToApplication (MkApplicationRouteConfig pages misc errs) =
   MkApplication
-    (cleanupSomeEndpoints $ pagesToSomeEndpoints pages <> misc)
+    (pagesToSomeEndpoints pages <> misc)
     errs
 
 pagesToSomeEndpoints :: (Monad m) => PageRoutes Identity m -> SomeEndpoints m
