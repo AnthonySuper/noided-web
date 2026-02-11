@@ -83,41 +83,40 @@ singleton :: StdMethod -> routed -> VerbRouter routed
 singleton v r = mempty & at v ?~ r
 
 unionWith :: (routed -> routed -> routed) -> VerbRouter routed -> VerbRouter routed -> VerbRouter routed
-unionWith f
-  (RouteVerbs g  p  h  pu  d  t  c  o  pa)
+unionWith
+  f
+  (RouteVerbs g p h pu d t c o pa)
   (RouteVerbs g' p' h' pu' d' t' c' o' pa') =
     RouteVerbs
-      (combine g  g')
-      (combine p  p')
-      (combine h  h')
+      (combine g g')
+      (combine p p')
+      (combine h h')
       (combine pu pu')
-      (combine d  d')
-      (combine t  t')
-      (combine c  c')
-      (combine o  o')
+      (combine d d')
+      (combine t t')
+      (combine c c')
+      (combine o o')
       (combine pa pa')
-  where
-    combine :: Maybe routed -> Maybe routed -> Maybe routed
-    combine (Just x) (Just y) = Just (f x y)
-    combine (Just x) Nothing  = Just x
-    combine Nothing  (Just y) = Just y
-    combine Nothing  Nothing  = Nothing
+    where
+      combine :: Maybe routed -> Maybe routed -> Maybe routed
+      combine (Just x) (Just y) = Just (f x y)
+      combine (Just x) Nothing = Just x
+      combine Nothing (Just y) = Just y
+      combine Nothing Nothing = Nothing
 
-foldrWithKey :: (StdMethod -> routed -> a -> a) -> a -> VerbRouter routed -> a
+foldrWithKey :: forall a. (StdMethod -> routed -> a -> a) -> a -> VerbRouter routed -> a
 foldrWithKey f z (RouteVerbs g p h pu d t c o pa) =
-  let
-    step :: StdMethod -> Maybe routed -> a -> a
-    step m mr acc =
-      case mr of
-        Just r  -> f m r acc
-        Nothing -> acc
-  in
-    step GET     g  $
-    step POST    p  $
-    step HEAD    h  $
-    step PUT     pu $
-    step DELETE  d  $
-    step TRACE   t  $
-    step CONNECT c  $
-    step OPTIONS o  $
-    step PATCH   pa z
+  let step :: StdMethod -> Maybe routed -> a -> a
+      step m mr acc =
+        case mr of
+          Just r -> f m r acc
+          Nothing -> acc
+   in step GET g $
+        step POST p $
+          step HEAD h $
+            step PUT pu $
+              step DELETE d $
+                step TRACE t $
+                  step CONNECT c $
+                    step OPTIONS o $
+                      step PATCH pa z
