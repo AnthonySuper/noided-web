@@ -82,6 +82,7 @@ library
       Noided.Web.Internal.Effect.GetCookies
       Noided.Web.Internal.Effect.RunTransaction
       Noided.Web.Internal.Effect.Translate
+      Noided.Web.Internal.Effect.UseConnection
       Noided.Web.Internal.Effect.WriteHeader
       Noided.Web.Internal.Effect.WriteCookie
 
