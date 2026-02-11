@@ -1,5 +1,6 @@
 module Noided.Web.Internal.Type.ApplicationConfig where
 
+import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
@@ -57,21 +58,25 @@ data ConfigurationReadFailedError
   | SignerFileReadFailed FilePath String
   deriving (Show, Generic)
 
+instance Exception ConfigurationReadFailedError
+
 readConfigurationForEnv :: ServerEnv -> IO (Either ConfigurationReadFailedError ApplicationConfig)
 readConfigurationForEnv se = runExceptT $ do
   dbS <- case se of
     Production -> do
-      url <- liftIO (lookupEnv "DATABASE_URL") >>= \case
-        Nothing -> throwE $ EnvironmentVariableMissing "DATABASE_URL"
-        Just u -> return $ T.pack u
+      url <-
+        liftIO (lookupEnv "DATABASE_URL") >>= \case
+          Nothing -> throwE $ EnvironmentVariableMissing "DATABASE_URL"
+          Just u -> return $ T.pack u
       return $ DBSettings $ connectionString url
     _ -> do
       let dbFile = "config/db.yml"
       exists <- liftIO $ doesFileExist dbFile
       unless exists $ throwE $ DBSettingsFileNotFound dbFile
-      cfg <- liftIO (Yaml.decodeFileEither dbFile) >>= \case
-        Left err -> throwE $ DBSettingsFailedParse (show err)
-        Right c -> return (c :: DBFileConfig)
+      cfg <-
+        liftIO (Yaml.decodeFileEither dbFile) >>= \case
+          Left err -> throwE $ DBSettingsFailedParse (show err)
+          Right c -> return (c :: DBFileConfig)
       case se of
         Development -> case cfg.development of
           Nothing -> throwE $ DBSettingsFailedParse "No development settings in config/db.yml"
@@ -79,13 +84,13 @@ readConfigurationForEnv se = runExceptT $ do
         Test -> case cfg.test of
           Nothing -> throwE $ DBSettingsFailedParse "No test settings in config/db.yml"
           Just s -> return s
-        Production -> error "Unreachable"
 
   (primary, secondaries) <- case se of
     Production -> do
-      pKey <- liftIO (lookupEnv "PRIMARY_SIGNING_KEY") >>= \case
-        Nothing -> throwE $ EnvironmentVariableMissing "PRIMARY_SIGNING_KEY"
-        Just k -> return $ TEnc.encodeUtf8 (T.pack k)
+      pKey <-
+        liftIO (lookupEnv "PRIMARY_SIGNING_KEY") >>= \case
+          Nothing -> throwE $ EnvironmentVariableMissing "PRIMARY_SIGNING_KEY"
+          Just k -> return $ TEnc.encodeUtf8 (T.pack k)
       allEnv <- liftIO getEnvironment
       let backupKeys = [TEnc.encodeUtf8 (T.pack v) | (k, v) <- allEnv, "BACKUP_SIGNING_KEY_" `isPrefixOf` k]
       return (signerHMACSHA512 pKey, map signerHMACSHA512 backupKeys)
@@ -93,7 +98,6 @@ readConfigurationForEnv se = runExceptT $ do
       let envStr = case se of
             Development -> "development"
             Test -> "test"
-            _ -> error "Unreachable"
           signerDir = "config/signers"
           primaryFile = signerDir </> envStr <.> "txt"
 
@@ -115,10 +119,11 @@ readConfigurationForEnv se = runExceptT $ do
 -- If that variable is missing or an unknown value, @Development@ is assumed.
 readConfiguration :: IO (Either ConfigurationReadFailedError ApplicationConfig)
 readConfiguration = do
-  env <- lookupEnv "NOIDED_ENV" >>= \case
-    Nothing -> return Development
-    Just "Development" -> return Development
-    Just "Test" -> return Test
-    Just "Production" -> return Production
-    Just _ -> return Development
+  env <-
+    lookupEnv "NOIDED_ENV" >>= \case
+      Nothing -> return Development
+      Just "Development" -> return Development
+      Just "Test" -> return Test
+      Just "Production" -> return Production
+      Just _ -> return Development
   readConfigurationForEnv env

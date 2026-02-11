@@ -20,7 +20,6 @@ import Noided.Web.Internal.Type.ApplicationConfig
 import Noided.Web.Internal.Type.DBSettings
 import Noided.Web.Internal.Type.Logger
 import Noided.Web.Internal.Type.ServerEnv
-
 import System.IO (stdout)
 
 -- | Use an application config to gain access to an interpreter with some common effects.
