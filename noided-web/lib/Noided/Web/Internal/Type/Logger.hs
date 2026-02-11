@@ -1,8 +1,10 @@
 module Noided.Web.Internal.Type.Logger
-  ( Logger (logMessage),
+  ( Logger (loggerLogMessage),
+    nullLogger,
     withAsyncLoggerOfSize,
     withProductionLoggerToHandle,
     withDebugLogger,
+    runUsingLogger,
   )
 where
 
@@ -17,12 +19,21 @@ import Data.Functor ((<&>))
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
+import Effectful
+import Effectful.Dispatch.Dynamic (interpret)
 import Noided.Web.Internal.Effect.Log
 import Numeric.Natural
 import System.IO
 
 -- | A logger can log messages in an IO context.
-newtype Logger = MkLogger {logMessage :: LoggedMessage -> IO ()}
+newtype Logger = MkLogger {loggerLogMessage :: LoggedMessage -> IO ()}
+
+nullLogger :: Logger
+nullLogger = MkLogger $ \_ -> return ()
+
+runUsingLogger :: (IOE :> es) => Logger -> Eff (Log : es) a -> Eff es a
+runUsingLogger logger = interpret $ \_ (LogMessage msg) ->
+  liftIO $ loggerLogMessage logger msg
 
 buildOutputTo ::
   (LoggedMessage -> Maybe a) ->

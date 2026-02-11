@@ -66,6 +66,7 @@ library
       Noided.Web
 
       Noided.Web.Application
+      Noided.Web.ApplicationConfig
 
       Noided.Web.Effect.Log
       Noided.Web.Effect.Signing
@@ -97,6 +98,9 @@ library
       Noided.Web.Internal.Type.ErrorRenderer
       Noided.Web.Internal.Type.Application
       Noided.Web.Internal.Type.Logger
+      Noided.Web.Internal.Type.ServerEnv
+      Noided.Web.Internal.Type.DBSettings
+      Noided.Web.Internal.Type.ApplicationConfig
 
       Noided.Web.Internal.PageAction
 
