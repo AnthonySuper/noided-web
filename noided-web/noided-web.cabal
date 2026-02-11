@@ -67,6 +67,7 @@ library
 
       Noided.Web.Application
       Noided.Web.ApplicationConfig
+      Noided.Web.Effect
 
       Noided.Web.Effect.Log
       Noided.Web.Effect.Signing
@@ -74,6 +75,7 @@ library
       Noided.Web.Effect.GetCookies
       Noided.Web.Effect.Translate
       Noided.Web.Effect.WriteCookie
+      Noided.Web.Effect.CurrentTime
 
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
