@@ -6,11 +6,14 @@
 
 module Noided.Web.Internal.Type.Application where
 
+import Data.Dependent.Map qualified as DMap
 import Data.Functor.Identity
 import Effectful
 import Effectful.Error.Static
 import GHC.Generics
 import Noided.Server.Internal.Type.Request
+import Noided.Server.Internal.Type.Server
+import Noided.Server.Internal.Type.VerbRouter qualified as VR
 import Noided.Web.Internal.Type.Endpoint
 import Noided.Web.Internal.Type.ErrorRenderer
 import Noided.Web.Internal.Type.PageAction
@@ -52,7 +55,11 @@ configToApplication (MkApplicationRouteConfig pages misc errs) =
 
 pagesToSomeEndpoints :: (Monad m) => PageRoutes Identity m -> SomeEndpoints m
 pagesToSomeEndpoints (MkPageRoutes routes) =
-  MkSomeEndpoints $ fmap pageToSomeEndpoint routes
+  foldMap (pageToSomeEndpoints . pageToSomeEndpoint) routes
+
+pageToSomeEndpoints :: SomeEndpoint m -> SomeEndpoints m
+pageToSomeEndpoints (SomeEndpoint method pt ep) =
+  MkSomeEndpoints $ DMap.singleton pt (MkVerbRouterOf $ VR.singleton method ep)
 
 pageToSomeEndpoint :: (Monad m) => SomePageAction Identity m -> SomeEndpoint m
 pageToSomeEndpoint (SomePageAction method pt act) =
