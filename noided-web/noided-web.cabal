@@ -76,6 +76,11 @@ library
       Noided.Web.Effect.Translate
       Noided.Web.Effect.WriteCookie
       Noided.Web.Effect.CurrentTime
+      Noided.Web.Effect.RequestId
+      Noided.Web.Effect.TimeEvent
+      Noided.Web.Effect.SomeRequest
+      Noided.Web.Effect.UseConnection
+      Noided.Web.Effect.WriteHeader
 
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
