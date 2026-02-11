@@ -20,6 +20,9 @@ data TranslationEnv
   }
   deriving (Generic)
 
+translationEnvFromEnv :: (FetchMessages f, FetchHtmlFormatters f) => f TranslationEnv
+translationEnvFromEnv = TranslateEnv <$> fetchMessages <*> fetchFormatters
+
 -- | Extremely basic monad transformer that provides translations for rendering purposes.
 type TranslationT :: (Type -> Type) -> Type -> Type
 newtype TranslationT m a = TranslationT {getTranslationT :: TranslationEnv -> m a}

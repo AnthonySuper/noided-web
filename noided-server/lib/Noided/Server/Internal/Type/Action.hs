@@ -38,7 +38,7 @@ instance (Functor monad) => Functor (SomeAction monad) where
     SomeAction v pt (mapActionResponse f a)
 
 aroundSomeAction ::
-  (forall arg. (arg -> monad response) -> arg -> monad' response') ->
+  (forall pathParams. (Request pathParams -> monad response) -> Request pathParams -> monad' response') ->
   SomeAction monad response ->
   SomeAction monad' response'
 aroundSomeAction f (SomeAction v pt (Act a)) =

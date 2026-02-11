@@ -1,0 +1,118 @@
+cabal-version:      3.0
+name:               noided-web
+version:            0.1.0.0
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Anthony Super
+maintainer:         anthony@noided.media
+category:           Web
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+common deps
+    build-depends:
+       base >=4.18 && <=4.20,
+       text,
+       time,
+       containers,
+       transformers,
+       mtl,
+       optics-core,
+       effectful-core,
+       effectful,
+       aeson,
+       uuid,
+       http-types,
+       bytestring,
+       cryptohash-sha512,
+       base64-bytestring,
+       memory,
+       cookie,
+       some,
+       http-media,
+       dependent-map,
+       lucid2,
+       hasql,
+       resource-pool,
+       yaml,
+       directory,
+       filepath,
+       wai,
+
+       noided-server,
+       noided-form,
+       noided-pathname,
+       noided-sql,
+       noided-web-html,
+       noided-translate
+
+common exts
+    default-extensions:
+       DataKinds
+       DerivingStrategies
+       DuplicateRecordFields
+       LambdaCase
+       OverloadedRecordDot
+       OverloadedStrings
+       TypeFamilies
+
+library
+    import:           warnings, deps, exts
+    exposed-modules:
+      Noided.Web
+
+      Noided.Web.Application
+
+      Noided.Web.Effect.Log
+      Noided.Web.Effect.Signing
+      Noided.Web.Effect.RunTransaction
+      Noided.Web.Effect.GetCookies
+      Noided.Web.Effect.Translate
+      Noided.Web.Effect.WriteCookie
+
+      Noided.Web.Internal.Effect.CurrentTime
+      Noided.Web.Internal.Effect.TimeEvent
+      Noided.Web.Internal.Effect.RequestId
+      Noided.Web.Internal.Effect.Log
+      Noided.Web.Internal.Effect.Signing
+      Noided.Web.Internal.Effect.SomeRequest
+      Noided.Web.Internal.Effect.GetCookies
+      Noided.Web.Internal.Effect.RunTransaction
+      Noided.Web.Internal.Effect.Translate
+      Noided.Web.Internal.Effect.WriteHeader
+      Noided.Web.Internal.Effect.WriteCookie
+
+      Noided.Web.Internal.Type.SignedMessage
+      Noided.Web.Internal.Type.Endpoint
+      Noided.Web.Internal.Type.SecureCookie
+      Noided.Web.Internal.Type.JSONResponse
+      Noided.Web.Internal.Type.PageAction
+      Noided.Web.Internal.Type.Response
+      Noided.Web.Internal.Type.ServerError
+      Noided.Web.Internal.Type.ErrorRenderer
+      Noided.Web.Internal.Type.Application
+
+      Noided.Web.Internal.PageAction
+
+      Noided.Web.Internal.Class.Endpoint
+
+
+    hs-source-dirs:   lib
+    default-language: GHC2021
+
+test-suite noided-web-test
+    import:           warnings, deps, exts
+    default-language: GHC2021
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    other-modules:
+       Noided.Web.Internal.Type.SignedMessageSpec
+
+    build-tool-depends: hspec-discover:hspec-discover
+    build-depends:
+        noided-web,
+        hspec
