@@ -23,7 +23,7 @@ newtype ErrorRenderer err
 -- | A container for multiple error renderers.
 -- This is used to handle \"generic\" server errors where no meaningful user remedy is possible, such as
 -- not being able to connect to a database.
-newtype ErrorRenderers = MkErrorRenderers {getErrorRenderers :: DMap.DMap TypeRep (ErrorRenderer)}
+newtype ErrorRenderers = MkErrorRenderers {getErrorRenderers :: DMap.DMap TypeRep ErrorRenderer}
 
 instance Semigroup ErrorRenderers where
   (MkErrorRenderers a) <> (MkErrorRenderers b) = MkErrorRenderers $ DMap.unionWithKey (\_ x y -> x <> y) a b
@@ -42,7 +42,7 @@ useErrorRenderersWith ::
   SomeServerError ->
   -- | Client-side @Accept@ header value
   SBS.ByteString ->
-  -- | Renderered response.
+  -- | Rendered response.
   Response
 useErrorRenderersWith fallback renderers sse@(SomeServerError _ mStack err) acceptHeader =
   toResp $ fromMaybe (fallback sse) fromRenderers

@@ -2,13 +2,12 @@
 
 module Noided.Web.Internal.Effect.WriteHeader where
 
-import Data.ByteString
-import Data.Map.Strict qualified as Map
+import Data.Bifunctor
+import Data.ByteString (ByteString)
 import Effectful
 import Effectful.Dispatch.Dynamic
 import Effectful.State.Static.Local
 import Network.HTTP.Types.Header
-import Optics.Core
 
 -- | Effect for writing header values.
 data WriteHeader :: Effect where
@@ -23,13 +22,14 @@ type instance DispatchOf WriteHeader = Dynamic
 writeHeader :: (WriteHeader :> es) => HeaderName -> ByteString -> Eff es ()
 writeHeader hn = send . WriteHeader hn
 
-type HeaderMap = Map.Map HeaderName ByteString
+type HeaderMap = [(HeaderName, ByteString)]
 
 -- | Run 'WriteHeader', accumulating headers in a map.
 runWriteHeaderMap :: Eff (WriteHeader : es) a -> Eff es (a, HeaderMap)
-runWriteHeaderMap = reinterpret (runState @HeaderMap mempty) $ \_ (WriteHeader hn bs) ->
-  modify @HeaderMap (at hn ?~ bs)
+runWriteHeaderMap = fmap (second reverse) . interpretInner
+  where
+    interpretInner = reinterpret (runState @HeaderMap mempty) $ \_ (WriteHeader hn bs) ->
+      modify @HeaderMap ((hn, bs) :)
 
--- | Run 'WriteHeader' ignoring all written headers.
 runIgnoringWrittenHeaders :: Eff (WriteHeader : es) a -> Eff es a
 runIgnoringWrittenHeaders = interpret $ \_ (WriteHeader _ _) -> return ()

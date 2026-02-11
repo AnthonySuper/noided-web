@@ -18,7 +18,7 @@ import Noided.Web.Internal.Type.ServerError
 import Optics.Core
 import Type.Reflection
 
--- | And endpoint either returns a 'Response', or a dynamically-typed 'SomeServerError'.
+-- | An endpoint either returns a 'Response', or a dynamically-typed 'SomeServerError'.
 -- This makes handling \"unrecoverable\" errors much easier - you can just define top-level handlers,
 -- and things will just work.
 type EndpointResponse = Either SomeServerError Response

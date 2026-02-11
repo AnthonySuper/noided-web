@@ -45,8 +45,6 @@ spec = do
       let newPayload = B64.encode (toStrict $ Aeson.encode ("not-hello-world" :: Text))
       let tampered = decodeUtf8Lenient newPayload <> "." <> sig
       let result = verifyMessage signer now (Just purpose) tampered :: Either SignedMessageFailure (SignedValue Text)
-      -- It might fail with SignatureDidNotMatch or MessageNotJSON depending on what we passed
-      -- But definitely not Right
       result `shouldBe` failureOf SignatureDidNotMatch
 
     it "fails if expired" $ do

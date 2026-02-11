@@ -111,8 +111,7 @@ verifySigned currT purpose msg = do
 
 -- | Why a signed message failed.
 data SignedMessageFailure
-  = MessageTooShort
-  | SplitterNotFound
+  = SplitterNotFound
   | SignatureNotBase64 String
   | SignatureDidNotMatch
   | MessageNotBase64 String

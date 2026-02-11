@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE NoFieldSelectors #-}
@@ -82,7 +83,7 @@ lookup v = view (at v)
 singleton :: StdMethod -> routed -> VerbRouter routed
 singleton v r = mempty & at v ?~ r
 
-unionWith :: (routed -> routed -> routed) -> VerbRouter routed -> VerbRouter routed -> VerbRouter routed
+unionWith :: forall routed. (routed -> routed -> routed) -> VerbRouter routed -> VerbRouter routed -> VerbRouter routed
 unionWith
   f
   (RouteVerbs g p h pu d t c o pa)
@@ -104,10 +105,9 @@ unionWith
       combine Nothing (Just y) = Just y
       combine Nothing Nothing = Nothing
 
-foldrWithKey :: forall a. (StdMethod -> routed -> a -> a) -> a -> VerbRouter routed -> a
+foldrWithKey :: forall a routed. (StdMethod -> routed -> a -> a) -> a -> VerbRouter routed -> a
 foldrWithKey f z (RouteVerbs g p h pu d t c o pa) =
-  let step :: StdMethod -> Maybe routed -> a -> a
-      step m mr acc =
+  let step m mr acc =
         case mr of
           Just r -> f m r acc
           Nothing -> acc
