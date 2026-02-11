@@ -62,7 +62,7 @@ runRecordingEventTimings = reinterpret (runState @TimingMap mempty) $ \env -> \c
     timeBefore <- getCurrentTime
     localSeqUnlift env (\lift -> lift act) `finally` do
       timeAfter <- getCurrentTime
-      let elapsedTime = timeBefore `diffUTCTime` timeAfter
+      let elapsedTime = timeAfter `diffUTCTime` timeBefore
       let newDuration = durationBefore + elapsedTime
       modify @TimingMap (at t ?~ newDuration)
   RecordStaticTime name time -> do

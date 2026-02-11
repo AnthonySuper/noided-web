@@ -10,7 +10,7 @@ import Web.Cookie qualified as Cookie
 
 -- | Effect for writing cookies.
 data WriteCookie :: Effect where
-  SetCookie :: SetCookie -> WriteCookie es ()
+  SetCookie :: SetCookie -> WriteCookie m ()
 
 type instance DispatchOf WriteCookie = Dynamic
 

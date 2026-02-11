@@ -25,7 +25,7 @@ writeHeader hn = send . WriteHeader hn
 
 type HeaderMap = Map.Map HeaderName ByteString
 
--- | Run 'WriteHeader', accumulating errors in a map.
+-- | Run 'WriteHeader', accumulating headers in a map.
 runWriteHeaderMap :: Eff (WriteHeader : es) a -> Eff es (a, HeaderMap)
 runWriteHeaderMap = reinterpret (runState @HeaderMap mempty) $ \_ (WriteHeader hn bs) ->
   modify @HeaderMap (at hn ?~ bs)
