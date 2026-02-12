@@ -35,6 +35,10 @@ deriving instance Eq User
 
 deriving instance Show User
 
+deriving instance Eq UserNullified
+
+deriving instance Show UserNullified
+
 userColumns :: UserTableDef ColumnName
 userColumns = User {id = "id", firstName = "first_name", middleName = "middle_name", lastName = "last_name"}
 
@@ -63,4 +67,8 @@ spec = do
     it "has a good Eq instance" $
       (User 1 "bob" Nothing "smith" :: User)
         `shouldBe` User 1 "bob" Nothing "smith"
+  describe "UserNullified" $ do
+    it "has a good Eq instance" $
+      (User Nothing Nothing Nothing Nothing :: UserNullified)
+        `shouldBe` User Nothing Nothing Nothing Nothing
   return ()

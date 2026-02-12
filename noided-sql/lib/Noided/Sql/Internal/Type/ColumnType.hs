@@ -32,6 +32,11 @@ type family ColumnInHaskell column where
   ColumnInHaskell (Column _ NonNull t) =
     HaskellTypeOf t
 
+type ColumnNullifiedInHaskell :: ColumnType -> Type
+type family ColumnNullifiedInHaskell column where
+  ColumnNullifiedInHaskell (Column _ _ t) =
+    Maybe (HaskellTypeOf t)
+
 type IdentityColumn = Column AlwaysDefault NonNull
 
 type RegularColumn = Column NoDefault NonNull

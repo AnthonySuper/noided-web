@@ -19,7 +19,21 @@ defineHKDTable name = do
   inQueryDecls <- defineInQuery name nameStripped
   nullifiedInQueryDecls <- defineNullifiedInQuery name nameStripped
   return $
-    [TySynD (mkName $ Text.unpack nameStripped) [] (ConT name `AppT` PromotedT 'InHaskell `AppT` PromotedT '())]
+    [ TySynD
+        (mkName $ Text.unpack nameStripped)
+        []
+        ( ConT name
+            `AppT` PromotedT 'InHaskell
+            `AppT` PromotedT '()
+        ),
+      TySynD
+        (mkName $ Text.unpack (nameStripped <> "Nullified"))
+        []
+        ( ConT name
+            `AppT` PromotedT 'NullifiedInHaskell
+            `AppT` PromotedT '()
+        )
+    ]
       ++ tableDefDecls
       ++ inQueryDecls
       ++ nullifiedInQueryDecls

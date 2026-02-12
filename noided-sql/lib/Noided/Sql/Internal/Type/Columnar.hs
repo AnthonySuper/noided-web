@@ -18,6 +18,11 @@ data ColumnUsage (argument :: Type) where
   -- In this case, we don't really need an argument, because
   -- this will no longer be an HKD.
   InHaskell :: ColumnUsage ()
+  -- | Nullified in Haskell.
+  -- In this case, we don't really need an argument, because
+  -- this will no longer be an HKD.
+  -- All fields, however, will be wrapped in a Maybe type.
+  NullifiedInHaskell :: ColumnUsage ()
 
 -- | Field wrapper for columnar values.
 -- This allows you to use the same data type when defining tables, in queries,
@@ -28,3 +33,4 @@ type family Columnar cd r arg where
   Columnar cd InQuery arg = arg (ColumnInQuery cd)
   Columnar cd NullifiedInQuery arg = arg (ColumnNullifiedInQuery cd)
   Columnar cd InHaskell '() = ColumnInHaskell cd
+  Columnar cd NullifiedInHaskell '() = ColumnNullifiedInHaskell cd
