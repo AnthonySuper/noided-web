@@ -77,7 +77,7 @@ defineHKDWrapper toPromote originalName newName = do
     aliasDecl =
       TySynD aliasName [] $
         ConT originalName `AppT` PromotedT toPromote
-    aliasName = mkName (Text.unpack $ newName)
+    aliasName = mkName (Text.unpack newName)
 
 defineNamedColumns :: (Quote m) => Type -> m [Dec]
 defineNamedColumns name' =
@@ -88,14 +88,21 @@ defineNamedColumns name' =
 defineUnwraps :: (Quote m) => Text.Text -> m [Dec]
 defineUnwraps (unwrapped :: Text.Text) =
   [d|
-    instance UnwrapSelectList $name where
+    instance UnwrapSelectList $inQueryName where
       type
-        SelectListUnwrapped $name =
+        SelectListUnwrapped $inQueryName =
           $normalAliasName
+
+    instance UnwrapSelectList $nullifiedInQueryName where
+      type
+        SelectListUnwrapped $nullifiedInQueryName =
+          $nullifiedAliasName
     |]
   where
+    nullifiedInQueryName = pure $ ConT $ (mkName $ Text.unpack $ unwrapped <> "NullifiedInQuery")
+    nullifiedAliasName = pure $ ConT (mkName $ Text.unpack $ unwrapped <> "Nullified")
     normalAliasName = pure $ ConT (mkName $ Text.unpack unwrapped)
-    name = pure $ ConT (mkName $ Text.unpack $ unwrapped <> "InQuery")
+    inQueryName = pure $ ConT (mkName $ Text.unpack $ unwrapped <> "InQuery")
 
 defineHKDDefaults :: (Quote m) => Type -> m [Dec]
 defineHKDDefaults name' =

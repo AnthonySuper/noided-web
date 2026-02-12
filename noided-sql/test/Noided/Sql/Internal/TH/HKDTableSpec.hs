@@ -11,10 +11,12 @@ import Data.Int (Int64)
 import Data.Text (Text)
 import GHC.Generics
 import Noided.Sql.Internal.Class.NamedColumns
+import Noided.Sql.Internal.Class.UnwrapSelectList
 import Noided.Sql.Internal.TH.HKDTable
 import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.Columnar
+import Noided.Sql.Internal.Type.HaskellT
 import Noided.Sql.Internal.Type.Nullability
 import Test.Hspec
 import Prelude hiding (id)
@@ -58,11 +60,19 @@ spec = do
       flength (frepeat (Const "") :: UserInQuery (Const Text)) `shouldBe` 4
     it "has good named columns" $
       shouldNameColumns (namedColumns :: UserInQuery ColumnName)
+    it "can unwrap a slect list" $ do
+      let sl :: UserInQuery HaskellT
+          sl = User (HaskT 1) (HaskT "bob") (HaskT Nothing) (HaskT "smith")
+      unwrapSelectList sl `shouldBe` User 1 "bob" Nothing "smith"
   describe "UserNullifiedInQuery" $ do
     it "has a good number of columns" $
       flength (frepeat (Const "") :: UserNullifiedInQuery (Const Text)) `shouldBe` 4
     it "has good named columns" $
       shouldNameColumns (namedColumns :: UserNullifiedInQuery ColumnName)
+    it "can unwrap a slect list" $ do
+      let sl :: UserNullifiedInQuery HaskellT
+          sl = User (HaskT Nothing) (HaskT Nothing) (HaskT Nothing) (HaskT Nothing)
+      unwrapSelectList sl `shouldBe` User Nothing Nothing Nothing Nothing
   describe "User" $ do
     it "has a good Eq instance" $
       (User 1 "bob" Nothing "smith" :: User)
