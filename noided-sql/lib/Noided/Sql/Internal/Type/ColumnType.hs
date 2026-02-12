@@ -21,6 +21,10 @@ type ColumnInQuery :: ColumnType -> SqlType
 type family ColumnInQuery column where
   ColumnInQuery (Column _ n t) = SqlT n t
 
+type ColumnNullifiedInQuery :: ColumnType -> SqlType
+type family ColumnNullifiedInQuery column where
+  ColumnNullifiedInQuery (Column _ _ t) = SqlT Nullable t
+
 type ColumnInHaskell :: ColumnType -> Type
 type family ColumnInHaskell column where
   ColumnInHaskell (Column _ Nullable t) =

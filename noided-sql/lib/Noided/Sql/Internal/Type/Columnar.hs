@@ -12,6 +12,8 @@ data ColumnUsage (argument :: Type) where
   -- | In a query.
   -- In this case, we need an argument of 'SqlType -> Type'.
   InQuery :: ColumnUsage (SqlType -> Type)
+  -- | Column nullified in a query.
+  NullifiedInQuery :: ColumnUsage (SqlType -> Type)
   -- | In Haskell.
   -- In this case, we don't really need an argument, because
   -- this will no longer be an HKD.
@@ -24,4 +26,5 @@ type Columnar :: ColumnType -> ColumnUsage argument -> argument -> Type
 type family Columnar cd r arg where
   Columnar cd InTableDef arg = arg cd
   Columnar cd InQuery arg = arg (ColumnInQuery cd)
+  Columnar cd NullifiedInQuery arg = arg (ColumnNullifiedInQuery cd)
   Columnar cd InHaskell '() = ColumnInHaskell cd
