@@ -12,6 +12,8 @@ import Noided.Sql.Internal.Type.HaskellT
 import Noided.Sql.Internal.Type.Tie
 
 -- | Unwrap a select list type to a proper, non-HKD Haskell type.
+-- This is because working with HKDs in Haskell is, generally, extremely irritating.
+-- So it\'s nice to unwrap to some normal type that's easier to work with.
 class UnwrapSelectList selectList where
   type SelectListUnwrapped selectList :: Type
   unwrapSelectList :: selectList HaskellT -> SelectListUnwrapped selectList
