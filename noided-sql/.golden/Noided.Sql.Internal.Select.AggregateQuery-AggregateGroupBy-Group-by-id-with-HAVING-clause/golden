@@ -1,0 +1,1 @@
+SELECT "subq"."id" AS "id", COUNT("subq"."val") AS "count" FROM (SELECT id AS "id", val AS "val") AS "subq" GROUP BY "subq"."id" HAVING (COUNT("subq"."val")) = (5)
