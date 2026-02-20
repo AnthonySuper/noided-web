@@ -141,6 +141,10 @@ library
       Noided.Sql.Internal.SqlExpr.Text
 
       Noided.Sql.Select
+      Noided.Sql.Insert
+      Noided.Sql.Update
+      Noided.Sql.Delete
+      Noided.Sql.Merge
       Noided.Sql.SqlExpr
 
     -- Modules included in this library but not exported.
