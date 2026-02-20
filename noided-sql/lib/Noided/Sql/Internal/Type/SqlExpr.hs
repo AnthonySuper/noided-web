@@ -28,6 +28,10 @@ newtype SqlExpr scope t = UnsafeMkSqlExpr {unsafeGetSqlExpr :: Syntax}
 
 type QueriedRow t = t (SqlExpr NormalQuery)
 
+type AggregateSetRow t = t (SqlExpr AggregateSet)
+
+type AggregatedRow t = t (SqlExpr Aggregated)
+
 type CastNullability :: Nullability -> Nullability -> Constraint
 class CastNullability from to where
   castNullability :: SqlExpr scope (SqlT from a) -> SqlExpr scope (SqlT to a)
