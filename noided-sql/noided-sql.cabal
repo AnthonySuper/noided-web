@@ -139,6 +139,10 @@ library
       Noided.Sql.Internal.SqlExpr.Numeric
       Noided.Sql.Internal.SqlExpr.Text
 
+      Noided.Sql.Internal.HKDTableDef
+
+      Noided.Sql
+      Noided.Sql.TransactM
       Noided.Sql.Select
       Noided.Sql.Insert
       Noided.Sql.Update
@@ -182,6 +186,8 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Delete.DeleteSpec
       Noided.Sql.Internal.Select.CombineSpec
       Noided.Sql.Internal.Merge.MergeSpec
+
+      Noided.Sql.Internal.HKDTableDefSpec
 
       Noided.Sql.Internal.TH.HKDTableSpec
 

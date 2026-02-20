@@ -11,6 +11,7 @@ module Noided.Row
 
     -- * Rows with wrapped elements
     WrappedRow (EmptyWrappedRow, (:::%), (:::%?), WrappedRowCons),
+    RowAppendLabels,
     wrappedRowAppend,
     wrappedRowElementL,
     wrappedRowGetFirstTyped,

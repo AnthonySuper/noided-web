@@ -1,5 +1,14 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Class.NamedColumns
@@ -15,6 +24,7 @@ where
 import Control.Arrow
 import Data.Functor.Const
 import Data.HKD
+import Data.Kind (Type)
 import Data.Text (pack)
 import GHC.Generics
 import Noided.Row
@@ -95,7 +105,25 @@ instance (GNamedColumns l, GNamedColumns r) => GNamedColumns (l :*: r) where
 instance GNamedColumns U1 where
   genericNamedColumns = U1
 
-instance (Selector s) => GNamedColumns (M1 S s (K1 R (ColumnName a))) where
-  genericNamedColumns =
-    let name = pack $ selName (undefined :: M1 S s (K1 R (ColumnName a)) ())
-     in M1 (K1 (MkColumnName name))
+type family IsColumnName (t :: Type) :: Bool where
+  IsColumnName (ColumnName _) = 'True
+  IsColumnName _ = 'False
+
+class GNamedColumnsField (isCN :: Bool) (s :: Meta) resultType where
+  genericNamedColumnsField :: resultType
+
+instance (Selector s, resultType ~ ColumnName a) => GNamedColumnsField 'True s resultType where
+  genericNamedColumnsField =
+    let name = pack $ selName (undefined :: M1 S s (K1 R resultType) ())
+     in MkColumnName name
+
+instance (NamedColumns subHKD, resultType ~ subHKD ColumnName) => GNamedColumnsField 'False s resultType where
+  genericNamedColumnsField = namedColumns
+
+instance
+  ( isCN ~ IsColumnName resultType,
+    GNamedColumnsField isCN s resultType
+  ) =>
+  GNamedColumns (M1 S s (K1 R resultType))
+  where
+  genericNamedColumns = M1 (K1 (genericNamedColumnsField @isCN @s))

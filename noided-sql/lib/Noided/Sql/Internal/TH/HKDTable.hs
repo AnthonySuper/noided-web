@@ -6,6 +6,7 @@ module Noided.Sql.Internal.TH.HKDTable where
 import Data.HKD
 import Data.Text qualified as Text
 import Language.Haskell.TH hiding (newName)
+import Noided.Row
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.NamedColumns
 import Noided.Sql.Internal.Class.UnwrapSelectList
@@ -121,6 +122,8 @@ defineHKDDefaults name' =
 
     instance FZip $name where
       fzipWith = gfzipWith
+
+    instance HKDToRow $name
     |]
   where
     name = pure name'

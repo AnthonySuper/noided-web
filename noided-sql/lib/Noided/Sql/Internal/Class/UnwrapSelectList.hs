@@ -1,4 +1,12 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Noided.Sql.Internal.Class.UnwrapSelectList where
@@ -7,6 +15,7 @@ import Data.HKD
 import Data.Kind (Type)
 import GHC.Generics
 import GHC.Records
+import GHC.TypeLits
 import Noided.Row
 import Noided.Sql.Internal.Class.AsHaskellValue
 import Noided.Sql.Internal.Type.HaskellT
@@ -65,14 +74,39 @@ instance
   where
   genericUnwrapSelectList = M1 . genericUnwrapSelectList
 
+type family IsHaskellT (t :: Type) :: Bool where
+  IsHaskellT (HaskellT _) = 'True
+  IsHaskellT _ = 'False
+
+class GUnwrapSelectListField (isHaskT :: Bool) (fieldName :: Symbol) selectListHaskT resultType where
+  genericUnwrapSelectListField :: selectListHaskT -> resultType
+
 instance
-  ( HasField fieldName (selectList HaskellT) (HaskellT columnType),
+  ( HasField fieldName selectListHaskT (HaskellT columnType),
     HaskellValueType columnType ~ resultType
+  ) =>
+  GUnwrapSelectListField 'True fieldName selectListHaskT resultType
+  where
+  genericUnwrapSelectListField = getHaskT . getField @fieldName
+
+instance
+  ( HasField fieldName selectListHaskT (subSelectList HaskellT),
+    UnwrapSelectList subSelectList,
+    SelectListUnwrapped subSelectList ~ resultType
+  ) =>
+  GUnwrapSelectListField 'False fieldName selectListHaskT resultType
+  where
+  genericUnwrapSelectListField = unwrapSelectList . getField @fieldName
+
+instance
+  ( HasField fieldName (selectList HaskellT) fieldType,
+    isHaskT ~ IsHaskellT fieldType,
+    GUnwrapSelectListField isHaskT fieldName (selectList HaskellT) resultType
   ) =>
   GUnwrapSelectList selectList (M1 s (MetaSel (Just fieldName) ignored ignored'' ignored''') (Rec0 resultType))
   where
   genericUnwrapSelectList =
-    M1 . K1 . getHaskT . getField @fieldName
+    M1 . K1 . genericUnwrapSelectListField @isHaskT @fieldName
 
 gunwrapSelectList ::
   forall result selectList.
