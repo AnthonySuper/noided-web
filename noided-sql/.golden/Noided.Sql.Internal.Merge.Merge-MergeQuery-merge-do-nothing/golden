@@ -1,0 +1,1 @@
+MERGE INTO "users" AS to_merge USING "source_users" AS "source_users" ON ((to_merge."id") = ("source_users"."id")) WHEN MATCHED THEN DO NOTHING RETURNING to_merge."id" AS "id"

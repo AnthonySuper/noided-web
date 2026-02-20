@@ -113,6 +113,8 @@ library
 
       Noided.Sql.Internal.Delete.Delete
 
+      Noided.Sql.Internal.Merge.Merge
+
       Noided.Sql.Internal.Class.AsBindParam
       Noided.Sql.Internal.Class.AsHaskellValue
       Noided.Sql.Internal.Class.DecodeSelectList
@@ -160,6 +162,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Update.UpdateSpec
       Noided.Sql.Internal.Delete.DeleteSpec
       Noided.Sql.Internal.Select.CombineSpec
+      Noided.Sql.Internal.Merge.MergeSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
