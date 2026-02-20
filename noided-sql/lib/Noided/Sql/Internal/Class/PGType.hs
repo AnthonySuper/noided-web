@@ -75,3 +75,6 @@ instance PGType UTCTime where
 
 instance PGType LocalTime where
   pgTypeName _ = "timestamp"
+
+instance PGType DiffTime where
+  pgTypeName _ = "interval"

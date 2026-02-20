@@ -7,6 +7,7 @@ import Data.Function ((&))
 import Data.HKD
 import Data.Int (Int64)
 import Data.Text (unpack)
+import Data.Time (DiffTime, LocalTime, UTCTime)
 import Noided.Sql.Internal.Class.NamedColumns
 import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.SelectM
@@ -47,3 +48,24 @@ spec = do
         & innerJoin_ series2
         `on_` (\_ _ -> bindParam True)
     return r
+
+  renderGolden "generate_series with UTCTime and interval step" $ do
+    r <-
+      addFrom_ $
+        fromBase_ $
+          generateSeriesStep
+            (bindParam @UTCTime (read "2024-01-01 00:00:00 UTC"))
+            (bindParam @UTCTime (read "2024-12-31 00:00:00 UTC"))
+            (bindParam @DiffTime 86400)
+    return r
+
+  renderGolden "generate_series with LocalTime and interval step" $ do
+    r <-
+      addFrom_ $
+        fromBase_ $
+          generateSeriesStep
+            (bindParam @LocalTime (read "2024-01-01 00:00:00"))
+            (bindParam @LocalTime (read "2024-12-31 00:00:00"))
+            (bindParam @DiffTime 86400)
+    return r
+

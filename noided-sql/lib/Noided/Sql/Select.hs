@@ -16,6 +16,7 @@ module Noided.Sql.Select
 
     -- ** Set-Returning Functions
     PGSeries,
+    StepType,
     generateSeries,
     generateSeriesStep,
 
