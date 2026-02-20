@@ -17,6 +17,7 @@ import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.SelectM
 import Noided.Sql.Internal.SqlExpr.Bool ((==.))
 import Noided.Sql.Internal.Type.AggregateExpr
+import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
@@ -59,6 +60,19 @@ instance FZip GroupedStats where fzipWith = gfzipWith
 instance NamedColumns GroupedStats where
   namedColumns = GroupedStats "id" "count"
 
+data ArrayStats f = ArrayStats
+  { asId :: f (NonNullT Int64),
+    asVals :: f (NullableT (PGArray (NonNullT Int64)))
+  }
+  deriving (Generic)
+
+instance FFunctor ArrayStats where ffmap = ffmapDefault
+instance FFoldable ArrayStats where ffoldMap = ffoldMapDefault
+instance FTraversable ArrayStats where ftraverse = gftraverse
+instance FZip ArrayStats where fzipWith = gfzipWith
+instance NamedColumns ArrayStats where
+  namedColumns = ArrayStats "id" "vals"
+
 renderAggregateGolden ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
   String ->
@@ -92,4 +106,10 @@ spec = do
         (\t1 -> Element t1.t1Id)
         (\(_ :--: t1Agg) -> agg (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
         (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg $ count_ t1Agg.t1Val))
+        baseQuery
+
+    renderAggregateGolden "Group by id and array_agg vals" $
+      groupBy_
+        (\t1 -> Element t1.t1Id)
+        (\(Element idAgg :--: t1Agg) -> ArrayStats (coerce idAgg) (agg $ arrayAgg_ t1Agg.t1Val))
         baseQuery

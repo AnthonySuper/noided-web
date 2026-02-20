@@ -6,6 +6,7 @@ module Noided.Sql.Internal.Type.AggregateExpr where
 import Data.Int
 import Data.Kind
 import Noided.Sql.Internal.Class.SqlNumeric
+import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.Syntax
@@ -102,3 +103,7 @@ stddev_ = unsafeBuildSingleArgAgg "STDDEV"
 -- | Sql @VARIANCE@ aggregate function.
 variance_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT Double)
 variance_ = unsafeBuildSingleArgAgg "VARIANCE"
+
+-- | Sql @ARRAY_AGG@ aggregate function.
+arrayAgg_ :: SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (PGArray (SqlT n r)))
+arrayAgg_ = unsafeBuildSingleArgAgg "ARRAY_AGG"
