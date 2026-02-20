@@ -68,7 +68,8 @@ common deps
         optics-core,
         mtl,
         vector,
-        template-haskell
+        template-haskell,
+        scientific
 
 common extensions
     default-extensions:
@@ -126,6 +127,7 @@ library
       Noided.Sql.Internal.Class.Query
       Noided.Sql.Internal.Class.RangeOffset
       Noided.Sql.Internal.Class.SelectList
+      Noided.Sql.Internal.Class.SqlNumeric
       Noided.Sql.Internal.Class.UnwrapSelectList
 
       Noided.Sql.Internal.TH.HKDTable
