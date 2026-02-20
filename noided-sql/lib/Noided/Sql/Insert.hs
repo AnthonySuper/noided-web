@@ -5,7 +5,10 @@ module Noided.Sql.Insert
     insertDefaultValuesReturning,
 
     -- * Insert values
-    InsertValues (..),
+    InsertValues,
+    defaultValues_,
+    values_,
+    insertSelect_,
     InsertForTable,
   )
 where
