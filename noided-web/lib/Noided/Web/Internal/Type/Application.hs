@@ -71,13 +71,13 @@ pageActionToEndpoint (PageAct act) =
     [ ( "text/html",
         \req -> do
           pageResp <- act req.urlParams
-          resp <- pure $ runIdentity $ pageResponseToResponse FullPage pageResp
+          let resp = runIdentity $ pageResponseToResponse FullPage pageResp
           pure (Right resp)
       ),
       ( "application/vnd.noided-fragment",
         \req -> do
           pageResp <- act req.urlParams
-          resp <- pure $ runIdentity $ pageResponseToResponse Fragment pageResp
+          let resp = runIdentity $ pageResponseToResponse Fragment pageResp
           pure (Right resp)
       )
     ]

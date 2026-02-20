@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -12,17 +13,22 @@ module Noided.Web.Application
     -- * Applications
     Application,
     applicationAroundAll,
+    applicationHoistM,
     toServerActions,
 
     -- ** Handling errors
     applicationHandleAsServerError,
     applicationHandleAsServerError',
+
+    -- ** Common application runners
+    applicationInterpretCommon,
     applicationInterpretRequest,
+    applicationInterpretResponse,
   )
 where
 
-import Data.Function
 import Data.ByteString.Lazy qualified as LBS
+import Data.Function
 import Data.Map.Strict qualified as Map
 import Data.Maybe
 import Effectful
@@ -32,11 +38,27 @@ import Network.HTTP.Types.Status
 import Network.Wai qualified as Wai
 import Noided.Server.Internal.Type.Action
 import Noided.Server.Internal.Type.Request
+import Noided.Web.Effect.WriteHeader
 import Noided.Web.Internal.Effect.SomeRequest
 import Noided.Web.Internal.Type.Application
 import Noided.Web.Internal.Type.Endpoint
 import Noided.Web.Internal.Type.ErrorRenderer
 import Noided.Web.Internal.Type.Response
+import Optics.Core
+
+applicationInterpretCommon ::
+  Application
+    ( Eff
+        ( WriteHeader
+            : GetHeaders
+            : GetQueryParams
+            : GetRequestBody
+            : es
+        )
+    ) ->
+  Application (Eff es)
+applicationInterpretCommon =
+  applicationInterpretRequest . applicationInterpretResponse
 
 -- | Interpret request-related actions from a request.
 applicationInterpretRequest ::
@@ -55,6 +77,11 @@ applicationInterpretRequest = applicationAroundAll $ \act req ->
     & runWithQueryParams req.queryParams
     & runWithRequestBody req.body
 
+applicationInterpretResponse :: Application (Eff (WriteHeader : es)) -> Application (Eff es)
+applicationInterpretResponse = applicationAroundAll $ \act req -> do
+  (res, headerMap) <- runWriteHeaderMap (act req)
+  return $ res & _Right % #headers %~ (<> headerMap)
+
 -- | Transform an application into server actions, suitable for use with noided-server.
 toServerActions :: (Monad m) => Application m -> [SomeAction m Wai.Response]
 toServerActions (MkApplication eps errs) =
@@ -62,17 +89,20 @@ toServerActions (MkApplication eps errs) =
 
 endpointToSomeAction :: (Monad m) => ErrorRenderers -> SomeEndpoint m -> SomeAction m Wai.Response
 endpointToSomeAction errs (SomeEndpoint method pt (MkEndpoint routes)) =
-  SomeAction method pt (Act $ \req -> do
-    let acceptHeader = fromMaybe "*/*" $ Map.lookup hAccept req.headers
-    let mSelected = mapAccept routes acceptHeader
-    case mSelected of
-      Nothing -> pure $ Wai.responseLBS status406 [] "Not Acceptable"
-      Just action -> do
-        res <- action req
-        case res of
-          Left sse -> pure $ responseToWai $ useErrorRenderersDebug errs sse acceptHeader
-          Right resp -> pure $ responseToWai resp
-  )
+  SomeAction
+    method
+    pt
+    ( Act $ \req -> do
+        let acceptHeader = fromMaybe "*/*" $ Map.lookup hAccept req.headers
+        let mSelected = mapAccept routes acceptHeader
+        case mSelected of
+          Nothing -> pure $ Wai.responseLBS status406 [] "Not Acceptable"
+          Just action -> do
+            res <- action req
+            case res of
+              Left sse -> pure $ responseToWai $ useErrorRenderersDebug errs sse acceptHeader
+              Right resp -> pure $ responseToWai resp
+    )
 
 responseToWai :: Response -> Wai.Response
 responseToWai (Response status headers body) =

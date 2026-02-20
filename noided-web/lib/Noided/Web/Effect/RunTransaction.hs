@@ -11,22 +11,21 @@ module Noided.Web.Effect.RunTransaction
     runTransactionEither',
     runTransactionToResult',
     timeTransactions,
-    runRunTransactionFromPool,
+    runRunTransactionFromConnection,
   )
 where
 
 import Data.Aeson
-import Data.Pool qualified as Pool
 import Data.Time.Clock (diffUTCTime)
 import Effectful
 import Effectful.Dispatch.Dynamic
-import Hasql.Connection
 import Noided.Sql.Internal.Type.SqlQuery
 import Noided.Sql.Internal.Type.TransactM
 import Noided.Web.Internal.Effect.CurrentTime
 import Noided.Web.Internal.Effect.Log
 import Noided.Web.Internal.Effect.RunTransaction
 import Noided.Web.Internal.Effect.TimeEvent
+import Noided.Web.Internal.Effect.UseConnection
 
 timeTransactions ::
   ( TimeEvent :> es,
@@ -37,19 +36,19 @@ timeTransactions ::
 timeTransactions = interpose $ \env r@(RunTransaction {}) ->
   recordEventTime "sql.transaction" (passthrough env r)
 
-runRunTransactionFromPool ::
-  ( IOE :> es,
+runRunTransactionFromConnection ::
+  ( UseConnection :> es,
+    IOE :> es,
     CurrentTime :> es,
     TimeEvent :> es,
     Log :> es
   ) =>
-  Pool.Pool Connection ->
   Eff (RunTransaction : es) a ->
   Eff es a
-runRunTransactionFromPool connPool act =
+runRunTransactionFromConnection act =
   recordEventTime "sql.checkout" $
-    withSeqEffToIO $ \liftE ->
-      Pool.withResource connPool $ \connection -> do
+    useConnection $ \connection ->
+      withSeqEffToIO $ \liftE -> do
         let sc = statementCallback $ \query useQuery -> do
               beforeT <- liftIO $ liftE getCurrentTime
               res <- useQuery query
