@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Select.AggregateQuerySpec (spec) where
 
@@ -27,10 +27,15 @@ import Test.Hspec
 import Test.Hspec.Golden
 
 data Table1 f = Table1 {t1Id :: f (NonNullT Int64), t1Val :: f (NonNullT Int64)} deriving (Generic)
+
 instance FFunctor Table1 where ffmap = ffmapDefault
+
 instance FFoldable Table1 where ffoldMap = ffoldMapDefault
+
 instance FTraversable Table1 where ftraverse = gftraverse
+
 instance FZip Table1 where fzipWith = gfzipWith
+
 instance NamedColumns Table1 where
   namedColumns = Table1 "id" "val"
 
@@ -41,9 +46,13 @@ data Stats f = Stats
   deriving (Generic)
 
 instance FFunctor Stats where ffmap = ffmapDefault
+
 instance FFoldable Stats where ffoldMap = ffoldMapDefault
+
 instance FTraversable Stats where ftraverse = gftraverse
+
 instance FZip Stats where fzipWith = gfzipWith
+
 instance NamedColumns Stats where
   namedColumns = Stats "count" "sum"
 
@@ -54,9 +63,13 @@ data GroupedStats f = GroupedStats
   deriving (Generic)
 
 instance FFunctor GroupedStats where ffmap = ffmapDefault
+
 instance FFoldable GroupedStats where ffoldMap = ffoldMapDefault
+
 instance FTraversable GroupedStats where ftraverse = gftraverse
+
 instance FZip GroupedStats where fzipWith = gfzipWith
+
 instance NamedColumns GroupedStats where
   namedColumns = GroupedStats "id" "count"
 
@@ -67,9 +80,13 @@ data ArrayStats f = ArrayStats
   deriving (Generic)
 
 instance FFunctor ArrayStats where ffmap = ffmapDefault
+
 instance FFoldable ArrayStats where ffoldMap = ffoldMapDefault
+
 instance FTraversable ArrayStats where ftraverse = gftraverse
+
 instance FZip ArrayStats where fzipWith = gfzipWith
+
 instance NamedColumns ArrayStats where
   namedColumns = ArrayStats "id" "vals"
 
