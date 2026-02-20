@@ -67,7 +67,8 @@ common deps
         noided-row,
         optics-core,
         mtl,
-        vector
+        vector,
+        template-haskell
 
 common extensions
     default-extensions:
@@ -126,6 +127,8 @@ library
       Noided.Sql.Internal.Class.SelectList
       Noided.Sql.Internal.Class.UnwrapSelectList
 
+      Noided.Sql.Internal.TH.HKDTable
+
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
 
@@ -163,6 +166,8 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Delete.DeleteSpec
       Noided.Sql.Internal.Select.CombineSpec
       Noided.Sql.Internal.Merge.MergeSpec
+
+      Noided.Sql.Internal.TH.HKDTableSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
