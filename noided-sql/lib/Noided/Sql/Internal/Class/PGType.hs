@@ -9,27 +9,27 @@ import Data.Text (Text)
 import Data.Time
 import Data.UUID (UUID)
 import Noided.Sql.Internal.Type.PGArray
+import Noided.Sql.Internal.Type.SqlType
 
 -- | Types that map to a particular Postgres type.
 class PGType t where
   pgTypeName :: proxy t -> Text
 
--- | Helper: provides the type of an element in a PG array.
--- We use overlapping instances to get better resolution here.
-class PGArrayElement t where
+-- | Helper: provides the name for an array element.
+class PGArrayElement (t :: SqlType) where
   pgArrayElementName :: proxy t -> Text
 
-instance (PGType t) => PGArrayElement t where
-  pgArrayElementName = pgTypeName
+instance (PGType pgt) => PGArrayElement (SqlT n pgt) where
+  pgArrayElementName _ = pgTypeName (Proxy @pgt)
 
-instance {-# OVERLAPPING #-} (PGArrayElement t) => PGArrayElement (PGArray t) where
-  pgArrayElementName _ = pgArrayElementName (Proxy @t)
+instance (PGArrayElement pgt) => PGArrayElement (SqlT n (PGArray pgt)) where
+  pgArrayElementName _ = pgArrayElementName (Proxy @pgt) <> "[]"
 
 instance
-  (PGArrayElement elm) =>
-  PGType (PGArray elm)
+  (PGArrayElement sqlT) =>
+  PGType (PGArray sqlT)
   where
-  pgTypeName _ = pgArrayElementName (Proxy @elm) <> "[]"
+  pgTypeName _ = pgArrayElementName (Proxy @sqlT) <> "[]"
 
 instance PGType Scientific where
   pgTypeName _ = "numeric"

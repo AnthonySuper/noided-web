@@ -8,6 +8,7 @@ import Data.Kind (Type)
 import GHC.Generics
 import GHC.Records
 import Noided.Row
+import Noided.Sql.Internal.Class.AsHaskellValue
 import Noided.Sql.Internal.Type.HaskellT
 import Noided.Sql.Internal.Type.Tie
 

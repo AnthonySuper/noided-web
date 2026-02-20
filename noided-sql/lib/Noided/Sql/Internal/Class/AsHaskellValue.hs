@@ -10,13 +10,32 @@ import Data.Text (Text)
 import Data.Time
 import Data.Typeable
 import Data.UUID (UUID)
+import Data.Vector (Vector)
 import Hasql.Decoders qualified as Dec
+import Noided.Sql.Internal.Type.Nullability
+import Noided.Sql.Internal.Type.PGArray
+import Noided.Sql.Internal.Type.SqlType
 
 type AsHaskellValue :: Type -> Constraint
 class (Typeable pgType, Typeable (HaskellTypeOf pgType)) => AsHaskellValue pgType where
   type HaskellTypeOf pgType :: Type
   type HaskellTypeOf pgType = pgType
   decodeHaskellValue :: proxy pgType -> Dec.Value (HaskellTypeOf pgType)
+
+type HaskellValueType :: SqlType -> Type
+type family HaskellValueType sqlT where
+  HaskellValueType (SqlT Nullable pgType) = Maybe (HaskellTypeOf pgType)
+  HaskellValueType (SqlT NonNull pgType) = HaskellTypeOf pgType
+
+instance
+  (KnownNullability n, AsHaskellValue pgt, Typeable (HaskellValueType (SqlT n pgt))) =>
+  AsHaskellValue (PGArray (SqlT n pgt))
+  where
+  type HaskellTypeOf (PGArray (SqlT n pgt)) = Vector (HaskellValueType (SqlT n pgt))
+  decodeHaskellValue _ =
+    case nullabilityS @n of
+      NonNullSing -> Dec.vectorArray (Dec.nonNullable (decodeHaskellValue (Proxy @pgt)))
+      NullableSing -> Dec.vectorArray (Dec.nullable (decodeHaskellValue (Proxy @pgt)))
 
 instance AsHaskellValue Scientific where
   decodeHaskellValue _ = Dec.numeric

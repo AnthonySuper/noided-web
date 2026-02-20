@@ -1,10 +1,11 @@
 module Noided.Sql.Internal.Type.Nullability where
 
 import GHC.Generics
+import Data.Typeable
 
 -- | Data kind used to determine the nullability of an SQL value.
 data Nullability = NonNull | Nullable
-  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic, Typeable)
 
 -- | Singleton type for nullabililty
 data NullabilitySing nullability where
@@ -12,7 +13,7 @@ data NullabilitySing nullability where
   NullableSing :: NullabilitySing Nullable
 
 -- | Singleton class for nullability
-class KnownNullability nullability where
+class (Typeable nullability) => KnownNullability nullability where
   nullabilityS :: NullabilitySing nullability
 
 instance KnownNullability NonNull where
