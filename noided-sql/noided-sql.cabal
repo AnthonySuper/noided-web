@@ -84,6 +84,7 @@ library
     -- Modules exported by the library.
     exposed-modules:
       Noided.Sql.Internal.Type.Columnar
+      Noided.Sql.Internal.Type.ViewColumnar
       Noided.Sql.Internal.Type.AggregateExpr
       Noided.Sql.Internal.Type.ColumnName
       Noided.Sql.Internal.Type.ColumnType
@@ -98,6 +99,7 @@ library
       Noided.Sql.Internal.Type.SqlType
       Noided.Sql.Internal.Type.Syntax
       Noided.Sql.Internal.Type.TableDefinition
+      Noided.Sql.Internal.Type.ViewDefinition
       Noided.Sql.Internal.Type.TableName
       Noided.Sql.Internal.Type.Tie
       Noided.Sql.Internal.Type.TransactionResult
@@ -134,6 +136,7 @@ library
       Noided.Sql.Internal.Class.UnwrapSelectList
 
       Noided.Sql.Internal.TH.HKDTable
+      Noided.Sql.Internal.TH.HKDView
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
@@ -141,6 +144,7 @@ library
       Noided.Sql.Internal.SqlExpr.Text
 
       Noided.Sql.Internal.HKDTableDef
+      Noided.Sql.Internal.HKDViewDef
 
       Noided.Sql
       Noided.Sql.TransactM
@@ -190,8 +194,10 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Merge.MergeSpec
 
       Noided.Sql.Internal.HKDTableDefSpec
+      Noided.Sql.Internal.HKDViewDefSpec
 
       Noided.Sql.Internal.TH.HKDTableSpec
+      Noided.Sql.Internal.TH.HKDViewSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
