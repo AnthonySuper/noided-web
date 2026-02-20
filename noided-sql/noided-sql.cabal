@@ -138,6 +138,7 @@ library
       Noided.Sql.Internal.SqlExpr.Numeric
 
       Noided.Sql.Select
+      Noided.Sql.SqlExpr
 
     -- Modules included in this library but not exported.
     -- other-modules:
