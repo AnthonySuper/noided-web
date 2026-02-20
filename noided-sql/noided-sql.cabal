@@ -103,6 +103,7 @@ library
       Noided.Sql.Internal.Type.TransactionResult
       Noided.Sql.Internal.Type.TransactM
       Noided.Sql.Internal.Type.WindowFrame
+      Noided.Sql.Internal.Type.PGArray
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
@@ -136,8 +137,19 @@ library
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
       Noided.Sql.Internal.SqlExpr.Numeric
+      Noided.Sql.Internal.SqlExpr.Text
 
+      Noided.Sql.Internal.HKDTableDef
+
+      Noided.Sql
+      Noided.Sql.TransactM
       Noided.Sql.Select
+      Noided.Sql.Insert
+      Noided.Sql.Update
+      Noided.Sql.Delete
+      Noided.Sql.Merge
+      Noided.Sql.Define
+      Noided.Sql.SqlExpr
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -167,12 +179,15 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
       Noided.Sql.Internal.SqlExpr.NumericSpec
+      Noided.Sql.Internal.SqlExpr.TextSpec
       Noided.Sql.Internal.Insert.InsertSpec
       Noided.Sql.Internal.Update.SetsSpec
       Noided.Sql.Internal.Update.UpdateSpec
       Noided.Sql.Internal.Delete.DeleteSpec
       Noided.Sql.Internal.Select.CombineSpec
       Noided.Sql.Internal.Merge.MergeSpec
+
+      Noided.Sql.Internal.HKDTableDefSpec
 
       Noided.Sql.Internal.TH.HKDTableSpec
 

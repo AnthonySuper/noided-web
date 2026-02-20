@@ -1,0 +1,1 @@
+SELECT "subq"."id" AS "id", ARRAY_AGG("subq"."val") AS "vals" FROM (SELECT id AS "id", val AS "val") AS "subq" GROUP BY "subq"."id"

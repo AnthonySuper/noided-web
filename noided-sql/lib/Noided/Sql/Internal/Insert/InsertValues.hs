@@ -6,9 +6,13 @@
 
 module Noided.Sql.Internal.Insert.InsertValues
   ( InsertValues (..),
+    defaultValues_,
+    values_,
+    insertSelect_,
     writeInsertValues,
     InsertForTable,
     writeColumnListForInsert,
+    MapSqlTypeToMutationType,
   )
 where
 
@@ -50,6 +54,27 @@ data InsertValues (insertedLabels :: [RowLabel MutationType]) where
     ) =>
     query ->
     InsertValues labels
+
+-- | Use the @DEFAULT VALUES@ clause.
+defaultValues_ :: InsertValues '[]
+defaultValues_ = DefaultValues
+
+-- | Use a list of values to insert.
+values_ ::
+  (labels ~ x ': xs) =>
+  NE.NonEmpty (WrappedRow labels MutationExpr) ->
+  InsertValues labels
+values_ = ValuesList
+
+-- | Insert from the results of a SELECT query.
+insertSelect_ ::
+  ( SelectQuery query,
+    QuerySelectList query ~ WrappedRow selectLabels,
+    labels ~ MapSqlTypeToMutationType selectLabels
+  ) =>
+  query ->
+  InsertValues labels
+insertSelect_ = InsertSelect
 
 writeInsertValues :: InsertValues values -> QueryWriter ()
 writeInsertValues = \case

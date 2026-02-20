@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Select.AggregateQuerySpec (spec) where
 
@@ -17,6 +17,7 @@ import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.SelectM
 import Noided.Sql.Internal.SqlExpr.Bool ((==.))
 import Noided.Sql.Internal.Type.AggregateExpr
+import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
@@ -26,10 +27,15 @@ import Test.Hspec
 import Test.Hspec.Golden
 
 data Table1 f = Table1 {t1Id :: f (NonNullT Int64), t1Val :: f (NonNullT Int64)} deriving (Generic)
+
 instance FFunctor Table1 where ffmap = ffmapDefault
+
 instance FFoldable Table1 where ffoldMap = ffoldMapDefault
+
 instance FTraversable Table1 where ftraverse = gftraverse
+
 instance FZip Table1 where fzipWith = gfzipWith
+
 instance NamedColumns Table1 where
   namedColumns = Table1 "id" "val"
 
@@ -40,9 +46,13 @@ data Stats f = Stats
   deriving (Generic)
 
 instance FFunctor Stats where ffmap = ffmapDefault
+
 instance FFoldable Stats where ffoldMap = ffoldMapDefault
+
 instance FTraversable Stats where ftraverse = gftraverse
+
 instance FZip Stats where fzipWith = gfzipWith
+
 instance NamedColumns Stats where
   namedColumns = Stats "count" "sum"
 
@@ -53,11 +63,32 @@ data GroupedStats f = GroupedStats
   deriving (Generic)
 
 instance FFunctor GroupedStats where ffmap = ffmapDefault
+
 instance FFoldable GroupedStats where ffoldMap = ffoldMapDefault
+
 instance FTraversable GroupedStats where ftraverse = gftraverse
+
 instance FZip GroupedStats where fzipWith = gfzipWith
+
 instance NamedColumns GroupedStats where
   namedColumns = GroupedStats "id" "count"
+
+data ArrayStats f = ArrayStats
+  { asId :: f (NonNullT Int64),
+    asVals :: f (NullableT (PGArray (NonNullT Int64)))
+  }
+  deriving (Generic)
+
+instance FFunctor ArrayStats where ffmap = ffmapDefault
+
+instance FFoldable ArrayStats where ffoldMap = ffoldMapDefault
+
+instance FTraversable ArrayStats where ftraverse = gftraverse
+
+instance FZip ArrayStats where fzipWith = gfzipWith
+
+instance NamedColumns ArrayStats where
+  namedColumns = ArrayStats "id" "vals"
 
 renderAggregateGolden ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
@@ -92,4 +123,10 @@ spec = do
         (\t1 -> Element t1.t1Id)
         (\(_ :--: t1Agg) -> agg (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
         (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg $ count_ t1Agg.t1Val))
+        baseQuery
+
+    renderAggregateGolden "Group by id and array_agg vals" $
+      groupBy_
+        (\t1 -> Element t1.t1Id)
+        (\(Element idAgg :--: t1Agg) -> ArrayStats (coerce idAgg) (agg $ arrayAgg_ t1Agg.t1Val))
         baseQuery

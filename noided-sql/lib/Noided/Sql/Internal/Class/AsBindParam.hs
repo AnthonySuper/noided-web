@@ -1,18 +1,23 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Noided.Sql.Internal.Class.AsBindParam where
 
 import Data.Functor.Contravariant
 import Data.Int
 import Data.Kind
-import Data.Text (Text, pack)
+import Data.Text (Text, intercalate, pack)
 import Data.Time
 import Data.Typeable
 import Data.UUID (UUID)
+import Data.Vector (Vector)
+import Data.Vector qualified as V
 import Hasql.Encoders qualified as Enc
 import Noided.Sql.Internal.Class.PGType
 import Noided.Sql.Internal.Type.Nullability
+import Noided.Sql.Internal.Type.PGArray
+import Noided.Sql.Internal.Type.SqlType
 
 type AsBindParam :: Type -> Constraint
 
@@ -49,6 +54,18 @@ instance (AsBindParam t, BoundNullability t ~ NonNull) => AsBindParam (Maybe t) 
 
 instance AsBindParam Text where
   bindParamEncoder = EncodeNonNull Enc.text
+
+instance
+  (AsBindParam elm, PGArrayElement (SqlT (BoundNullability elm) (BoundType elm))) =>
+  AsBindParam (Vector elm)
+  where
+  type BoundType (Vector elm) = PGArray (SqlT (BoundNullability elm) (BoundType elm))
+  type BoundNullability (Vector elm) = NonNull
+  bindParamEncoder =
+    case bindParamEncoder @elm of
+      EncodeNonNull v -> EncodeNonNull $ Enc.array $ Enc.dimension V.foldl (Enc.element (Enc.nonNullable v))
+      EncodeNullable v -> EncodeNonNull $ Enc.array $ Enc.dimension V.foldl (Enc.element (Enc.nullable v))
+  inspectBindParam v = "ARRAY[" <> intercalate ", " (V.toList (V.map inspectBindParam v)) <> "]"
 
 -- | Strings encode to the 'Text' type.
 instance AsBindParam String where

@@ -1,9 +1,18 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Noided.Sql.Internal.Class.DecodeSelectList where
 
 import Data.HKD
+import Data.Kind (Type)
 import GHC.Generics
 import Noided.Row
 import Noided.Sql.Internal.Class.AsHaskellValue
@@ -52,8 +61,26 @@ instance (GDecodeSelectList l, GDecodeSelectList r) => GDecodeSelectList (l :*: 
 instance GDecodeSelectList U1 where
   genericRowDecoder = U1
 
-instance (KnownNullability n, AsHaskellValue pg) => GDecodeSelectList (K1 R (PGDecoder (SqlT n pg))) where
-  genericRowDecoder = K1 DecodePG
+type family IsPGDecoder (t :: Type) :: Bool where
+  IsPGDecoder (PGDecoder _) = 'True
+  IsPGDecoder _ = 'False
+
+class GDecodeSelectListField (isPGD :: Bool) resultType where
+  genericRowDecoderField :: resultType
+
+instance (KnownNullability n, AsHaskellValue pg, resultType ~ PGDecoder (SqlT n pg)) => GDecodeSelectListField 'True resultType where
+  genericRowDecoderField = DecodePG
+
+instance (DecodeSelectList subHKD, resultType ~ subHKD PGDecoder) => GDecodeSelectListField 'False resultType where
+  genericRowDecoderField = selectListDecoder
+
+instance
+  ( isPGD ~ IsPGDecoder resultType,
+    GDecodeSelectListField isPGD resultType
+  ) =>
+  GDecodeSelectList (K1 R resultType)
+  where
+  genericRowDecoder = K1 (genericRowDecoderField @isPGD)
 
 gselectListDecoder :: (Generic (hkd PGDecoder), GDecodeSelectList (Rep (hkd PGDecoder))) => hkd PGDecoder
 gselectListDecoder = to genericRowDecoder

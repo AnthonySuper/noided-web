@@ -1,8 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Noided.Sql.Internal.Select.CombineSpec (spec) where
 
@@ -27,9 +27,13 @@ data TestTable f = TestTable {col1 :: f (NonNullT Int64), col2 :: f (NonNullT In
   deriving (Generic)
 
 instance FFunctor TestTable where ffmap = ffmapDefault
+
 instance FFoldable TestTable where ffoldMap = ffoldMapDefault
+
 instance FTraversable TestTable where ftraverse = gftraverse
+
 instance FZip TestTable where fzipWith = gfzipWith
+
 instance NamedColumns TestTable where namedColumns = TestTable "col1" "col2"
 
 -- Helper query
@@ -56,22 +60,22 @@ renderGolden description query =
 spec :: Spec
 spec = describe "CombinedQueries" $ do
   renderGolden "union" $
-    QueryCombineUnion (QueryCombineOf (CombineBase q1)) <>
-    QueryCombineUnion (QueryCombineOf (CombineBase q2))
+    QueryCombineUnion (QueryCombineOf (CombineBase q1))
+      <> QueryCombineUnion (QueryCombineOf (CombineBase q2))
 
   renderGolden "union-all" $
-    QueryCombineUnionAll (QueryCombineOf (CombineBase q1)) <>
-    QueryCombineUnionAll (QueryCombineOf (CombineBase q2))
+    QueryCombineUnionAll (QueryCombineOf (CombineBase q1))
+      <> QueryCombineUnionAll (QueryCombineOf (CombineBase q2))
 
   renderGolden "intersect" $
-    QueryCombineIntersect (QueryCombineOf (CombineBase q1)) <>
-    QueryCombineIntersect (QueryCombineOf (CombineBase q2))
+    QueryCombineIntersect (QueryCombineOf (CombineBase q1))
+      <> QueryCombineIntersect (QueryCombineOf (CombineBase q2))
 
   renderGolden "except" $
-    QueryCombineExcept (QueryCombineOf (CombineBase q1)) <>
-    QueryCombineExcept (QueryCombineOf (CombineBase q2))
+    QueryCombineExcept (QueryCombineOf (CombineBase q1))
+      <> QueryCombineExcept (QueryCombineOf (CombineBase q2))
 
   renderGolden "chaining" $
-    QueryCombineUnion (QueryCombineOf (CombineBase q1)) <>
-    QueryCombineUnion (QueryCombineOf (CombineBase q2)) <>
-    QueryCombineUnion (QueryCombineOf (CombineBase q3))
+    QueryCombineUnion (QueryCombineOf (CombineBase q1))
+      <> QueryCombineUnion (QueryCombineOf (CombineBase q2))
+      <> QueryCombineUnion (QueryCombineOf (CombineBase q3))
