@@ -14,6 +14,11 @@ module Noided.Sql.Select
     on_',
     (&),
 
+    -- ** Set-Returning Functions
+    PGSeries,
+    generateSeries,
+    generateSeriesStep,
+
     -- ** Combining Queries (Union/Intersect/Except)
     CombineType (..),
     CombinedQueries (..),
@@ -49,3 +54,4 @@ import Noided.Sql.Internal.Select.AggregateQuery
 import Noided.Sql.Internal.Select.Combine
 import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.SelectM
+import Noided.Sql.Internal.Type.PGSeries
