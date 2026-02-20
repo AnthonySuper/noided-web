@@ -138,6 +138,7 @@ library
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
       Noided.Sql.Internal.SqlExpr.Numeric
+      Noided.Sql.Internal.SqlExpr.Text
 
       Noided.Sql.Select
       Noided.Sql.SqlExpr
@@ -170,6 +171,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
       Noided.Sql.Internal.SqlExpr.NumericSpec
+      Noided.Sql.Internal.SqlExpr.TextSpec
       Noided.Sql.Internal.Insert.InsertSpec
       Noided.Sql.Internal.Update.SetsSpec
       Noided.Sql.Internal.Update.UpdateSpec
