@@ -37,7 +37,10 @@ module Noided.Sql.Select
     combiningExceptAll,
 
     -- ** Aggregate Queries
-    AggregateQuery (..),
+    AggregateQuery,
+    aggregate_,
+    groupBy_,
+    groupByHaving_,
   )
 where
 

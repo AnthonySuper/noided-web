@@ -74,23 +74,22 @@ spec :: Spec
 spec = do
   describe "AggregateEntireQuery" $ do
     renderAggregateGolden "Simple count and sum over a table" $
-      AggregateEntireQuery
-        (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
+      aggregate_
         (\(Table1 _ val) -> Stats (agg $ count_ val) (agg $ sum_ val))
+        (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
 
   describe "AggregateGroupBy" $ do
     let baseQuery = addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val"))
 
     renderAggregateGolden "Group by id and count vals" $
-      AggregateGroupBy
-        baseQuery
+      groupBy_
         (\t1 -> Element t1.t1Id)
-        Nothing
         (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg $ count_ t1Agg.t1Val))
+        baseQuery
 
     renderAggregateGolden "Group by id with HAVING clause" $
-      AggregateGroupBy
-        baseQuery
+      groupByHaving_
         (\t1 -> Element t1.t1Id)
-        (Just $ \(_ :--: t1Agg) -> agg (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
+        (\(_ :--: t1Agg) -> agg (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
         (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg $ count_ t1Agg.t1Val))
+        baseQuery

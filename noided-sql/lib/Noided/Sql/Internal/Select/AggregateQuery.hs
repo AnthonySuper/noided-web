@@ -48,6 +48,33 @@ instance Functor AggregateQuery where
   fmap f (AggregateGroupBy q gb h p) = AggregateGroupBy q gb h (f . p)
   fmap f (AggregateEntireQuery q p) = AggregateEntireQuery q (f . p)
 
+-- | Aggregate over the entire result set of a query.
+aggregate_ ::
+  (FTraversable sl) =>
+  (AggregateSetRow sl -> res) ->
+  SelectM (QueriedRow sl) ->
+  AggregateQuery res
+aggregate_ p q = AggregateEntireQuery q p
+
+-- | Group a query by a set of columns.
+groupBy_ ::
+  (FTraversable sl, FTraversable gb) =>
+  (QueriedRow sl -> QueriedRow gb) ->
+  (AggregatedRow gb :--: AggregateSetRow sl -> res) ->
+  SelectM (QueriedRow sl) ->
+  AggregateQuery res
+groupBy_ gb p q = AggregateGroupBy q gb Nothing p
+
+-- | Group a query by a set of columns, with a HAVING clause.
+groupByHaving_ ::
+  (FTraversable sl, FTraversable gb) =>
+  (QueriedRow sl -> QueriedRow gb) ->
+  (AggregatedRow gb :--: AggregateSetRow sl -> SqlExpr Aggregated (SqlT n Bool)) ->
+  (AggregatedRow gb :--: AggregateSetRow sl -> res) ->
+  SelectM (QueriedRow sl) ->
+  AggregateQuery res
+groupByHaving_ gb h p q = AggregateGroupBy q gb (Just h) p
+
 renderAggregateQuery ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
   AggregateQuery (sl (SqlExpr Aggregated)) ->
