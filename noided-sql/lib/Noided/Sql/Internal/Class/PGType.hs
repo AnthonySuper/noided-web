@@ -3,6 +3,7 @@
 module Noided.Sql.Internal.Class.PGType where
 
 import Data.Int
+import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Data.Time
 import Data.UUID (UUID)
@@ -10,6 +11,9 @@ import Data.UUID (UUID)
 -- | Types that map to a particular Postgres type.
 class PGType t where
   pgTypeName :: proxy t -> Text
+
+instance PGType Scientific where
+  pgTypeName _ = "numeric"
 
 instance PGType Bool where
   pgTypeName _ = "bool"

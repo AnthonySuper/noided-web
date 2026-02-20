@@ -5,6 +5,7 @@ module Noided.Sql.Internal.Class.AsHaskellValue where
 
 import Data.Int
 import Data.Kind
+import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Data.Time
 import Data.Typeable
@@ -16,6 +17,9 @@ class (Typeable pgType, Typeable (HaskellTypeOf pgType)) => AsHaskellValue pgTyp
   type HaskellTypeOf pgType :: Type
   type HaskellTypeOf pgType = pgType
   decodeHaskellValue :: proxy pgType -> Dec.Value (HaskellTypeOf pgType)
+
+instance AsHaskellValue Scientific where
+  decodeHaskellValue _ = Dec.numeric
 
 instance AsHaskellValue Bool where
   decodeHaskellValue _ = Dec.bool

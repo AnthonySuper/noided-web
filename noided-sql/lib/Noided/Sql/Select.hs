@@ -35,10 +35,17 @@ module Noided.Sql.Select
     combiningExcept,
     QueryCombineExceptAll,
     combiningExceptAll,
+
+    -- ** Aggregate Queries
+    AggregateQuery,
+    aggregate_,
+    groupBy_,
+    groupByHaving_,
   )
 where
 
 import Data.Function ((&))
+import Noided.Sql.Internal.Select.AggregateQuery
 import Noided.Sql.Internal.Select.Combine
 import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.SelectM

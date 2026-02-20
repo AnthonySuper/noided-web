@@ -1,0 +1,1 @@
+SELECT COUNT("subq"."val") AS "count", SUM("subq"."val") AS "sum" FROM (SELECT id AS "id", val AS "val") AS "subq"

@@ -68,7 +68,8 @@ common deps
         optics-core,
         mtl,
         vector,
-        template-haskell
+        template-haskell,
+        scientific
 
 common extensions
     default-extensions:
@@ -83,6 +84,7 @@ library
     -- Modules exported by the library.
     exposed-modules:
       Noided.Sql.Internal.Type.Columnar
+      Noided.Sql.Internal.Type.AggregateExpr
       Noided.Sql.Internal.Type.ColumnName
       Noided.Sql.Internal.Type.ColumnType
       Noided.Sql.Internal.Type.HaskellT
@@ -105,6 +107,7 @@ library
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
       Noided.Sql.Internal.Select.Combine
+      Noided.Sql.Internal.Select.AggregateQuery
 
       Noided.Sql.Internal.Insert.Insert
       Noided.Sql.Internal.Insert.InsertValues
@@ -125,12 +128,14 @@ library
       Noided.Sql.Internal.Class.Query
       Noided.Sql.Internal.Class.RangeOffset
       Noided.Sql.Internal.Class.SelectList
+      Noided.Sql.Internal.Class.SqlNumeric
       Noided.Sql.Internal.Class.UnwrapSelectList
 
       Noided.Sql.Internal.TH.HKDTable
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
+      Noided.Sql.Internal.SqlExpr.Numeric
 
       Noided.Sql.Select
 
@@ -159,7 +164,9 @@ test-suite noided-sql-test
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Select.SelectMSpec
+      Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
+      Noided.Sql.Internal.SqlExpr.NumericSpec
       Noided.Sql.Internal.Insert.InsertSpec
       Noided.Sql.Internal.Update.SetsSpec
       Noided.Sql.Internal.Update.UpdateSpec
