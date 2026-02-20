@@ -6,6 +6,7 @@
 module Noided.Sql.Internal.Merge.Merge where
 
 import Data.Foldable (for_)
+import Data.List.NonEmpty (NonEmpty)
 import Noided.Row
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.FromItem
@@ -60,7 +61,7 @@ data MergeQuery returning where
     TableDefinition targetCols targetSelectList ->
     source ->
     (QueriedRow targetSelectList -> QueriedRow (FromItemSelectList source) -> SqlExpr NormalQuery (SqlT n Bool)) ->
-    [MergeClause targetCols targetSelectList (FromItemSelectList source)] ->
+    NonEmpty (MergeClause targetCols targetSelectList (FromItemSelectList source)) ->
     (QueriedRow targetSelectList -> returning) ->
     MergeQuery returning
 
@@ -73,7 +74,7 @@ mergeReturning ::
   TableDefinition targetCols targetSelectList ->
   source ->
   (QueriedRow targetSelectList -> QueriedRow (FromItemSelectList source) -> SqlExpr NormalQuery (SqlT n Bool)) ->
-  [MergeClause targetCols targetSelectList (FromItemSelectList source)] ->
+  NonEmpty (MergeClause targetCols targetSelectList (FromItemSelectList source)) ->
   (QueriedRow targetSelectList -> returning) ->
   MergeQuery returning
 mergeReturning = Merge
@@ -84,7 +85,7 @@ mergeReturningAll ::
   TableDefinition targetCols targetSelectList ->
   source ->
   (QueriedRow targetSelectList -> QueriedRow (FromItemSelectList source) -> SqlExpr NormalQuery (SqlT n Bool)) ->
-  [MergeClause targetCols targetSelectList (FromItemSelectList source)] ->
+  NonEmpty (MergeClause targetCols targetSelectList (FromItemSelectList source)) ->
   MergeQuery (QueriedRow targetSelectList)
 mergeReturningAll td src onCond clauses = Merge td src onCond clauses id
 

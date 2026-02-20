@@ -84,34 +84,33 @@ spec = describe "MergeQuery" $ do
   renderGolden "merge-matched-update-not-matched-insert" $
     mergeReturningAll userTable (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      [ whenMatched_ $ MergeUpdate $ \_ s ->
-          #name |= MutateVal s.name
-      , whenNotMatched_ $ MergeInsert $ \_ s ->
-          (ValuesList $
-            NE.fromList
-              [ MutateVal s.name
-                :::% MutateVal s.email
-                :::% MutateVal s.score
-                :::% EmptyWrappedRow
-              ] :: InsertValues NameEmailScoreInsertRow)
-      ]
+      ( whenMatched_ (MergeUpdate $ \_ s -> #name |= MutateVal s.name)
+        NE.:| [ whenNotMatched_ $ MergeInsert $ \_ s ->
+                  (ValuesList $
+                    NE.fromList
+                      [ MutateVal s.name
+                        :::% MutateVal s.email
+                        :::% MutateVal s.score
+                        :::% EmptyWrappedRow
+                      ] :: InsertValues NameEmailScoreInsertRow)
+              ]
+      )
 
   renderGolden "merge-matched-delete" $
     mergeReturningAll userTable (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      [ whenMatched_ MergeDelete ]
+      (NE.singleton $ whenMatched_ MergeDelete)
 
   renderGolden "merge-do-nothing" $
     mergeReturning userTable (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      [ whenMatched_ MergeDoNothing ]
+      (NE.singleton $ whenMatched_ MergeDoNothing)
       (\r -> r.id :::% EmptyWrappedRow :: WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "merge-with-extra-condition" $
     mergeReturning userTable (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      [ andMergeCondition_ (\t _ -> t.score >. bindParam @Int64 100) $
-          whenMatched_ MergeDelete
-      , whenNotMatchedBySource_ MergeDelete
-      ]
+      ( andMergeCondition_ (\t _ -> t.score >. bindParam @Int64 100) (whenMatched_ MergeDelete)
+        NE.:| [ whenNotMatchedBySource_ MergeDelete ]
+      )
       (\r -> r.id :::% EmptyWrappedRow :: WrappedRow IdRow (SqlExpr NormalQuery))
