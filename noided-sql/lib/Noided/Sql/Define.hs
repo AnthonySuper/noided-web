@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 -- |
 -- Module: Noided.Sql.Define
 -- Description: Tools for defining SQL tables using HKD structures.

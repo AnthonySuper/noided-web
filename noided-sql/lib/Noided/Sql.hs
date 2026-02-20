@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 -- |
 -- Module: Noided.Sql
 -- Description: The noided-sql library for type-safe SQL queries.
