@@ -83,6 +83,7 @@ library
     -- Modules exported by the library.
     exposed-modules:
       Noided.Sql.Internal.Type.Columnar
+      Noided.Sql.Internal.Type.AggregateExpr
       Noided.Sql.Internal.Type.ColumnName
       Noided.Sql.Internal.Type.ColumnType
       Noided.Sql.Internal.Type.HaskellT

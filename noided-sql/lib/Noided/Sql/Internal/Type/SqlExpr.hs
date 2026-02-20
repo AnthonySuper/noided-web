@@ -15,6 +15,8 @@ data SqlScope
     Windowed
   | -- | Query values that are in an aggregate set (and must be used with an aggregate function).
     AggregateSet
+  | -- | Query values that are aggregated (use aggregate functions)
+    Aggregated
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
 
 -- | An SQL expression with some given type.
