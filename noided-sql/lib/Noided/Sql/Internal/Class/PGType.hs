@@ -3,14 +3,33 @@
 module Noided.Sql.Internal.Class.PGType where
 
 import Data.Int
+import Data.Proxy
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Data.Time
 import Data.UUID (UUID)
+import Noided.Sql.Internal.Type.PGArray
 
 -- | Types that map to a particular Postgres type.
 class PGType t where
   pgTypeName :: proxy t -> Text
+
+-- | Helper: provides the type of an element in a PG array.
+-- We use overlapping instances to get better resolution here.
+class PGArrayElement t where
+  pgArrayElementName :: proxy t -> Text
+
+instance (PGType t) => PGArrayElement t where
+  pgArrayElementName = pgTypeName
+
+instance {-# OVERLAPPING #-} (PGArrayElement t) => PGArrayElement (PGArray t) where
+  pgArrayElementName _ = pgArrayElementName (Proxy @t)
+
+instance
+  (PGArrayElement elm) =>
+  PGType (PGArray elm)
+  where
+  pgTypeName _ = pgArrayElementName (Proxy @elm) <> "[]"
 
 instance PGType Scientific where
   pgTypeName _ = "numeric"

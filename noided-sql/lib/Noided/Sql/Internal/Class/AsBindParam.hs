@@ -10,9 +10,11 @@ import Data.Text (Text, pack)
 import Data.Time
 import Data.Typeable
 import Data.UUID (UUID)
+import Data.Vector (Vector)
 import Hasql.Encoders qualified as Enc
 import Noided.Sql.Internal.Class.PGType
 import Noided.Sql.Internal.Type.Nullability
+import Noided.Sql.Internal.Type.PGArray
 
 type AsBindParam :: Type -> Constraint
 
@@ -49,6 +51,15 @@ instance (AsBindParam t, BoundNullability t ~ NonNull) => AsBindParam (Maybe t) 
 
 instance AsBindParam Text where
   bindParamEncoder = EncodeNonNull Enc.text
+
+instance
+  (PGArrayElement elm, Typeable elm, PGType elm) =>
+  AsBindParam (Vector elm)
+  where
+  type BoundType (Vector elm) = PGArray elm
+  type BoundNullability (Vector elm) = NonNull
+  bindParamEncoder = undefined
+  inspectBindParam = undefined
 
 -- | Strings encode to the 'Text' type.
 instance AsBindParam String where

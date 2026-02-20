@@ -69,7 +69,8 @@ common deps
         mtl,
         vector,
         template-haskell,
-        scientific
+        scientific,
+        vector
 
 common extensions
     default-extensions:
@@ -103,6 +104,7 @@ library
       Noided.Sql.Internal.Type.TransactionResult
       Noided.Sql.Internal.Type.TransactM
       Noided.Sql.Internal.Type.WindowFrame
+      Noided.Sql.Internal.Type.PGArray
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
