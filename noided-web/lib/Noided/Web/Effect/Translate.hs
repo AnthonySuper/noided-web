@@ -4,6 +4,9 @@ module Noided.Web.Effect.Translate
   ( HasTranslations,
     withMessagesFromQueryParams,
     withMessagesFromQueryParams',
+    FetchMessagesE,
+    FetchHtmlFormattersE,
+    runFetchHtmlFormattersE,
   )
 where
 
@@ -12,6 +15,7 @@ import Data.Text
 import Effectful
 import Noided.Form
 import Noided.Translate
+import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Internal.Effect.SomeRequest
 import Noided.Web.Internal.Effect.Translate

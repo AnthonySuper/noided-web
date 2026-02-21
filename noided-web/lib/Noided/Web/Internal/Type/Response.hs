@@ -53,6 +53,12 @@ data PageResponse renderM where
     -- | The actual redirection
     PageResponse renderM
 
+respondPage :: Status -> HtmlT renderM () -> PageResponse renderM
+respondPage = RespondPage
+
+respondPage200 :: HtmlT renderM () -> PageResponse renderM
+respondPage200 = RespondPage ok200
+
 -- | Lift the monad in which rendering takes place.
 liftPageResponseRendering ::
   (Monad m, Monad n) =>
