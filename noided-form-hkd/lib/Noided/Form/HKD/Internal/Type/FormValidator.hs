@@ -9,7 +9,7 @@ import Noided.Validation
 
 type FormValidator :: (Type -> Type) -> HKDFieldType -> Type
 data FormValidator m field where
-  -- | Perform *conditional validation* by doing something before a returning a validator.
+  -- | Perform *conditional validation* by doing something before returning a validator.
   -- This is useful if you have conditional validations - the classic case here is having both a @password@ and
   -- a @confirmPassword@ field, in  which case validation of each field depends on the other value.
   --

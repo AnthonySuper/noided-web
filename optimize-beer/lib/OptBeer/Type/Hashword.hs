@@ -3,6 +3,7 @@
 
 module OptBeer.Type.Hashword where
 
+import Control.Applicative ((<|>))
 import Control.Monad.IO.Class
 import Data.Password.Bcrypt qualified as BC
 import Data.String
@@ -12,7 +13,6 @@ import GHC.Generics
 import Noided.Form
 import OptBeer.DB.Type.PasswordDigest
 import Web.HttpApiData
-import Control.Applicative ((<|>))
 
 newtype OpaquePassword = MkOpaquePassword {getOpaquePassword :: Text}
   deriving (Generic, Eq)
@@ -55,9 +55,9 @@ unsafeDoNotHashPasswords :: (Monad m) => OpaquePassword -> m Hashword
 unsafeDoNotHashPasswords = return . UnsafeHashwordNothing . getOpaquePassword
 
 -- | Hash a password using bcrypt with some params.
-hashPasswordBycrptParams :: (MonadIO f) => Int -> OpaquePassword -> f Hashword
-hashPasswordBycrptParams params = fmap HashwordBcrypt . BC.hashPasswordWithParams params . BC.mkPassword . getOpaquePassword
+hashPasswordBycryptParams :: (MonadIO f) => Int -> OpaquePassword -> f Hashword
+hashPasswordBycryptParams params = fmap HashwordBcrypt . BC.hashPasswordWithParams params . BC.mkPassword . getOpaquePassword
 
 -- | Hash a password using bcrypt, with some params.
 hashPasswordBcrypt :: (MonadIO f) => OpaquePassword -> f Hashword
-hashPasswordBcrypt = hashPasswordBycrptParams BC.defaultParams
+hashPasswordBcrypt = hashPasswordBycryptParams BC.defaultParams
