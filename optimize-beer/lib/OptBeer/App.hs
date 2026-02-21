@@ -1,10 +1,10 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.App where
+ 
+ import Network.Wai qualified as Wai
+ import Noided.Web
 
-import Effectful
-import Network.Wai qualified as Wai
-import Noided.Web
 import Noided.Web.Internal.Type.Application
 import OptBeer.Action
 

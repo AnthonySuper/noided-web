@@ -11,7 +11,7 @@ import OptBeer.Action.User (userActions)
 import OptBeer.Page.Layout (pageLayout)
 import OptBeer.Page.Type (mapResponsesToPage)
 
-optBeerActions :: (FetchMessagesE :> es) => PageRoutes Identity (Eff es)
+optBeerActions :: (FetchMessagesE :> es, GetServerEnv :> es) => PageRoutes Identity (Eff es)
 optBeerActions =
   beforeTransform
     & pagesAddLayout pageLayout

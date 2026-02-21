@@ -15,6 +15,7 @@ import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.Type.HtmlFormatter
 import Noided.Web.Internal.Type.PageAction
 import Noided.Web.Internal.Type.Response
+import Noided.Web.Internal.Type.ServerEnv
 import Optics
 
 -- | A page env.
@@ -24,7 +25,8 @@ data PageEnv
   = MkPageEnv
   { messages :: !Messages,
     htmlFormatters :: !HtmlFormatters,
-    pageTitle :: !(Maybe Text)
+    pageTitle :: !(Maybe Text),
+    serverEnv :: !ServerEnv
   }
   deriving (Generic)
 
@@ -43,16 +45,18 @@ instance FetchHtmlFormatters Page where
 readPageTitle :: Eff es (Maybe Text)
 readPageTitle = return Nothing
 
-readPageEnv :: (FetchMessagesE :> es, FetchHtmlFormattersE :> es) => Eff es PageEnv
+readPageEnv :: (FetchMessagesE :> es, FetchHtmlFormattersE :> es, GetServerEnv :> es) => Eff es PageEnv
 readPageEnv =
   MkPageEnv
     <$> fetchMessages
     <*> fetchFormatters
     <*> readPageTitle
+    <*> getServerEnv
 
 mapResponsesToPage ::
   ( FetchMessagesE :> es,
-    FetchHtmlFormattersE :> es
+    FetchHtmlFormattersE :> es,
+    GetServerEnv :> es
   ) =>
   PageRoutes Page (Eff es) ->
   PageRoutes Identity (Eff es)
