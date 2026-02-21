@@ -16,7 +16,7 @@ import Web.HttpApiData
 
 newtype OpaquePassword = MkOpaquePassword {getOpaquePassword :: Text}
   deriving (Generic, Eq)
-  deriving (IsString, FromHttpApiData, FromFormSubmission ct) via Text
+  deriving (IsString, FromHttpApiData, ToHttpApiData, FromFormSubmission ct) via Text
 
 instance Show OpaquePassword where
   show _ = "\"\""

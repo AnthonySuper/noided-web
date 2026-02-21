@@ -2,3 +2,5 @@ dist-newstyle/
 noided-sql/.golden/**/actual
 haddocks/
 cabal.project.local
+node_modules/
+optimize-beer/static/

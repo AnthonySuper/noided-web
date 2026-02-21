@@ -1,0 +1,145 @@
+@property --tiny-space {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --small-space {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 8px;
+}
+
+@property --base-space {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 16px;
+}
+
+@property --large-space {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 32px;
+}
+
+@property --huge-space {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 64px;
+}
+
+/* Colors */
+
+@property --color-primary {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #d4a017; /* Beer Amber/Gold */
+}
+
+@property --color-primary-dark {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #a67c00;
+}
+
+@property --color-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #fdfdfb;
+}
+
+@property --color-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2d2d2a;
+}
+
+@property --color-text-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6b6b63;
+}
+
+@property --color-error {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #c0392b;
+}
+
+@property --color-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e0e0d1;
+}
+
+/* Radius */
+
+@property --radius-small {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --radius-base {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 8px;
+}
+
+@property --radius-large {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 16px;
+}
+
+/* Typography */
+
+@property --font-size-small {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 14px;
+}
+
+@property --font-size-base {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 16px;
+}
+
+@property --font-size-large {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 20px;
+}
+
+@property --font-size-xl {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 24px;
+}
+
+@property --font-size-xxl {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 32px;
+}
+
+/* Shadows & Rings */
+
+@property --ring-opacity {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.2;
+}
+
+@property --shadow-sm {
+  syntax: "<string>";
+  inherits: true;
+  initial-value: "0 1px 2px 0 rgb(0 0 0 / 0.05)";
+}
+
+@property --shadow-base {
+  syntax: "<string>";
+  inherits: true;
+  initial-value: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)";
+}

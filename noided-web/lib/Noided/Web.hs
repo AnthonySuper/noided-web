@@ -12,13 +12,13 @@ import Noided.Server
 import Noided.Web.Application
 import Noided.Web.ApplicationConfig
 import Noided.Web.Effect
-import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Internal.Type.ServerEnv
 
 useNoidedApplication ::
   ApplicationRouteConfig
     ( Eff
-        [ RunTransaction,
+        [ GetServerEnv,
+          RunTransaction,
           FetchMessagesE,
           TimeEvent,
           WriteHeader,
@@ -42,7 +42,8 @@ useNoidedApplication appConfig on404 useApplication = do
     let allRan =
           application
             & applicationHoistM
-              ( runRunTransactionFromConnection
+              ( runServerEnv config.serverEnv
+                  >>> runRunTransactionFromConnection
                   >>> withMessagesFromQueryParams "en"
                   >>> ( case config.serverEnv of
                           Production -> runIgnoringEventTimings

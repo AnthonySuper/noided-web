@@ -1,0 +1,21 @@
+en:
+  form:
+    CreateUser:
+      attributes:
+        name:
+          name: "Name"
+        email:
+          name: "Email"
+        confirmEmail:
+          name: "Confirm Email"
+        password:
+          name: "Password"
+        confirmPassword:
+          name: "Confirm Password"
+  password_policy:
+    min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
+    max_length: "{pluralize($count) { one { At most $count character long } default { At most $count characters long } }}"
+    uppercase: "{pluralize($count) { one { At least $count uppercase letter } default { At least $count uppercase letters } }}"
+    lowercase: "{pluralize($count) { one { At least $count lowercase letter } default { At least $count lowercase letters } }}"
+    digits: "{pluralize($count) { one { At least $count digit } default { At least $count digits } }}"
+    special: "{pluralize($count) { one { At least $count special character } default { At least $count special characters } }}"

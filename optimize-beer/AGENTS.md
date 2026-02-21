@@ -74,3 +74,42 @@ When setting up test data, you don't always need to construct a full HKD record 
     ```
 -   `values_` takes a `Data.List.NonEmpty.NonEmpty`, so it is sometimes easier to turn on the `OverloadedLists`
     extension so that you can use a list literal to build its argument.
+
+### Translation Testing
+When testing renderers, we want to ensure that all required translation keys exist.
+-   Use `withTranslationsInLocale` from `OptBeer.Form.Render.SpecHelper` to provide a translation environment to your specs.
+-   Use `assertHasNoBadTranslations` to verify that the rendered output does not contain `<noided-bad-translation>` tags.
+-   **Note**: `hspec-discover` automatically applies the `hook` in the `test/OptBeer/Form/Render/` directory, which loads translations from `config/translations`.
+
+## Form Rendering Conventions
+
+### Structure
+-   **Model Scoping**: Use `fieldWrapModelName` to scope translation keys for an entire form (e.g., `fieldWrapModelName "CreateUser"`).
+-   **Subforms**: When rendering a subform, use `subformField` to wrap the specific renderer for that HKD type.
+-   **Reusability**: Extract common field layouts into helpers (e.g., a `fieldWrapper` that handles labels and error lists).
+
+### Translations (i18n)
+-   Translation files are located in `config/translations/`.
+-   The loader is **recursive**, so you can organize keys into subdirectories by locale (e.g., `config/translations/en/form.yaml`).
+-   Use the `pluralize` syntax for counts:
+    ```yaml
+    password_policy:
+      min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
+    ```
+
+## Frontend Architecture (Vite)
+
+-   **Source Assets**: All frontend source files (TypeScript, CSS) live in the `frontend/` directory.
+-   **Built Assets**: Vite builds production assets into the `static/` directory.
+    -   **Important**: Do not manually modify files in `static/`.
+    -   The Haskell server uses the `FrontendAssets` effect to look up hashed filenames from `static/.vite/manifest.json` in production.
+-   **Dev Server**: In development mode, the app points to the Vite dev server at `http://localhost:5173`.
+
+## CSS Conventions
+
+-   **Design System**: We use type-safe CSS variables defined with `@property` in `frontend/style/variables.css`.
+    -   Always prefer using variables (e.g., `var(--color-primary)`) over hardcoded values.
+-   **Modern Features**: We use modern CSS features like `:has()` for state-based styling.
+    -   Example: `.form-field-wrapper:has(.form-field-errors)` is used to style inputs when errors are present.
+-   **Color Calculations**: We use the `rgb(from ...)` syntax to derive colors (like focus rings with custom opacity) from base variables.
+    -   Example: `box-shadow: 0 0 0 3px rgb(from var(--color-primary) r g b / var(--ring-opacity));`
