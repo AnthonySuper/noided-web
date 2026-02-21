@@ -10,6 +10,22 @@ jobs:
   build:
     name: GHC ${{ matrix.ghc }}
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: optimize-beer-test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       matrix:
         ghc: ['9.6.7', '9.8.2']
@@ -24,6 +40,11 @@ jobs:
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
+
+    - name: Load database schema
+      run: |
+        docker exec -i ${{ job.services.postgres.id }} env PGPASSWORD=password psql -U postgres -d optimize-beer-test < optimize-beer/db/schema.sql
+
     - name: Configure
       run: cabal configure --enable-tests
     - name: Dry run
@@ -55,4 +76,6 @@ jobs:
       run: cabal build --enable-tests --enable-benchmarks all
 
     - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/optimize-beer-test
       run: cabal test all

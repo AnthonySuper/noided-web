@@ -1,0 +1,4 @@
+development:
+  dbname: optimize_beer_development
+test:
+  dbname: optimize_beer_test
