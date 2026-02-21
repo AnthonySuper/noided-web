@@ -87,6 +87,24 @@ validateHKDForm' ::
   (FormInput :*: FormValidator m :*: HasErrors :*: FormLens outerForm) field ->
   AccumErrors m (Endo (outerForm FormErrors)) (FormResult field)
 validateHKDForm' = \case
+  (fi :*: ValidateBefore validateBeforeNext :*: he :*: fl) -> AccumErrs $ do
+    res <- runValidatorTThese (validateBeforeNext fi)
+    let mapBase baseErrs = Endo $ over (baseLens fl) (<> onlyBaseErrors baseErrs)
+    case res of
+      This fatal ->
+        return $
+          Left $
+            mapBase fatal
+      That nextValidator ->
+        runAccumErrs $ validateHKDForm' (fi :*: nextValidator :*: he :*: fl)
+      These nonFatal nextValidator -> do
+        r <- runAccumErrs $ validateHKDForm' (fi :*: nextValidator :*: he :*: fl)
+        return $
+          case r of
+            Left bad ->
+              Left $ mapBase nonFatal <> bad
+            Right _ ->
+              Left $ mapBase nonFatal
   (fi :*: BaseValidator validateBase validateInner :*: he :*: fl) -> AccumErrs $ do
     res <- runValidatorTThese (validateBase fi)
     let mapBase baseErrs = Endo $ over (baseLens fl) (<> onlyBaseErrors baseErrs)

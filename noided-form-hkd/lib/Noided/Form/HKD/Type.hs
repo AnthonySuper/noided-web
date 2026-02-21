@@ -20,6 +20,7 @@ module Noided.Form.HKD.Type
     -- * Form Validators
     FormValidator,
     validateBase,
+    validateBefore,
     validateInputRaw,
     validateInput,
     validateSubform,
@@ -102,6 +103,11 @@ validateBase ::
   FormValidator m field ->
   FormValidator m field
 validateBase = BaseValidator
+
+validateBefore ::
+  (FormInput field -> ValidatorT m (FormValidator m field)) ->
+  FormValidator m field
+validateBefore = ValidateBefore
 
 -- | Validate raw input.
 validateInputRaw :: (FieldInput a -> ValidatorT m a) -> FormValidator m (InputField a)
