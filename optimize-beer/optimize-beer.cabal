@@ -65,6 +65,7 @@ common exts
        LambdaCase
        OverloadedLabels
        TypeApplications
+       OverloadedRecordDot
        AllowAmbiguousTypes
 
 common deps
@@ -124,6 +125,8 @@ library
         OptBeer.Page.Type
         OptBeer.Page.Layout
         OptBeer.Action
+
+        OptBeer.Error.BadRequest
 
         OptBeer.Effect.HashPassword
         OptBeer.Type.Hashword

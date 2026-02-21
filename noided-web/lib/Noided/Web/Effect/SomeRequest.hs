@@ -9,6 +9,7 @@ module Noided.Web.Effect.SomeRequest
     getRequestBody,
     runWithRequestBody,
     runWithBodyFromRequest,
+    RequestBody (..),
 
     -- * Query parameters
     GetQueryParams,
@@ -24,4 +25,6 @@ module Noided.Web.Effect.SomeRequest
   )
 where
 
+import Noided.Server.Internal.Type.Request
 import Noided.Web.Internal.Effect.SomeRequest
+

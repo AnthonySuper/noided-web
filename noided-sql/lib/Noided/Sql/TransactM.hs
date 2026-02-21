@@ -39,9 +39,13 @@ module Noided.Sql.TransactM
     SelectList,
     UnwrapSelectList (..),
     DecodeSelectList (..),
+
+    -- * Re-Exports
+    SessionError (..),
   )
 where
 
+import Hasql.Errors
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.SelectList
 import Noided.Sql.Internal.Class.UnwrapSelectList
