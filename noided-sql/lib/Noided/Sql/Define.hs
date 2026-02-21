@@ -2,7 +2,7 @@
 
 -- |
 -- Module: Noided.Sql.Define
--- Description: Tools for defining SQL tables using HKD structures.
+-- Description: Tools for defining SQL tables and views using HKD structures.
 --
 -- This module provides the tools to define your SQL tables using Higher-Kinded Data (HKD) structures.
 -- Using HKDs allows you to use the same data type for:
@@ -48,6 +48,24 @@
 -- > usersWithProfilesTable = hkdTableDef "users"
 --
 -- This will result in columns named @"user_id"@, @"profile_bio"@, and @"profile_url"@ in the @"users"@ table.
+--
+-- === Example: View Definition
+--
+-- For SQL views (or any select-only result type), use 'ViewColumnar' and
+-- 'defineHKDView' instead. Note that a type defined with 'ViewColumnar' does
+-- not /have/ to correspond to an actual SQL view — you can also populate the
+-- fields directly as the return value of a 'SelectM'.
+--
+-- > data UserSummaryF realm f = UserSummary
+-- >   { summaryId   :: ViewColumnar (NonNullT Int64) realm f,
+-- >     summaryName :: ViewColumnar (NonNullT Text)  realm f
+-- >   }
+-- >   deriving (Generic)
+-- >
+-- > $(defineHKDView ''UserSummaryF)
+-- >
+-- > userSummaryView :: ViewDef UserSummaryInQuery
+-- > userSummaryView = hkdViewDef "user_summary"
 module Noided.Sql.Define
   ( -- * Defining tables
     TableDefinition (..),
@@ -72,6 +90,15 @@ module Noided.Sql.Define
     NullableT,
     NonNullT,
 
+    -- * Defining views
+    ViewDef (..),
+    hkdViewDef,
+
+    -- * HKD View Helpers
+    defineHKDView,
+    ViewColumnar,
+    ViewColumnUsage (..),
+
     -- * HKD re-exports
     module Data.HKD,
     WrappedRow,
@@ -81,10 +108,14 @@ where
 import Data.HKD
 import Noided.Row (WrappedRow)
 import Noided.Sql.Internal.HKDTableDef (hkdTableDef)
+import Noided.Sql.Internal.HKDViewDef (hkdViewDef)
 import Noided.Sql.Internal.TH.HKDTable
+import Noided.Sql.Internal.TH.HKDView
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.Columnar
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.TableDefinition
 import Noided.Sql.Internal.Type.TableName
+import Noided.Sql.Internal.Type.ViewColumnar
+import Noided.Sql.Internal.Type.ViewDefinition
