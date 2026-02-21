@@ -10,6 +10,7 @@ import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
 import Data.Text (Text)
 import Noided.Form.HKD
+import Noided.Form.Types (FormValue (..))
 import Noided.Sql
 import Noided.Validation
 import OptBeer.DB.Table.Actor
@@ -23,25 +24,34 @@ import OptBeer.ValidationError.ValueTaken
 createUserValidator :: FormValidator (TransactM e) (SubformField CreateUserF)
 createUserValidator = validateBefore $ \case
   SubformInput inputs -> do
-    let mConfirmEmail = case inputs.confirmEmail of
-          InputInput (FromTyped t) -> Just t
-          _ -> Nothing
-        mConfirmPassword = case inputs.confirmPassword of
-          InputInput (FromTyped t) -> Just t
-          _ -> Nothing
+    let confirmEmailText = fieldInputToText inputs.confirmEmail.val
+        confirmPasswordOpaque = fieldInputToOpaquePassword inputs.confirmPassword.val
 
     return $
       validateSubform $
         CreateUser
           { name = validateUserName,
-            email = validateUserEmail mConfirmEmail,
-            confirmEmail = validateInput return,
-            password = validateUserPassword mConfirmPassword,
-            confirmPassword = validateInput return
+            email = validateUserEmail confirmEmailText,
+            confirmEmail = validateInputRaw (return . fieldInputToText),
+            password = validateUserPassword confirmPasswordOpaque,
+            confirmPassword = validateInputRaw (return . fieldInputToOpaquePassword)
           }
 
+fieldInputToText :: FieldInput Text -> Text
+fieldInputToText = \case
+  FromTyped t -> t
+  FromForm (TextValue t) -> t
+  _ -> ""
+
+fieldInputToOpaquePassword :: FieldInput OpaquePassword -> OpaquePassword
+fieldInputToOpaquePassword = \case
+  FromTyped t -> t
+  FromForm (TextValue t) -> MkOpaquePassword t
+  _ -> MkOpaquePassword ""
+
 validateUserName :: FormValidator (TransactM e) (InputField Text)
-validateUserName = validateInput $ \nameText -> do
+validateUserName = validateInputRaw $ \fi -> do
+  let nameText = fieldInputToText fi
   exists <- lift $ queryMaybe $ do
     row <- addFrom_ (fromBase_ actorsTable)
     addWhere_ (row.name ==. bindParam nameText)
@@ -51,9 +61,10 @@ validateUserName = validateInput $ \nameText -> do
     Nothing -> return ()
   return nameText
 
-validateUserEmail :: Maybe Text -> FormValidator (TransactM e) (InputField Text)
-validateUserEmail mConfirm = validateInput $ \emailText -> do
-  when (Just emailText /= mConfirm) $
+validateUserEmail :: Text -> FormValidator (TransactM e) (InputField Text)
+validateUserEmail confirmEmail = validateInputRaw $ \fi -> do
+  let emailText = fieldInputToText fi
+  when (emailText /= confirmEmail) $
     failNonfatal DoesNotMatchConfirmation
 
   exists <- lift $ queryMaybe $ do
@@ -65,8 +76,9 @@ validateUserEmail mConfirm = validateInput $ \emailText -> do
     Nothing -> return ()
   return emailText
 
-validateUserPassword :: Maybe OpaquePassword -> FormValidator (TransactM e) (InputField OpaquePassword)
-validateUserPassword mConfirm = validateInput $ \pw -> do
-  when (Just pw /= mConfirm) $
+validateUserPassword :: OpaquePassword -> FormValidator (TransactM e) (InputField OpaquePassword)
+validateUserPassword confirmPassword = validateInputRaw $ \fi -> do
+  let pw = fieldInputToOpaquePassword fi
+  when (pw /= confirmPassword) $
     failNonfatal DoesNotMatchConfirmation
   return pw
