@@ -34,8 +34,16 @@ module Noided.Sql.TransactM
     queryVector,
     queryFoldl,
     queryFoldr,
+
+    -- * Result Decoders
+    SelectList,
+    UnwrapSelectList (..),
+    DecodeSelectList (..),
   )
 where
 
+import Noided.Sql.Internal.Class.DecodeSelectList
+import Noided.Sql.Internal.Class.SelectList
+import Noided.Sql.Internal.Class.UnwrapSelectList
 import Noided.Sql.Internal.Type.TransactM
 import Noided.Sql.Internal.Type.TransactionResult

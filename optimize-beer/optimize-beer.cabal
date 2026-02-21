@@ -73,6 +73,12 @@ common deps
       containers,
       http-api-data,
       time,
+      resource-pool,
+      hasql,
+      directory,
+      hspec,
+      aeson,
+      yaml,
 
       noided-form-hkd,
       noided-form,
@@ -143,7 +149,11 @@ test-suite optimize-beer-test
     default-language: GHC2021
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:
+      OptBeer.DB.SpecHook
+
+      OptBeer.DB.Table.ActorSpec
+      OptBeer.DB.Table.SpecHelper
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

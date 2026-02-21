@@ -6,7 +6,6 @@ module OptBeer.DB.Table.Timestamps where
 
 import Data.Time (UTCTime)
 import GHC.Generics
-import Noided.Row
 import Noided.Sql.Define
 
 data TimestampsF realm wrapper
