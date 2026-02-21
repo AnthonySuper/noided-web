@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2xWbGtvMiETH1TpTLFhSkEQVbwtx46DGYiZIxnRKMovjqxt5SEsSjQUeFd8b4H7
+\restrict N5IYXPjCSE2Uhg3hitr2mK1MxgZVNGArHkFZmfNqxhXQnhCzURYNcyvjcfWWDbw
 
 -- Dumped from database version 17.6 (Postgres.app)
 -- Dumped by pg_dump version 18.2
@@ -24,6 +24,13 @@ SET row_security = off;
 --
 
 CREATE COLLATION public.case_insensitive (provider = icu, deterministic = false, locale = 'und');
+
+
+--
+-- Name: identifier; Type: COLLATION; Schema: public; Owner: -
+--
+
+CREATE COLLATION public.identifier (provider = icu, deterministic = false, locale = 'und-u-ks-level1');
 
 
 SET default_tablespace = '';
@@ -51,13 +58,13 @@ ALTER TABLE ONLY public.schema_migrations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2xWbGtvMiETH1TpTLFhSkEQVbwtx46DGYiZIxnRKMovjqxt5SEsSjQUeFd8b4H7
+\unrestrict N5IYXPjCSE2Uhg3hitr2mK1MxgZVNGArHkFZmfNqxhXQnhCzURYNcyvjcfWWDbw
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict 5Okj9YOL6emrlTtmYdOKx2M6Lbxa5jXkhpveCr7sKXaSDOBTgXxSuzKtOZPmwxx
+\restrict XNU53SWdeEHVWfV5LKHCMJd2SKLOuc35W4Yu30cETxvALMUT3ciyPuN1khtFY6A
 
 -- Dumped from database version 17.6 (Postgres.app)
 -- Dumped by pg_dump version 18.2
@@ -79,12 +86,13 @@ SET row_security = off;
 --
 
 INSERT INTO public.schema_migrations (filename) VALUES
-	('202602210012_create_case_insensitive_collation.rb');
+	('202602210012_create_case_insensitive_collation.rb'),
+	('202602210049_create_identifier_collation.rb');
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 5Okj9YOL6emrlTtmYdOKx2M6Lbxa5jXkhpveCr7sKXaSDOBTgXxSuzKtOZPmwxx
+\unrestrict XNU53SWdeEHVWfV5LKHCMJd2SKLOuc35W4Yu30cETxvALMUT3ciyPuN1khtFY6A
 
