@@ -8,7 +8,9 @@ import Control.Monad (when)
 import Lucid
 import Noided.Form.HKD
 import Noided.Web.Html.FormRender
+import OptBeer.Form.Render.PasswordPolicy
 import OptBeer.Form.Type.CreateUser
+import OptBeer.Validate.Password
 
 createUserRenderer ::
   ( FetchMessages m,
@@ -32,7 +34,9 @@ createUserRendererT =
     }
   where
     textField = formField $ fieldWrapper $ renderInputTag [class_ "form-field-input", type_ "text"]
-    passwordField = formField $ fieldWrapper $ renderInputTag [class_ "form-field-input", type_ "password"]
+    passwordField = formField $ fieldWrapper $ do
+      renderPasswordPolicy defaultOptBeerPasswordPolicy
+      renderInputTag [class_ "form-field-input", type_ "password"]
 
     fieldWrapper inputAct = div_ [class_ "form-field-wrapper"] $ do
       hasError <- fieldHasError

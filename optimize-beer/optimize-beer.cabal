@@ -126,6 +126,7 @@ library
         OptBeer.Form.Type.CreateUser
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Render.CreateUser
+        OptBeer.Form.Render.PasswordPolicy
 
 
     -- Modules included in this library but not exported.
