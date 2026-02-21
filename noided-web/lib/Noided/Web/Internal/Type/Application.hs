@@ -8,9 +8,11 @@ module Noided.Web.Internal.Type.Application where
 
 import Data.Dependent.Map qualified as DMap
 import Data.Functor.Identity
+import Data.Monoid (Last (..))
 import Effectful
 import Effectful.Error.Static
 import GHC.Generics
+import Network.Wai qualified as Wai
 import Noided.Server.Internal.Type.Request
 import Noided.Server.Internal.Type.Server
 import Noided.Server.Internal.Type.VerbRouter qualified as VR
@@ -26,7 +28,8 @@ data ApplicationRouteConfig m
   = MkApplicationRouteConfig
   { pages :: PageRoutes Identity m,
     miscEndpoints :: SomeEndpoints m,
-    errorHandlers :: ErrorRenderers
+    errorHandlers :: ErrorRenderers,
+    production404 :: Last (Wai.Request -> IO Wai.Response)
   }
   deriving (Generic)
   deriving (Semigroup, Monoid) via (Generically (ApplicationRouteConfig m))
@@ -43,12 +46,23 @@ withMisc p = mempty & #miscEndpoints .~ p
 withErrorHandlers :: ErrorRenderers -> ApplicationRouteConfig m
 withErrorHandlers p = mempty & #errorHandlers .~ p
 
+-- | Build an application route config with a custom production 404 handler.
+-- When a route is not found in production (or test) mode, this handler is called.
+-- In development mode, a debug page listing all routes is shown regardless,
+-- and this custom handler is not used.
+withProduction404 :: (Wai.Request -> IO Wai.Response) -> ApplicationRouteConfig m
+withProduction404 handler = mempty & #production404 .~ Last (Just handler)
+
+-- | Get the production 404 handler, if one has been set.
+getProduction404 :: ApplicationRouteConfig m -> Maybe (Wai.Request -> IO Wai.Response)
+getProduction404 (MkApplicationRouteConfig _ _ _ p) = getLast p
+
 -- | Map a config to an actual application, which we can do routing in.
 --
 -- This internally uses a 'Data.Dependent.Map' along with a 'Noided.Web.Internal.Type.VerbRouter' to
 -- ensure that page routes and verb routes are modeled as much as possible.
 configToApplication :: (Monad m) => ApplicationRouteConfig m -> Application m
-configToApplication (MkApplicationRouteConfig pages misc errs) =
+configToApplication (MkApplicationRouteConfig pages misc errs _) =
   MkApplication
     (pagesToSomeEndpoints pages <> misc)
     errs

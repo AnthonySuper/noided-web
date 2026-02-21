@@ -8,6 +8,8 @@ module Noided.Web.Application
     withPages,
     withMisc,
     withErrorHandlers,
+    withProduction404,
+    getProduction404,
     configToApplication,
 
     -- * Applications

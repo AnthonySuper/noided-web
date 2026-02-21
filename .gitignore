@@ -4,3 +4,5 @@ haddocks/
 cabal.project.local
 node_modules/
 optimize-beer/static/
+optimize-beer/vendor/
+optimize-beer/.bundle/
