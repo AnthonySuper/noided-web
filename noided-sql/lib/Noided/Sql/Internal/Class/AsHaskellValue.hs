@@ -5,6 +5,7 @@ module Noided.Sql.Internal.Class.AsHaskellValue where
 
 import Data.Int
 import Data.Kind
+import Data.Proxy
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Data.Time
@@ -20,7 +21,7 @@ type AsHaskellValue :: Type -> Constraint
 class (Typeable pgType, Typeable (HaskellTypeOf pgType)) => AsHaskellValue pgType where
   type HaskellTypeOf pgType :: Type
   type HaskellTypeOf pgType = pgType
-  decodeHaskellValue :: proxy pgType -> Dec.Value (HaskellTypeOf pgType)
+  decodeHaskellValue :: Proxy pgType -> Dec.Value (HaskellTypeOf pgType)
 
 type HaskellValueType :: SqlType -> Type
 type family HaskellValueType sqlT where

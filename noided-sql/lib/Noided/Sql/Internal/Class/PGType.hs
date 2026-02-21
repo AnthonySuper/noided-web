@@ -13,11 +13,11 @@ import Noided.Sql.Internal.Type.SqlType
 
 -- | Types that map to a particular Postgres type.
 class PGType t where
-  pgTypeName :: proxy t -> Text
+  pgTypeName :: Proxy t -> Text
 
 -- | Helper: provides the name for an array element.
 class PGArrayElement (t :: SqlType) where
-  pgArrayElementName :: proxy t -> Text
+  pgArrayElementName :: Proxy t -> Text
 
 instance (PGType pgt) => PGArrayElement (SqlT n pgt) where
   pgArrayElementName _ = pgTypeName (Proxy @pgt)

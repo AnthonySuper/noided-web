@@ -18,6 +18,7 @@ module Noided.Sql.Internal.HKDTableDef where
 import Data.Char (isUpper, toLower)
 import Data.Kind
 import Data.Proxy (Proxy (..))
+import Data.String (IsString (..))
 import Data.Text qualified as Text
 import GHC.Generics
 import GHC.TypeLits
@@ -26,8 +27,6 @@ import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.Columnar
 import Noided.Sql.Internal.Type.TableDefinition
 import Noided.Sql.Internal.Type.TableName
-
-import Data.String (IsString (..))
 
 -- | Class to implement a generic, snake-cased name.
 class GSnakeCasedNames (rep :: Type -> Type) where
@@ -47,6 +46,12 @@ instance (KnownSymbol s) => GSnakeCasedNames (M1 S ('MetaSel ('Just s) i1 i2 i3)
 
 instance {-# OVERLAPPABLE #-} (Generic a, GSnakeCasedNames (Rep a)) => GSnakeCasedNames (M1 S ('MetaSel ('Just s) i1 i2 i3) (K1 R a)) where
   genericSnakeCasedNames = M1 $ K1 $ to (genericSnakeCasedNames @(Rep a))
+
+type HKDTableDef ::
+  (forall arg. ColumnUsage arg -> arg -> Type) ->
+  Type
+type HKDTableDef hkd =
+  TableDefinition (HKDRowLabels (hkd InTableDef)) (hkd InQuery)
 
 -- | Define a table using an HKD structure.
 -- This automatically generates snake_cased column names from the record field names.
@@ -75,7 +80,7 @@ hkdTableDef ::
     HKDToRow (hkdTable InTableDef)
   ) =>
   TableName ->
-  TableDefinition (HKDRowLabels (hkdTable InTableDef)) (hkdTable InQuery)
+  HKDTableDef hkdTable
 hkdTableDef tn =
   DefineTable
     { tableName = tn,

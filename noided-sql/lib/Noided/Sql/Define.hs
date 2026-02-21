@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 -- |
@@ -72,6 +73,7 @@ module Noided.Sql.Define
     TableName (..),
     tableNameNoSchema,
     hkdTableDef,
+    HKDTableDef,
 
     -- * HKD Table Helpers
     defineHKDTable,
@@ -99,15 +101,32 @@ module Noided.Sql.Define
     ViewColumnar,
     ViewColumnUsage (..),
 
+    -- * Defining Column Types
+    PGType (..),
+    AsBindParam (..),
+    AsHaskellValue (..),
+    decodeNewtypeWrapper,
+    pgTypeNameNewtype,
+    bindParamEncoderNewtype,
+    inspectBindParamNewtype,
+
     -- * HKD re-exports
     module Data.HKD,
     WrappedRow,
   )
 where
 
+import Data.Coerce
+import Data.Functor.Contravariant
 import Data.HKD
+import Data.Proxy
+import Data.Text (Text)
+import Hasql.Decoders qualified as Dec
 import Noided.Row (WrappedRow)
-import Noided.Sql.Internal.HKDTableDef (hkdTableDef)
+import Noided.Sql.Internal.Class.AsBindParam
+import Noided.Sql.Internal.Class.AsHaskellValue
+import Noided.Sql.Internal.Class.PGType
+import Noided.Sql.Internal.HKDTableDef (HKDTableDef, hkdTableDef)
 import Noided.Sql.Internal.HKDViewDef (hkdViewDef)
 import Noided.Sql.Internal.TH.HKDTable
 import Noided.Sql.Internal.TH.HKDView
@@ -119,3 +138,43 @@ import Noided.Sql.Internal.Type.TableDefinition
 import Noided.Sql.Internal.Type.TableName
 import Noided.Sql.Internal.Type.ViewColumnar
 import Noided.Sql.Internal.Type.ViewDefinition
+
+decodeNewtypeWrapper ::
+  forall decoded {wrapped}.
+  ( Coercible decoded wrapped,
+    AsHaskellValue decoded,
+    HaskellTypeOf decoded ~ decoded
+  ) =>
+  Proxy wrapped ->
+  Dec.Value wrapped
+decodeNewtypeWrapper Proxy =
+  fmap coerce (decodeHaskellValue $ Proxy @decoded)
+
+pgTypeNameNewtype ::
+  forall decoded {wrapped}.
+  (PGType decoded) =>
+  Proxy wrapped ->
+  Text
+pgTypeNameNewtype Proxy =
+  pgTypeName (Proxy @decoded)
+
+bindParamEncoderNewtype ::
+  forall decoded {wrapped}.
+  ( AsBindParam decoded,
+    BoundNullability decoded ~ NonNull,
+    Coercible wrapped decoded
+  ) =>
+  EncoderOf NonNull wrapped
+bindParamEncoderNewtype =
+  case bindParamEncoder @decoded of
+    EncodeNonNull v -> EncodeNonNull (contramap coerce v)
+
+inspectBindParamNewtype ::
+  forall decoded {wrapped}.
+  ( AsBindParam decoded,
+    Coercible wrapped decoded
+  ) =>
+  wrapped ->
+  Text
+inspectBindParamNewtype v =
+  inspectBindParam (coerce v :: decoded)
