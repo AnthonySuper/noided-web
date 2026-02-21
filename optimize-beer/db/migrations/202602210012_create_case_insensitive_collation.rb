@@ -3,7 +3,7 @@ Sequel.migration do
     execute <<~SQL
       CREATE COLLATION case_insensitive (
         provider = icu,
-        locale = 'und-u-=ks-level2',
+        locale = 'und-u-ks-level2',
         deterministic = false
       );
     SQL
