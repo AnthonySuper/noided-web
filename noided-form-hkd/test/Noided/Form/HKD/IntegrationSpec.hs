@@ -151,7 +151,7 @@ validatePasswordForm = validateBefore $ \case
           { password = validateInput return,
             confirmPassword = validateInput return
           }
- 
+
  -- Validators
 
 validateAddress :: (Monad m) => FormValidator m (SubformField Address)
