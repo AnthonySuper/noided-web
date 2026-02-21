@@ -58,6 +58,8 @@ If you prefer to set up manually or need to customize the setup:
 - ghcup (Haskell toolchain installer)
 - GHC 9.6.7 or 9.8.2 (as tested in CI)
 - Cabal 3.10
+- Ruby 3.0+ (for database migrations in `optimize-beer`)
+- PostgreSQL 18 (with `optimize_beer_development` and `optimize_beer_test` databases)
 
 ### Installation Steps
 
@@ -74,30 +76,51 @@ If you prefer to set up manually or need to customize the setup:
    ghcup set cabal 3.10
    ```
 
-3. **Update cabal:**
+3. **Install Ruby dependencies:**
+   ```bash
+   cd optimize-beer
+   bundle install
+   cd ..
+   ```
+
+4. **Setup Databases:**
+   Ensure PostgreSQL 18 is running and create the databases:
+   ```bash
+   psql -h localhost -U postgres -c "CREATE DATABASE optimize_beer_development;"
+   psql -h localhost -U postgres -c "CREATE DATABASE optimize_beer_test;"
+   ```
+
+5. **Run Migrations:**
+   ```bash
+   cd optimize-beer
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/optimize_beer_development ./script/db.rb migrate
+   cd ..
+   ```
+
+6. **Update cabal:**
    ```bash
    cabal update
    ```
 
-4. **Configure the project:**
+7. **Configure the project:**
    ```bash
    cabal configure --enable-tests
    ```
 
-5. **Install dependencies:**
+8. **Install Haskell dependencies:**
    ```bash
    cabal build --only-dependencies --enable-tests --enable-benchmarks all
    ```
 
-6. **Build all packages:**
+9. **Build all packages:**
    ```bash
    cabal build --enable-tests --enable-benchmarks all
    ```
 
-7. **Run tests:**
-   ```bash
-   cabal test all
-   ```
+10. **Run tests:**
+    ```bash
+    DATABASE_URL=postgresql://postgres:password@localhost:5432/optimize_beer_test cabal test all
+    ```
 
 ## Common Development Commands
 
