@@ -68,7 +68,6 @@ common deps
       base >= 4.18 && <= 4.23,
       text,
       bytestring,
-      containers,
       vector,
       optics,
       containers,
@@ -88,7 +87,6 @@ common deps
       noided-translate,
       noided-validation,
       noided-web-html,
-      noided-sql,
       noided-web
 
 library
