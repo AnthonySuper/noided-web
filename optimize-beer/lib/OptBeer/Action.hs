@@ -6,11 +6,10 @@ import Data.Function
 import Data.Functor.Identity
 import Effectful
 import Noided.Web.Effect
-import Noided.Web.Internal.Type.PageAction
+import Noided.Web.PageAction
 import OptBeer.Action.User (userActions)
 import OptBeer.Page.Layout (pageLayout)
 import OptBeer.Page.Type (mapResponsesToPage)
-import Noided.Web.Internal.Type.ServerEnv
 
 optBeerActions :: (FetchMessagesE :> es, GetServerEnv :> es, IOE :> es) => PageRoutes Identity (Eff es)
 optBeerActions =

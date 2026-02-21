@@ -68,6 +68,8 @@ library
       Noided.Web.Application
       Noided.Web.ApplicationConfig
       Noided.Web.Effect
+      Noided.Web.PageAction
+      Noided.Web.Response
 
       Noided.Web.Effect.Log
       Noided.Web.Effect.Signing

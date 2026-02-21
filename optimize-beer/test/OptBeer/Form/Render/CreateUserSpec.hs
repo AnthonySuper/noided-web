@@ -7,7 +7,7 @@ import Lucid.Base (HtmlT)
 import Noided.Form.HKD
 import Noided.Translate
 import Noided.Web.Html.FormRender
-import Noided.Web.Html.Internal.Type.TranslationT (TranslationT)
+import Noided.Web.Html (TranslationT)
 import OptBeer.Form.Render.CreateUser
 import OptBeer.Form.Render.SpecHelper
 import OptBeer.Form.Type.CreateUser

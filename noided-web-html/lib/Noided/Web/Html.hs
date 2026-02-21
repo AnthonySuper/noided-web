@@ -62,6 +62,19 @@ module Noided.Web.Html
 
     -- *** With Effectful
     FetchHtmlFormattersE (..),
+
+    -- * HTML Formatters
+    HtmlFormatter (..),
+    HtmlFormatters,
+    useHtmlFormatter,
+    defaultFormatters,
+
+    -- * Translation Monad Transformer
+    TranslationT (..),
+    TranslationEnv (..),
+    translationEnvFromEnv,
+    translateFromEnv,
+    unwrapTranslationT,
   )
 where
 
@@ -71,3 +84,5 @@ import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.FormRenderer
 import Noided.Web.Html.Internal.Translate
 import Noided.Web.Html.Internal.Type.FormRendererT
+import Noided.Web.Html.Internal.Type.HtmlFormatter
+import Noided.Web.Html.Internal.Type.TranslationT
