@@ -1,19 +1,19 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module OptBeer.DB.SpecHook (hook) where
+module OptBeer.SpecHook (hook) where
 
 import Control.Exception (Exception, throwIO)
 import Data.Pool (Pool, defaultPoolConfig, newPool)
-import Hasql.Connection
-import Hasql.Errors
-import Hasql.Connection.Settings (connectionString)
-import Noided.Web.Internal.Type.DBSettings
-import System.Environment (lookupEnv)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
-import Test.Hspec
+import Hasql.Connection
+import Hasql.Connection.Settings (connectionString)
+import Hasql.Errors
+import Noided.Web.Internal.Type.DBSettings
 import System.Directory (doesFileExist)
+import System.Environment (lookupEnv)
+import Test.Hspec
 
 data SpecHookError
   = DatabaseUrlNotSetAndConfigMissing FilePath

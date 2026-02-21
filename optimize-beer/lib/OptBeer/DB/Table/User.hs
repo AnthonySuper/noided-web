@@ -15,7 +15,7 @@ import OptBeer.DB.Table.Timestamps
 
 data UserF realm wrapper
   = User
-  { id :: Columnar (IdentityColumn ActorId) realm wrapper,
+  { id :: Columnar (RegularColumn ActorId) realm wrapper,
     email :: Columnar (RegularColumn Text) realm wrapper,
     timestamps :: TimestampsF realm wrapper
   }

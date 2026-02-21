@@ -26,6 +26,13 @@ module Noided.Sql.SqlExpr
 
     -- ** Nullability
     Nullability (..),
+    CastNullability,
+
+    -- ** Mutation expressions
+    MutationExpr,
+    MutationType (..),
+    mutateVal_,
+    defaultVal_,
 
     -- * Bind params
     AsBindParam (BoundNullability, BoundType),
@@ -95,6 +102,8 @@ import Noided.Sql.Internal.SqlExpr.Bool
 import Noided.Sql.Internal.SqlExpr.Numeric
 import Noided.Sql.Internal.SqlExpr.Text
 import Noided.Sql.Internal.Type.AggregateExpr
+import Noided.Sql.Internal.Type.MutationExpr
+import Noided.Sql.Internal.Type.MutationType
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType

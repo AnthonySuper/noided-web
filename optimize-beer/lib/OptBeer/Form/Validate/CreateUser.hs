@@ -17,6 +17,7 @@ import OptBeer.DB.Table.Actor
 import OptBeer.DB.Table.User
 import OptBeer.Form.Type.CreateUser
 import OptBeer.Type.Hashword
+import OptBeer.Validate.Password
 import OptBeer.ValidationError.DoesNotMatchConfirmation
 import OptBeer.ValidationError.ValueTaken
 
@@ -81,4 +82,5 @@ validateUserPassword confirmPassword = validateInputRaw $ \fi -> do
   let pw = fieldInputToOpaquePassword fi
   when (pw /= confirmPassword) $
     failNonfatal DoesNotMatchConfirmation
+  validatePasswordComplexity pw
   return pw

@@ -13,6 +13,12 @@ data MutationExpr val where
   MutateVal :: SqlExpr NormalQuery t -> MutationExpr (ActualValue t)
   DefaultVal :: MutationExpr DefaultValue
 
+mutateVal_ :: SqlExpr NormalQuery t -> MutationExpr (ActualValue t)
+mutateVal_ = MutateVal
+
+defaultVal_ :: MutationExpr DefaultValue
+defaultVal_ = DefaultVal
+
 unsafeMutationExprToSyntax :: MutationExpr val -> Syntax
 unsafeMutationExprToSyntax = \case
   MutateVal (UnsafeMkSqlExpr e) -> e

@@ -1,3 +1,7 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+
 module OptBeer.Form.Type.CreateUser where
 
 import Data.HKD
@@ -36,3 +40,5 @@ deriving via (Generically (CreateUserF FormErrors)) instance Semigroup (CreateUs
 deriving via (Generically (CreateUserF FormErrors)) instance Monoid (CreateUserF FormErrors)
 
 instance HKDForm CreateUserF
+
+deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField OpaquePassword))) => Show (CreateUserF wrapper)

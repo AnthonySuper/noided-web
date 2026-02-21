@@ -44,3 +44,33 @@ The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) inst
           addWhere_ (row.someField ==. bindParam val)
           select_ $ Element row.someField
         ```
+
+-   **Ambiguous Field Names**: Many tables and forms share common field names (e.g., `id`, `name`, `email`).
+    -   **Always** use `{-# LANGUAGE NoFieldSelectors #-}` and `{-# LANGUAGE OverloadedRecordDot #-}` in modules that work with multiple HKD types.
+    -   Use `DuplicateRecordFields` to allow multiple types to define the same field names.
+
+## Testing Best Practices
+
+### Database Isolation
+To prevent test data from polluting the database, all tests should run inside a transaction that automatically rolls back.
+-   Use `runDB` from `OptBeer.DB.Table.SpecHelper`, which uses `transactDryRun`.
+-   **Crucial**: If a test requires database setup (e.g., pre-inserting a record), that setup **must** be done inside the same `runDB` block as the code being tested. Otherwise, the setup data will be rolled back before the test runs.
+    ```haskell
+    it "finds a user" $ \pool -> do
+      res <- runDB (do
+        _ <- querySingleRow (insertUser ...)
+        performBusinessLogic -- This can see the inserted user
+        ) pool
+    ```
+
+### Direct Row Construction
+When setting up test data, you don't always need to construct a full HKD record (like `User { ... }`). You can use `WrappedRow` syntax to specify only the columns you care about.
+-   Use `values_` with the label operator `:==>` and the mutation helper `mutateVal_`.
+-   Example:
+    ```haskell
+    let insertActor = insertReturning actorsTable
+          (values_ ((#name :==> mutateVal_ (bindParam @Text "Alice") :::%? EmptyWrappedRow) :| [])
+          (\row -> row.id)
+    ```
+-   `values_` takes a `Data.List.NonEmpty.NonEmpty`, so it is sometimes easier to turn on the `OverloadedLists`
+    extension so that you can use a list literal to build its argument.

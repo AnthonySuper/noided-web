@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Noided.Sql.Internal.Insert.InsertValues
   ( InsertValues (..),
@@ -23,7 +23,7 @@ import Data.List.NonEmpty qualified as NE
 import GHC.Records
 import GHC.TypeLits
 import Noided.Row
-import Noided.Sql.Internal.Class.Query (SelectQuery, Query(..))
+import Noided.Sql.Internal.Class.Query (Query (..), SelectQuery)
 import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.MutationExpr
@@ -126,13 +126,20 @@ instance
 instance AsInsertValue (Column MayBeDefault a b) DefaultValue where
   toInsertValue = coerce
 
-instance (n ~ DefaultValue) => AsInsertValue (Column AlwaysDefault a b) n where
+instance {-# OVERLAPPING #-} (n ~ DefaultValue) => AsInsertValue (Column AlwaysDefault a b) n where
   toInsertValue = coerce
 
 instance
   {-# OVERLAPS #-}
   (CastNullability definedNull insertedNull, a ~ b) =>
-  AsInsertValue (Column na insertedNull a) (ActualValue (SqlT definedNull b))
+  AsInsertValue (Column MayBeDefault insertedNull a) (ActualValue (SqlT definedNull b))
+  where
+  toInsertValue = coerce
+
+instance
+  {-# OVERLAPS #-}
+  (CastNullability definedNull insertedNull, a ~ b) =>
+  AsInsertValue (Column NoDefault insertedNull a) (ActualValue (SqlT definedNull b))
   where
   toInsertValue = coerce
 
