@@ -18,13 +18,14 @@
   font-family: inherit;
   font-size: var(--font-size-base);
   background-color: white;
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-field-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.2);
+  box-shadow: 0 0 0 3px rgb(from var(--color-primary) r g b / var(--ring-opacity));
 }
 
 /* Error states using :has() */
@@ -33,7 +34,7 @@
 }
 
 .form-field-wrapper:has(.form-field-errors) .form-field-input:focus {
-  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.2);
+  box-shadow: 0 0 0 3px rgb(from var(--color-error) r g b / var(--ring-opacity));
 }
 
 .form-field-errors {

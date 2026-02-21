@@ -96,3 +96,20 @@ When testing renderers, we want to ensure that all required translation keys exi
     password_policy:
       min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
     ```
+
+## Frontend Architecture (Vite)
+
+-   **Source Assets**: All frontend source files (TypeScript, CSS) live in the `frontend/` directory.
+-   **Built Assets**: Vite builds production assets into the `static/` directory.
+    -   **Important**: Do not manually modify files in `static/`.
+    -   The Haskell server uses the `FrontendAssets` effect to look up hashed filenames from `static/.vite/manifest.json` in production.
+-   **Dev Server**: In development mode, the app points to the Vite dev server at `http://localhost:5173`.
+
+## CSS Conventions
+
+-   **Design System**: We use type-safe CSS variables defined with `@property` in `frontend/style/variables.css`.
+    -   Always prefer using variables (e.g., `var(--color-primary)`) over hardcoded values.
+-   **Modern Features**: We use modern CSS features like `:has()` for state-based styling.
+    -   Example: `.form-field-wrapper:has(.form-field-errors)` is used to style inputs when errors are present.
+-   **Color Calculations**: We use the `rgb(from ...)` syntax to derive colors (like focus rings with custom opacity) from base variables.
+    -   Example: `box-shadow: 0 0 0 3px rgb(from var(--color-primary) r g b / var(--ring-opacity));`

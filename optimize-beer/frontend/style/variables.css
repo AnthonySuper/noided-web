@@ -123,3 +123,23 @@
   inherits: true;
   initial-value: 32px;
 }
+
+/* Shadows & Rings */
+
+@property --ring-opacity {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.2;
+}
+
+@property --shadow-sm {
+  syntax: "<string>";
+  inherits: true;
+  initial-value: "0 1px 2px 0 rgb(0 0 0 / 0.05)";
+}
+
+@property --shadow-base {
+  syntax: "<string>";
+  inherits: true;
+  initial-value: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)";
+}
