@@ -1,0 +1,1 @@
+SELECT "series"."generate_series" AS "e", "series_1"."generate_series" AS "e_1" FROM generate_series($1, $2) AS "series"("generate_series") INNER JOIN LATERAL generate_series($3, $4) AS "series_1"("generate_series") ON ($5)

@@ -104,6 +104,7 @@ library
       Noided.Sql.Internal.Type.TransactM
       Noided.Sql.Internal.Type.WindowFrame
       Noided.Sql.Internal.Type.PGArray
+      Noided.Sql.Internal.Type.PGSeries
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
@@ -175,6 +176,7 @@ test-suite noided-sql-test
     -- Modules included in this executable, other than Main.
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
+      Noided.Sql.Internal.Type.PGSeriesSpec
       Noided.Sql.Internal.Select.SelectMSpec
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec

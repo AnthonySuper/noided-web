@@ -108,3 +108,6 @@ instance AsBindParam UTCTime where
 
 instance AsBindParam LocalTime where
   bindParamEncoder = EncodeNonNull Enc.timestamp
+
+instance AsBindParam DiffTime where
+  bindParamEncoder = EncodeNonNull Enc.interval
