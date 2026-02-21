@@ -54,6 +54,14 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
+common exts
+    default-extensions:
+       DerivingVia
+       DeriveAnyClass
+       UndecidableInstances
+       TypeFamilies
+       DataKinds
+
 common deps
     build-depends:
       base >= 4.18 && <= 4.23,
@@ -64,6 +72,7 @@ common deps
       optics,
       containers,
       http-api-data,
+      time,
 
       noided-form-hkd,
       noided-form,
@@ -72,14 +81,20 @@ common deps
       noided-translate,
       noided-validation,
       noided-web-html,
+      noided-sql,
       noided-web
 
 library
     -- Import common warning flags.
-    import:           warnings
+    import:           warnings, exts, deps
 
     -- Modules exported by the library.
     exposed-modules:
+
+        OptBeer.DB.Ids.ActorId
+
+        OptBeer.DB.Table.Actor
+        OptBeer.DB.Table.Timestamps
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -122,7 +137,7 @@ executable optimize-beer
 
 test-suite optimize-beer-test
     -- Import common warning flags.
-    import:           warnings
+    import:           warnings, exts, deps
 
     -- Base language which the package is written in.
     default-language: GHC2021
