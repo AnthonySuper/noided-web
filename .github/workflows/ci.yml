@@ -15,7 +15,7 @@ jobs:
       postgres:
         image: postgres:18
         env:
-          POSTGRES_DB: optimize-beer-test
+          POSTGRES_DB: optimize_beer_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
         ports:
@@ -43,7 +43,7 @@ jobs:
 
     - name: Load database schema
       run: |
-        docker exec -i ${{ job.services.postgres.id }} env PGPASSWORD=password psql -U postgres -d optimize-beer-test < optimize-beer/db/schema.sql
+        docker exec -i ${{ job.services.postgres.id }} env PGPASSWORD=password psql -U postgres -d optimize_beer_test < optimize-beer/db/schema.sql
 
     - name: Configure
       run: cabal configure --enable-tests
@@ -77,5 +77,5 @@ jobs:
 
     - name: Run tests
       env:
-        DATABASE_URL: postgresql://postgres:password@localhost:5432/optimize-beer-test
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/optimize_beer_test
       run: cabal test all
