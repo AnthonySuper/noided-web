@@ -25,3 +25,12 @@ The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) inst
 -   **Timestamps**: Use the `timestamps` helper instead of manual columns. This adds `created_at` and `updated_at` with `timestamptz` and default `now()`.
 -   **Collations**: Use `identifier` collation for names/identifiers where case-insensitive (but case-preserving) behavior is desired.
 -   **Enums**: Use PostgreSQL enums where appropriate; the script supports the `pg_enum` extension.
+
+### Common Pitfalls
+
+-   **Foreign Key Types**: In Sequel migrations, `foreign_key` defaults to `Integer` (4-byte `int4`). However, our primary keys (like `actors.id`) use `Bignum` (8-byte `int8`/`bigint`) to match Haskell's `Int64`.
+    -   **Always** specify `type: :Bignum` for foreign keys:
+        ```ruby
+        foreign_key :id, :actors, primary_key: true, type: :Bignum
+        ```
+    -   Failure to do this will result in `UnexpectedColumnTypeStatementError` during tests because of the size mismatch (4 vs 8 bytes).

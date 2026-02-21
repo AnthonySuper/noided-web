@@ -61,6 +61,7 @@ common exts
        UndecidableInstances
        TypeFamilies
        DataKinds
+       OverloadedStrings
 
 common deps
     build-depends:
@@ -96,11 +97,14 @@ library
 
     -- Modules exported by the library.
     exposed-modules:
-
         OptBeer.DB.Ids.ActorId
-
-        OptBeer.DB.Table.Actor
-        OptBeer.DB.Table.Timestamps
+                OptBeer.DB.Type.PasswordDigest
+        
+                OptBeer.DB.Table.Actor
+                OptBeer.DB.Table.User
+                OptBeer.DB.Table.UserPassword
+                OptBeer.DB.Table.Timestamps
+        
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -150,10 +154,12 @@ test-suite optimize-beer-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
-      OptBeer.DB.SpecHook
-
-      OptBeer.DB.Table.ActorSpec
-      OptBeer.DB.Table.SpecHelper
+            OptBeer.DB.SpecHook
+            OptBeer.DB.Table.ActorSpec
+            OptBeer.DB.Table.UserSpec
+            OptBeer.DB.Table.UserPasswordSpec
+            OptBeer.DB.Table.SpecHelper
+      
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

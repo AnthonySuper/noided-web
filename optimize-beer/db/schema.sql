@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fAaAOOjNc3kdttKB8bta2jtTkzEimOKogCU1szZkNGad5FFMyr6sNwc9PL9bgew
+\restrict z4Uk13Vk50hMn8LCWrC97wnP8ZKQHT73Bo3tYI2xam6asLkxgXdmRMo3IDzoSPh
 
 -- Dumped from database version 17.6 (Postgres.app)
 -- Dumped by pg_dump version 18.2
@@ -73,6 +73,30 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: user_passwords; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_passwords (
+    user_id bigint NOT NULL,
+    password_digest text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    email text NOT NULL COLLATE public.case_insensitive,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: actors actors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -89,6 +113,22 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: user_passwords user_passwords_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_passwords
+    ADD CONSTRAINT user_passwords_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: actors_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -96,16 +136,39 @@ CREATE UNIQUE INDEX actors_name_index ON public.actors USING btree (name);
 
 
 --
+-- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email);
+
+
+--
+-- Name: user_passwords user_passwords_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_passwords
+    ADD CONSTRAINT user_passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: users users_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES public.actors(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fAaAOOjNc3kdttKB8bta2jtTkzEimOKogCU1szZkNGad5FFMyr6sNwc9PL9bgew
+\unrestrict z4Uk13Vk50hMn8LCWrC97wnP8ZKQHT73Bo3tYI2xam6asLkxgXdmRMo3IDzoSPh
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict qf87eCahN8tgacBX3qgK4CDInt8naazOrZggmvLFYuOFdkxCqHZnRRQLo5rtUNT
+\restrict rBuZYo6bvVWQ6Z9BJ9fbMrySEeIT5jZHdIG0v6dWiLiNhIDwZWfKPhhe1gjtJJs
 
 -- Dumped from database version 17.6 (Postgres.app)
 -- Dumped by pg_dump version 18.2
@@ -129,12 +192,14 @@ SET row_security = off;
 INSERT INTO public.schema_migrations (filename) VALUES
 	('202602210012_create_case_insensitive_collation.rb'),
 	('202602210049_create_identifier_collation.rb'),
-	('202602210052_create_actors_table.rb');
+	('202602210052_create_actors_table.rb'),
+	('202602210201_create_users_table.rb'),
+	('202602210202_create_user_passwords_table.rb');
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict qf87eCahN8tgacBX3qgK4CDInt8naazOrZggmvLFYuOFdkxCqHZnRRQLo5rtUNT
+\unrestrict rBuZYo6bvVWQ6Z9BJ9fbMrySEeIT5jZHdIG0v6dWiLiNhIDwZWfKPhhe1gjtJJs
 
