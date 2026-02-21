@@ -14,10 +14,6 @@ import Noided.Sql.Internal.Type.TableName
 -- Unlike 'TableDefinition', a 'ViewDef' has no column type definitions and
 -- cannot be used with insert, update, delete, or merge operations — only
 -- 'select'.
---
--- Note that a 'ViewDef' does not /have/ to correspond to an actual SQL view
--- in the database. It is perfectly fine to use one as the result type of an
--- arbitrary 'SelectM', populating the fields yourself.
 type ViewDef ::
   ((SqlType -> Type) -> Type) ->
   Type
