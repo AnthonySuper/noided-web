@@ -74,3 +74,25 @@ When setting up test data, you don't always need to construct a full HKD record 
     ```
 -   `values_` takes a `Data.List.NonEmpty.NonEmpty`, so it is sometimes easier to turn on the `OverloadedLists`
     extension so that you can use a list literal to build its argument.
+
+### Translation Testing
+When testing renderers, we want to ensure that all required translation keys exist.
+-   Use `withTranslationsInLocale` from `OptBeer.Form.Render.SpecHelper` to provide a translation environment to your specs.
+-   Use `assertHasNoBadTranslations` to verify that the rendered output does not contain `<noided-bad-translation>` tags.
+-   **Note**: `hspec-discover` automatically applies the `hook` in the `test/OptBeer/Form/Render/` directory, which loads translations from `config/translations`.
+
+## Form Rendering Conventions
+
+### Structure
+-   **Model Scoping**: Use `fieldWrapModelName` to scope translation keys for an entire form (e.g., `fieldWrapModelName "CreateUser"`).
+-   **Subforms**: When rendering a subform, use `subformField` to wrap the specific renderer for that HKD type.
+-   **Reusability**: Extract common field layouts into helpers (e.g., a `fieldWrapper` that handles labels and error lists).
+
+### Translations (i18n)
+-   Translation files are located in `config/translations/`.
+-   The loader is **recursive**, so you can organize keys into subdirectories by locale (e.g., `config/translations/en/form.yaml`).
+-   Use the `pluralize` syntax for counts:
+    ```yaml
+    password_policy:
+      min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
+    ```
