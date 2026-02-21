@@ -76,9 +76,14 @@ common deps
       resource-pool,
       hasql,
       directory,
+      transformers,
       hspec,
       aeson,
       yaml,
+      password,
+      effectful,
+      effectful-core,
+      hkd,
 
       noided-form-hkd,
       noided-form,
@@ -102,6 +107,15 @@ library
         OptBeer.DB.Table.User
         OptBeer.DB.Table.UserPassword
         OptBeer.DB.Table.Timestamps
+
+        OptBeer.Effect.HashPassword
+        OptBeer.Type.Hashword
+
+        OptBeer.ValidationError.DoesNotMatchConfirmation
+        OptBeer.ValidationError.ValueTaken
+
+        OptBeer.Form.Type.CreateUser
+        OptBeer.Form.Validate.CreateUser
 
 
     -- Modules included in this library but not exported.

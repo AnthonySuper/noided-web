@@ -107,7 +107,53 @@ shouldHaveError :: (ValidationError p) => ValidationErrors -> p -> Expectation
 errs `shouldHaveError` err =
   errs `shouldSatisfy` (`hasError` err)
 
--- Validators
+data PasswordForm f = PasswordForm
+  { password :: f (InputField Text),
+    confirmPassword :: f (InputField Text)
+  }
+  deriving (Generic)
+
+deriving instance
+  (Show (f (InputField Text))) => Show (PasswordForm f)
+
+instance FFunctor PasswordForm where ffmap = ffmapDefault
+
+instance FFoldable PasswordForm where ffoldMap = ffoldMapDefault
+
+instance FTraversable PasswordForm where ftraverse = gftraverse
+
+instance FZip PasswordForm where fzipWith = gfzipWith
+
+instance FRepeat PasswordForm where frepeat = gfrepeat
+
+deriving via (Generically (PasswordForm FormErrors)) instance Semigroup (PasswordForm FormErrors)
+
+deriving via (Generically (PasswordForm FormErrors)) instance Monoid (PasswordForm FormErrors)
+
+instance HKDForm PasswordForm
+
+data PasswordsDoNotMatch = PasswordsDoNotMatch
+  deriving (Show, Eq, Ord, Generic, ValidationError)
+
+validatePasswordForm :: (Monad m) => FormValidator m (SubformField PasswordForm)
+validatePasswordForm = validateBefore $ \case
+  SubformInput inputs -> do
+    let pw = case inputs.password of
+          InputInput (FromTyped t) -> Just t
+          _ -> Nothing
+        cpw = case inputs.confirmPassword of
+          InputInput (FromTyped t) -> Just t
+          _ -> Nothing
+    check (pw == cpw) PasswordsDoNotMatch
+    return $
+      validateSubform $
+        PasswordForm
+          { password = validateInput return,
+            confirmPassword = validateInput return
+          }
+ 
+ -- Validators
+
 validateAddress :: (Monad m) => FormValidator m (SubformField Address)
 validateAddress =
   validateSubform $
@@ -211,6 +257,18 @@ spec = describe "HKD Form Integration" $ do
             e.innerErrors `shouldHaveError` TooLong "toolongtag"
           Nothing -> expectationFailure "Expected error at index 0"
       Right _ -> expectationFailure "Expected failure due to non-fatal error being reported"
+
+  it "supports conditional validation with ValidateBefore" $ do
+    let input =
+          PasswordForm
+            { password = InputInput $ FromTyped "pass123",
+              confirmPassword = InputInput $ FromTyped "mismatch"
+            }
+    result <- validateForm validatePasswordForm input
+    case result of
+      Left err -> do
+        err.baseErrors `shouldHaveError` PasswordsDoNotMatch
+      Right _ -> expectationFailure "Expected mismatch error"
 
 unwrap :: FormResult (InputField a) -> a
 unwrap (InputResult a) = a

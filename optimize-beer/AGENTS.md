@@ -34,3 +34,13 @@ The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) inst
         foreign_key :id, :actors, primary_key: true, type: :Bignum
         ```
     -   Failure to do this will result in `UnexpectedColumnTypeStatementError` during tests because of the size mismatch (4 vs 8 bytes).
+
+-   **Single Column Queries**: When you need to select only a single column from a table (e.g., for existence checks), use `Element` from `Data.HKD`. This avoids the need to define a single-field HKD structure.
+    -   `Noided.Sql` re-exports `Data.HKD`, so `Element` is available directly when you import `Noided.Sql`.
+    -   Example:
+        ```haskell
+        exists <- queryMaybe $ do
+          row <- addFrom_ (fromBase_ myTable)
+          addWhere_ (row.someField ==. bindParam val)
+          select_ $ Element row.someField
+        ```

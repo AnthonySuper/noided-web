@@ -65,6 +65,9 @@ instance IsList TranslateParams where
 class GAsTranslateParams r where
   genericAsTranslateParams :: r () -> TranslateParams
 
+instance GAsTranslateParams U1 where
+  genericAsTranslateParams _ = mempty
+
 instance
   (AsTranslateParam param, KnownSymbol s) =>
   GAsTranslateParams (S1 (MetaSel (Just s) i i' i'') (Rec0 param))
