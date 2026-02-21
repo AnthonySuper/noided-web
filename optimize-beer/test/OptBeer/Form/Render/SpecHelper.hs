@@ -11,7 +11,7 @@ import Data.Text qualified as T
 import Data.Text.Lazy qualified as LT
 import Lucid
 import Noided.Translate
-import Noided.Web.Html.Internal.Type.TranslationT
+import Noided.Web.Html
 import Test.Hspec
 import Text.HTML.TagSoup qualified as TagSoup
 

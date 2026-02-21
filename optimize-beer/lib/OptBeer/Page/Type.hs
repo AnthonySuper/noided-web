@@ -10,12 +10,9 @@ import Effectful
 import GHC.Generics
 import Noided.Translate
 import Noided.Web.Effect
-import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
-import Noided.Web.Html.Internal.Class.FetchMessages
-import Noided.Web.Html.Internal.Type.HtmlFormatter
-import Noided.Web.Internal.Type.PageAction
-import Noided.Web.Internal.Type.Response
-import Noided.Web.Internal.Type.ServerEnv
+import Noided.Web.Html
+import Noided.Web.PageAction
+import Noided.Web.Response
 import Optics
 
 -- | A page env.

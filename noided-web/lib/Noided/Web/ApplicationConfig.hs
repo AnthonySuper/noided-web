@@ -6,6 +6,10 @@ module Noided.Web.ApplicationConfig
     readConfigurationForEnv,
     readConfiguration,
     withInterpretersFromConfig,
+
+    -- * Database Settings
+    DBSettings (..),
+    DBFileConfig (..),
   )
 where
 

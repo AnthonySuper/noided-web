@@ -10,7 +10,7 @@ import Data.Yaml qualified as Yaml
 import Hasql.Connection
 import Hasql.Connection.Settings (connectionString)
 import Hasql.Errors
-import Noided.Web.Internal.Type.DBSettings
+import Noided.Web.ApplicationConfig
 import System.Directory (doesFileExist)
 import System.Environment (lookupEnv)
 import Test.Hspec

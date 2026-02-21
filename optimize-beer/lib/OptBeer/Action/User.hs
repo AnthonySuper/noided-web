@@ -5,8 +5,8 @@ module OptBeer.Action.User where
 import Lucid
 import Noided.Pathname
 import Noided.Web.Html.FormRender
-import Noided.Web.Internal.Type.PageAction
-import Noided.Web.Internal.Type.Response
+import Noided.Web.PageAction
+import Noided.Web.Response
 import OptBeer.Form.Render.CreateUser
 import OptBeer.Form.Type.CreateUser
 import OptBeer.Routes (newUserPath)
