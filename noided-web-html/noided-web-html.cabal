@@ -92,6 +92,7 @@ library
         Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 
         Noided.Web.Html
+        Noided.Web.Html.FormRender
 
     -- Modules included in this library but not exported.
     -- other-modules:

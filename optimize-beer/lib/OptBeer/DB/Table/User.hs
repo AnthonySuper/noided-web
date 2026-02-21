@@ -1,6 +1,8 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.DB.Table.User where
@@ -13,7 +15,7 @@ import OptBeer.DB.Table.Timestamps
 
 data UserF realm wrapper
   = User
-  { id :: Columnar (IdentityColumn ActorId) realm wrapper,
+  { id :: Columnar (RegularColumn ActorId) realm wrapper,
     email :: Columnar (RegularColumn Text) realm wrapper,
     timestamps :: TimestampsF realm wrapper
   }

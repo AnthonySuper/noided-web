@@ -9,6 +9,14 @@ import Noided.Validation
 
 type FormValidator :: (Type -> Type) -> HKDFieldType -> Type
 data FormValidator m field where
+  -- | Perform *conditional validation* by doing something before returning a validator.
+  -- This is useful if you have conditional validations - the classic case here is having both a @password@ and
+  -- a @confirmPassword@ field, in  which case validation of each field depends on the other value.
+  --
+  -- Any errors reported while building the validator will be reported as the form's base errors.
+  ValidateBefore ::
+    (FormInput field -> ValidatorT m (FormValidator m field)) ->
+    FormValidator m field
   -- | Add *base validations* to a type.
   BaseValidator ::
     -- | Validate the entire input, potentially changing it along the way.
@@ -32,8 +40,12 @@ data FormValidator m field where
     FormValidator m (ListField subfield)
 
 -- | Hoist a form validator into a new monad.
-hoistFormValidator :: forall m n field. (Monad m) => (forall res. m res -> n res) -> FormValidator m field -> FormValidator n field
+hoistFormValidator :: forall m n field. (Monad m, Monad n) => (forall res. m res -> n res) -> FormValidator m field -> FormValidator n field
 hoistFormValidator f = \case
+  ValidateBefore validateBefore ->
+    ValidateBefore $ \inp -> do
+      next <- hoist f (validateBefore inp)
+      return $ hoistFormValidator f next
   BaseValidator validateBase validateInner ->
     BaseValidator
       (hoist f <$> validateBase)

@@ -1,6 +1,8 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.DB.Table.UserPassword where
@@ -13,7 +15,7 @@ import OptBeer.DB.Type.PasswordDigest
 
 data UserPasswordF realm wrapper
   = UserPassword
-  { userId :: Columnar (IdentityColumn ActorId) realm wrapper,
+  { userId :: Columnar (RegularColumn ActorId) realm wrapper,
     passwordDigest :: Columnar (RegularColumn PasswordDigest) realm wrapper,
     timestamps :: TimestampsF realm wrapper
   }

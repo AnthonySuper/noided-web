@@ -62,6 +62,10 @@ common exts
        TypeFamilies
        DataKinds
        OverloadedStrings
+       LambdaCase
+       OverloadedLabels
+       TypeApplications
+       AllowAmbiguousTypes
 
 common deps
     build-depends:
@@ -70,15 +74,22 @@ common deps
       bytestring,
       vector,
       optics,
+      optics-core,
       containers,
       http-api-data,
       time,
       resource-pool,
       hasql,
       directory,
+      transformers,
       hspec,
       aeson,
       yaml,
+      password,
+      password-types,
+      effectful,
+      effectful-core,
+      hkd,
 
       noided-form-hkd,
       noided-form,
@@ -102,6 +113,17 @@ library
         OptBeer.DB.Table.User
         OptBeer.DB.Table.UserPassword
         OptBeer.DB.Table.Timestamps
+
+        OptBeer.Effect.HashPassword
+        OptBeer.Type.Hashword
+
+        OptBeer.ValidationError.DoesNotMatchConfirmation
+        OptBeer.ValidationError.ValueTaken
+        OptBeer.ValidationError.PasswordComplexity
+        OptBeer.Validate.Password
+
+        OptBeer.Form.Type.CreateUser
+        OptBeer.Form.Validate.CreateUser
 
 
     -- Modules included in this library but not exported.
@@ -151,11 +173,14 @@ test-suite optimize-beer-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
-            OptBeer.DB.SpecHook
+            OptBeer.SpecHook
+
             OptBeer.DB.Table.ActorSpec
             OptBeer.DB.Table.UserSpec
             OptBeer.DB.Table.UserPasswordSpec
             OptBeer.DB.Table.SpecHelper
+
+            OptBeer.Form.Validate.CreateUserSpec
 
 
     -- LANGUAGE extensions used by modules in this package.
