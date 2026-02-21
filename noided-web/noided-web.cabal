@@ -82,6 +82,7 @@ library
       Noided.Web.Effect.UseConnection
       Noided.Web.Effect.WriteHeader
       Noided.Web.Effect.ServerEnv
+      Noided.Web.Effect.FrontendAssets
 
       Noided.Web.Internal.Effect.CurrentTime
       Noided.Web.Internal.Effect.TimeEvent
@@ -96,6 +97,7 @@ library
       Noided.Web.Internal.Effect.WriteHeader
       Noided.Web.Internal.Effect.WriteCookie
       Noided.Web.Internal.Effect.ServerEnv
+      Noided.Web.Internal.Effect.FrontendAssets
       Noided.Web.Internal.Type.SignedMessage
       Noided.Web.Internal.Type.Endpoint
       Noided.Web.Internal.Type.SecureCookie
@@ -109,6 +111,7 @@ library
       Noided.Web.Internal.Type.ServerEnv
       Noided.Web.Internal.Type.DBSettings
       Noided.Web.Internal.Type.ApplicationConfig
+      Noided.Web.Internal.Type.FrontendAssets
 
       Noided.Web.Internal.PageAction
 

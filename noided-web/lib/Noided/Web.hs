@@ -12,7 +12,6 @@ import Noided.Server
 import Noided.Web.Application
 import Noided.Web.ApplicationConfig
 import Noided.Web.Effect
-import Noided.Web.Internal.Effect.ServerEnv
 import Noided.Web.Internal.Type.ServerEnv
 
 useNoidedApplication ::

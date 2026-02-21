@@ -1,0 +1,70 @@
+.form-field-wrapper {
+  margin-bottom: var(--base-space);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tiny-space);
+}
+
+.form-field-label {
+  font-weight: 600;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+.form-field-input {
+  padding: var(--small-space) var(--base-space);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  background-color: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-field-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.2);
+}
+
+/* Error states using :has() */
+.form-field-wrapper:has(.form-field-errors) .form-field-input {
+  border-color: var(--color-error);
+}
+
+.form-field-wrapper:has(.form-field-errors) .form-field-input:focus {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.2);
+}
+
+.form-field-errors {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.form-field-error {
+  color: var(--color-error);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+}
+
+/* Password policy rendering */
+.password-policy-requirements {
+  margin: 0 0 var(--small-space) 0;
+  padding: var(--small-space) var(--base-space);
+  background-color: #f8f8f2;
+  border-left: 3px solid var(--color-primary);
+  list-style: none;
+  border-radius: 0 var(--radius-small) var(--radius-small) 0;
+}
+
+.password-policy-requirement {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+.password-policy-requirement::before {
+  content: "• ";
+  color: var(--color-primary);
+  font-weight: bold;
+}

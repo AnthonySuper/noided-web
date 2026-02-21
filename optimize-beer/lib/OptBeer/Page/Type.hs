@@ -26,7 +26,8 @@ data PageEnv
   { messages :: !Messages,
     htmlFormatters :: !HtmlFormatters,
     pageTitle :: !(Maybe Text),
-    serverEnv :: !ServerEnv
+    serverEnv :: !ServerEnv,
+    assets :: !AssetLinks
   }
   deriving (Generic)
 
@@ -45,18 +46,20 @@ instance FetchHtmlFormatters Page where
 readPageTitle :: Eff es (Maybe Text)
 readPageTitle = return Nothing
 
-readPageEnv :: (FetchMessagesE :> es, FetchHtmlFormattersE :> es, GetServerEnv :> es) => Eff es PageEnv
+readPageEnv :: (FetchMessagesE :> es, FetchHtmlFormattersE :> es, GetServerEnv :> es, FrontendAssets :> es) => Eff es PageEnv
 readPageEnv =
   MkPageEnv
     <$> fetchMessages
     <*> fetchFormatters
     <*> readPageTitle
     <*> getServerEnv
+    <*> getAssetLinks "frontend/main.ts"
 
 mapResponsesToPage ::
   ( FetchMessagesE :> es,
     FetchHtmlFormattersE :> es,
-    GetServerEnv :> es
+    GetServerEnv :> es,
+    FrontendAssets :> es
   ) =>
   PageRoutes Page (Eff es) ->
   PageRoutes Identity (Eff es)
