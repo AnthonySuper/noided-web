@@ -4,6 +4,8 @@ module Noided.Web.Html.FormRender
     runFormT,
     FormRendererT,
     FieldRendererT,
+    HtmlFormT,
+    HtmlFormRendererT,
 
     -- * Building renderers
     formField,
@@ -38,8 +40,12 @@ module Noided.Web.Html.FormRender
     inputFieldValue,
     inputValueText,
     inputValueAttribute,
+    FetchMessages,
+    FetchHtmlFormatters,
   )
 where
 
+import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
+import Noided.Web.Html.Internal.Class.FetchMessages
 import Noided.Web.Html.Internal.FormRenderer
 import Noided.Web.Html.Internal.Type.FormRendererT

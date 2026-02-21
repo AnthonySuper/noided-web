@@ -90,6 +90,7 @@ common deps
       effectful,
       effectful-core,
       hkd,
+      lucid2,
 
       noided-form-hkd,
       noided-form,
@@ -124,6 +125,7 @@ library
 
         OptBeer.Form.Type.CreateUser
         OptBeer.Form.Validate.CreateUser
+        OptBeer.Form.Render.CreateUser
 
 
     -- Modules included in this library but not exported.
@@ -171,6 +173,9 @@ test-suite optimize-beer-test
     -- Base language which the package is written in.
     default-language: GHC2021
 
+    build-depends:
+          tagsoup
+
     -- Modules included in this executable, other than Main.
     other-modules:
             OptBeer.SpecHook
@@ -179,6 +184,10 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.UserSpec
             OptBeer.DB.Table.UserPasswordSpec
             OptBeer.DB.Table.SpecHelper
+
+            OptBeer.Form.Render.SpecHook
+            OptBeer.Form.Render.SpecHelper
+            OptBeer.Form.Render.CreateUserSpec
 
             OptBeer.Form.Validate.CreateUserSpec
 

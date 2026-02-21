@@ -49,8 +49,19 @@ loadTranslations path = do
   if isDir
     then do
       files <- liftIO $ listDirectory path
-      let relevantFiles = filter (\f -> let ext = takeExtension f in ext `elem` [".yml", ".yaml", ".json"]) files
-      foldM (\acc f -> (acc <>) <$> loadFile (path </> f)) mempty relevantFiles
+      foldM
+        ( \acc f -> do
+            let fullPath = path </> f
+            isSubDir <- liftIO $ doesDirectoryExist fullPath
+            if isSubDir
+              then (acc <>) <$> loadTranslations fullPath
+              else
+                if takeExtension f `elem` [".yml", ".yaml", ".json"]
+                  then (acc <>) <$> loadFile fullPath
+                  else return acc
+        )
+        mempty
+        files
     else loadFile path
 
 loadFile :: (IOE :> es, Log :> es) => FilePath -> Eff es Translations
