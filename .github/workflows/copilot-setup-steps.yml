@@ -79,7 +79,6 @@ jobs:
       with:
         path: |
           ~/.cabal/store
-          dist-newstyle
         key: ${{ runner.os }}-build-${{ env.cache-name }}-9.8.2-${{ hashFiles('**/plan.json') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-9.8.2-
@@ -91,15 +90,30 @@ jobs:
 
     - name: Save dependencies cache
       uses: actions/cache/save@v4
-      if: steps.restore-deps-cache.outputs.cache-hit != 'true'
       with:
         path: |
           ~/.cabal/store
-          dist-newstyle
         key: ${{ steps.restore-deps-cache.outputs.cache-primary-key }}
+    - name: Restore cached ofiles
+      uses: actions/cache/restore@v4
+      id: restore-bins-cache
+      env:
+        cache-name: cache-cabal-copilot-ofiles
+      with:
+        path: |
+          dist-newstyle/
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-9.8.2-${{ hashFiles('**/plan.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-9.8.2-
 
     - name: Build all packages
       run: cabal build --enable-tests --enable-benchmarks all
+    - name: Save ofiles cache
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          dist-newstyle/
+        key: ${{ steps.restore-bins-cache.outputs.cache-primary-key }}
 
     - name: Run tests
       run: cabal test all
