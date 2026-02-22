@@ -5,6 +5,8 @@ module OptBeer.Action.Organization where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Lucid hiding (select_)
+import Noided.Translate (MessageKey)
+import Noided.Web.Html (renderTranslated)
 import OptBeer.Action.Base
 import OptBeer.DB.Ids.ActorId (ActorId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
@@ -37,13 +39,13 @@ organizationActions =
     <> actPost organizationsPath createOrganizationAction
     <> actGet showOrganizationPath showOrganizationAction
 
-wrapForm :: (Monad m) => HtmlT m a -> HtmlT m a
+wrapForm :: (FetchMessages m, FetchHtmlFormatters m) => HtmlT m a -> HtmlT m a
 wrapForm act = form_ [method_ "post", action_ "/organizations", class_ "form"] $ do
   res <- act
   div_ [class_ "form-buttons"] $
     button_
       [class_ "button", type_ "submit"]
-      "Create Organization"
+      (renderTranslated (["organization.create.button"] :: [MessageKey]) mempty)
   return res
 
 newOrganizationAction ::
@@ -145,7 +147,7 @@ showOrganizationAction (ident :-$ RPNil) = do
       case ident of
         OrganizationById rid -> addWhere_ (row.id ==. bindParam rid)
         OrganizationByName name -> addWhere_ (row.name ==. bindParam name)
-      return row
+      select_ row
 
     case orgMay of
       Nothing -> return Nothing
