@@ -121,13 +121,18 @@ library
         OptBeer.DB.Ids.ActorId
         OptBeer.DB.Ids.SessionId
         OptBeer.DB.Ids.LoginAttemptId
+        OptBeer.DB.Ids.OrganizationId
         OptBeer.DB.Type.PasswordDigest
+        OptBeer.DB.Type.OrganizationAccessLevel
 
         OptBeer.DB.Table.Actor
         OptBeer.DB.Table.User
         OptBeer.DB.Table.UserPassword
         OptBeer.DB.Table.Session
         OptBeer.DB.Table.LoginAttempt
+        OptBeer.DB.Table.Organization
+        OptBeer.DB.Table.OrganizationUserAccess
+        OptBeer.DB.Table.UserDefaultOrganization
         OptBeer.DB.Table.Timestamps
 
         OptBeer.Page.Type
@@ -226,6 +231,10 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.UserPasswordSpec
             OptBeer.DB.Table.SessionSpec
             OptBeer.DB.Table.LoginAttemptSpec
+            OptBeer.DB.Table.OrganizationSpec
+            OptBeer.DB.Table.OrganizationUserAccessSpec
+            OptBeer.DB.Table.UserDefaultOrganizationSpec
+            OptBeer.DB.Type.OrganizationAccessLevelSpec
             OptBeer.DB.Table.SpecHelper
 
             OptBeer.Form.Render.SpecHook

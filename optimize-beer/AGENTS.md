@@ -122,6 +122,28 @@ When selecting from multiple tables or returning multiple values from `SelectM`:
 -   The bounds are constructed using `Incl` (inclusive) and `Excl` (exclusive).
 -   Example: `Range (Incl start) (Excl end)`
 
+### Custom Enum Types
+When wrapping a Postgres ENUM type in Haskell:
+1.  **Define the Data Type**: Use a simple sum type and derive `Generic`, `Show`, `Eq`, etc.
+2.  **`PGType` Instance**: Provide the name of the enum type in Postgres.
+3.  **`AsBindParam` Instance**: Use `EncodeNonNull` with `Hasql.Encoders.enum`.
+4.  **`AsHaskellValue` Instance**: Use `Hasql.Decoders.enum`.
+-   **Crucial**: Both `Enc.enum` and `Dec.enum` require the **schema** (usually `Just "public"`) and the **type name** as arguments before the mapping function.
+-   Example:
+    ```haskell
+    instance AsBindParam MyEnum where
+      bindParamEncoder = EncodeNonNull $ Enc.enum (Just "public") "my_enum_type" $ \case
+        A -> "a"
+        B -> "b"
+
+    instance AsHaskellValue MyEnum where
+      type HaskellTypeOf MyEnum = MyEnum
+      decodeHaskellValue _ = Dec.enum (Just "public") "my_enum_type" $ \case
+        "a" -> Just A
+        "b" -> Just B
+        _ -> Nothing
+    ```
+
 ### Translation Testing
 When testing renderers, we want to ensure that all required translation keys exist.
 -   Use `withTranslationsInLocale` from `OptBeer.Form.Render.SpecHelper` to provide a translation environment to your specs.

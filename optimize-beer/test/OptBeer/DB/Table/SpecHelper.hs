@@ -2,6 +2,7 @@
 
 module OptBeer.DB.Table.SpecHelper where
 
+import Control.Monad (forM_)
 import Data.Pool (Pool, withResource)
 import Data.Vector (Vector)
 import Hasql.Connection (Connection)
@@ -9,6 +10,18 @@ import Noided.Sql
 import Noided.Sql.TransactM
 import Test.Hspec
 import Noided.Form.HKD
+import Data.Proxy
+
+-- | Asserts that an enum type correctly round-trips through the database.
+-- This will test every value from minBound to maxBound.
+assertEnumRoundtrips ::
+  forall e.
+  (Enum e, Bounded e, Eq e, Show e, AsBindParam e, AsHaskellValue e, HaskellTypeOf e ~ e, BoundNullability e ~ NonNull, BoundType e ~ e) =>
+  Pool Connection ->
+  Expectation
+assertEnumRoundtrips pool = forM_ [minBound @e .. maxBound @e] $ \val -> do
+  res <- runDB (querySingleRow $ select_ $ Element (bindParam val) :: TransactM String e) pool
+  res `shouldBe` val
 
 -- | Asserts that a table def is valid, by ensuring it has correct columns.
 -- This will use `SelectM` to try to select a value from the table with a `WHERE FALSE` where clause.
