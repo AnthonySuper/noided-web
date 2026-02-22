@@ -1,6 +1,6 @@
 Sequel.migration do
   change do
-    create_table :login_attempts do
+    create_table :sessions do
       primary_key :id, type: :Bignum
       foreign_key(
         :user_id,
@@ -9,11 +9,13 @@ Sequel.migration do
       )
       String(:user_agent, null: true)
       column(:remote_ip, :inet, null: false)
-      column(:attempt_at, :timestamptz, null: false)
-      column(:successful, :boolean, null: false)
+      column(:valid_during, :tstzrange, null: false)
 
-      index %i[user_id attempt_at]
-      index %i[remote_ip attempt_at]
+      index :user_id
+      index :valid_during, type: :gist
+
+      timestamps
+
     end
   end
 end
