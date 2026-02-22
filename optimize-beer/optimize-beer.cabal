@@ -215,6 +215,9 @@ test-suite optimize-beer-test
 
             OptBeer.Form.Validate.CreateUserSpec
 
+            OptBeer.Action.SpecHook
+            OptBeer.Action.SpecHelper
+
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
