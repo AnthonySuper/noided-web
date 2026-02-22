@@ -103,6 +103,7 @@ loginAction (RPNil :: RouteParams '[]) = do
   let userAgent = Map.lookup hUserAgent headers >>= \v -> either (const Nothing) Just (decodeUtf8' v)
       remoteIp = sockAddrToIPRange remoteSock
   now <- getCurrentTime
+  let validUntil = addUTCTime sessionTtl now
   result <- runTransactionEither $ do
     -- 1. Validate form (blank checks)
     validated <- validateForm createSessionValidator body >>= either MonadError.throwError pure
@@ -146,7 +147,7 @@ loginAction (RPNil :: RouteParams '[]) = do
             Cookie.setCookieHttpOnly = True,
             Cookie.setCookieSecure = True,
             Cookie.setCookieSameSite = Just Cookie.sameSiteLax,
-            Cookie.setCookieExpires = Just (validUntil session)
+            Cookie.setCookieExpires = Just validUntil
           }
       return $ RespondRedirect RedirectFound "/"
 
