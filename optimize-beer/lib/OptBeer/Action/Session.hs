@@ -173,7 +173,7 @@ logoutAction ::
   Eff es (PageResponse renderM)
 logoutAction (RPNil :: RouteParams '[]) = do
   msid <- getCurrentSessionId
-  now <- getCurrentTime
+
   case msid of
     Nothing -> return ()
     Just sid -> do

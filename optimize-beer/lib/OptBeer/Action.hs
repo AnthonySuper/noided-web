@@ -40,7 +40,7 @@ optBeerActions =
     & pagesHandleError handleBadRequest
     & pagesAroundAction runSettingCookies
     & pagesHandleError handleSessionError
-    & pagesHandleError handleBadRequest
+
     & mapResponsesToPage
     & pagesAroundAction runWithCurrentActorFromSession
     & pagesAroundAction runFrontendAssets

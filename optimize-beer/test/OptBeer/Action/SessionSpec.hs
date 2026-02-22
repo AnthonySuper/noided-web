@@ -162,7 +162,7 @@ logoutSpec = describe "logoutAction" $ do
 
     case resp of
       RespondRedirect RedirectFound "/" -> return ()
-      _ -> fail $ "Expected redirect to /, got something else"
+      _ -> fail "Expected redirect to /, got something else"
 
     -- 3. Verify: Session should be gone
     mSession <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
