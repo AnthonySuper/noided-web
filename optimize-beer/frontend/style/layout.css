@@ -1,0 +1,23 @@
+#overall-header {
+  padding: var(--base-space);
+  background-color: var(--color-primary);
+  display: grid;
+  grid-template:
+    "logo-header gap user-name" 1fr /
+    auto 1fr auto;
+}
+
+#header-name {
+  margin: 0;
+  font-size: var(--font-size-large);
+  grid-area: logo-header;
+
+  a {
+    color: black;
+    text-decoration: none;
+  }
+}
+
+#header-login, #header-actor {
+  grid-area: user-name;
+}

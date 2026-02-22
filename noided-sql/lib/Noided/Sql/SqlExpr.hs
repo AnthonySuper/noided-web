@@ -96,6 +96,10 @@ module Noided.Sql.SqlExpr
     inetSubOffset_,
     inetSubInet_,
 
+    -- * Range functions
+    contains_,
+    isContainedBy_,
+
     -- * Aggregate functions
     AggregateExpr,
     agg,
@@ -123,6 +127,7 @@ import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.SqlExpr.Bool
 import Noided.Sql.Internal.SqlExpr.Inet
 import Noided.Sql.Internal.SqlExpr.Numeric
+import Noided.Sql.Internal.SqlExpr.Range
 import Noided.Sql.Internal.SqlExpr.Text
 import Noided.Sql.Internal.Type.AggregateExpr
 import Noided.Sql.Internal.Type.MutationExpr

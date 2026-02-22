@@ -40,6 +40,9 @@ import Network.HTTP.Types.Status
 import Network.Wai qualified as Wai
 import Noided.Server.Internal.Type.Action
 import Noided.Server.Internal.Type.Request
+import Noided.Web.Effect.CurrentTime
+import Noided.Web.Effect.GetCookies
+import Noided.Web.Effect.Signing
 import Noided.Web.Effect.WriteHeader
 import Noided.Web.Internal.Effect.SomeRequest
 import Noided.Web.Internal.Type.Application
@@ -49,9 +52,11 @@ import Noided.Web.Internal.Type.Response
 import Optics.Core
 
 applicationInterpretCommon ::
+  (Signing :> es, CurrentTime :> es) =>
   Application
     ( Eff
         ( WriteHeader
+            : GetCookies
             : GetRemoteIp
             : GetHeaders
             : GetQueryParams
@@ -65,9 +70,11 @@ applicationInterpretCommon =
 
 -- | Interpret request-related actions from a request.
 applicationInterpretRequest ::
+  (Signing :> es, CurrentTime :> es) =>
   Application
     ( Eff
-        ( GetRemoteIp
+        ( GetCookies
+            : GetRemoteIp
             : GetHeaders
             : GetQueryParams
             : GetRequestBody
@@ -77,6 +84,7 @@ applicationInterpretRequest ::
   Application (Eff es)
 applicationInterpretRequest = applicationAroundAll $ \act req ->
   act req
+    & runWithActualCookies
     & runWithRemoteIp req.remoteHost
     & runWithHeaders req.headers
     & runWithQueryParams req.queryParams
