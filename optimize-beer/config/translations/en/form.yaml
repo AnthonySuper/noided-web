@@ -13,8 +13,6 @@ en:
           name: "Confirm Email"
         confirmPassword:
           name: "Confirm Password"
-    errors:
-      InvalidCredentials: "The email or password you entered is incorrect."
   password_policy:
     min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
     max_length: "{pluralize($count) { one { At most $count character long } default { At most $count characters long } }}"
