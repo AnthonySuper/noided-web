@@ -136,6 +136,12 @@ it "updates the user" $ \runner -> do
   updatedUser.name `shouldBe` "New Name"
 ```
 
+### Transaction Error Handling
+Prefer using `runTransaction` over `runTransactionToResult` in most actions.
+-   `runTransaction` automatically throws `SessionError`s, which will be caught by the global error handler and rendered as a 500 Internal Server Error.
+-   This avoids "swallowing" unexpected database errors or misrepresenting them as other error types (like 404s).
+-   Only use `runTransactionToResult` or `runTransactionEither` when you have a specific business requirement to handle database-level failures manually.
+
 ### Transaction Monad (TransactM)
 -   **Crucial**: `TransactM` does **not** have an instance of `MonadIO`. You cannot use `liftIO` inside a database transaction.
 -   This is a deliberate design choice to ensure transactions are deterministic and can be retried safely.

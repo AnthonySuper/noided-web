@@ -4,7 +4,7 @@
 module OptBeer.Action.Organization where
 
 import Control.Monad.Error.Class qualified as MonadError
-import Lucid
+import Lucid hiding (select_)
 import OptBeer.Action.Base
 import OptBeer.DB.Ids.ActorId (ActorId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
@@ -113,7 +113,7 @@ createOrganizationAction (RPNil :: RouteParams '[]) = do
             return ()
           Just _ -> return ()
 
-        return (Right () :: Either (FormErrors (SubformField CreateOrganizationF)) ())
+        return org.id
 
       case result of
         Left err ->
@@ -121,7 +121,7 @@ createOrganizationAction (RPNil :: RouteParams '[]) = do
             RespondFormErrors
               wrapForm
               (renderFormT createOrganizationRenderer body err)
-        Right _ -> return $ RespondRedirect RedirectFound "/"
+        Right orgId -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById orgId))
 
 showOrganizationAction ::
   ( Error Unauthorized :> es,
@@ -139,7 +139,7 @@ showOrganizationAction (ident :-$ RPNil) = do
     Nothing -> throwError $ Unauthorized "You must be logged in to view an organization."
     Just a -> return a
 
-  mOrgAndAccess <- runTransactionToResult $ do
+  mOrgAndAccess <- runInfallibleTransaction $ do
     orgMay <- queryMaybe $ do
       row <- addFrom_ (fromBase_ organizationsTable)
       case ident of
@@ -154,12 +154,10 @@ showOrganizationAction (ident :-$ RPNil) = do
           row <- addFrom_ (fromBase_ organizationUserAccessesTable)
           addWhere_ (row.organizationId ==. bindParam (org.id :: OrganizationId))
           addWhere_ (row.userId ==. bindParam (actor.id :: ActorId))
-          return row
+          select_ row
         return $ Just (org, accessMay)
 
   case mOrgAndAccess of
-    TransactOK (Just (org, Just _)) -> return $ respondPage200 (showOrganizationPage org)
-    TransactOK (Just (_, Nothing)) -> throwError $ Forbidden "You do not have access to this organization."
-    TransactOK Nothing -> throwError $ NotFound "Organization not found."
-    TransactErr _ -> throwError $ NotFound "Organization not found."
-    SessionErr _ -> throwError $ NotFound "Organization not found."
+    Just (org, Just _) -> return $ respondPage200 (showOrganizationPage org)
+    Just (_, Nothing) -> throwError $ Forbidden "You do not have access to this organization."
+    Nothing -> throwError $ NotFound "Organization not found."

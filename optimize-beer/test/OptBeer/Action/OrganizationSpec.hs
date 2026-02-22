@@ -21,6 +21,7 @@ import OptBeer.DB.Table.OrganizationUserAccess qualified as OUA
 import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Table.UserDefaultOrganization qualified as UDO
 import OptBeer.DB.Type.OrganizationAccessLevel
+import OptBeer.Routes (showOrganizationPath)
 import OptBeer.Type.OrganizationIdent
 import Test.Hspec
 
@@ -59,10 +60,6 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
       $ do
         createOrganizationAction RPNil
 
-    case resp of
-      RespondRedirect RedirectFound "/" -> return ()
-      _ -> fail "Expected redirect to /"
-
     -- 3. Verify: Check organization, access, and default
     (org, access, defaultOrg) <- runDBSetup runner $ do
         org <- querySingleRow $ do
@@ -82,6 +79,10 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
           select_ row
 
         return (org, access, defaultOrg)
+
+    case resp of
+      RespondRedirect RedirectFound loc -> loc `shouldBe` usePathTemplate showOrganizationPath (OrganizationById org.id)
+      _ -> fail "Expected redirect to organization show page"
 
     access.accessLevel `shouldBe` Admin
     defaultOrg.organizationId `shouldBe` org.id
@@ -141,7 +142,7 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
               ]
         body = FormBody (MultipartFormDataSubmission formData)
 
-    _ <- runEff
+    resp <- runEff
       . runFailingError @SessionError
       . runFailingError @BadRequest
       . runFailingError @Unauthorized
@@ -152,11 +153,21 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
         createOrganizationAction RPNil
 
     -- 3. Verify: Default org should still be the existing one
-    defaultOrg <- runDBSetup runner $ do
-        querySingleRow $ do
+    (newOrg, defaultOrg) <- runDBSetup runner $ do
+        newOrg <- querySingleRow $ do
+          row <- addFrom_ (fromBase_ Org.organizationsTable)
+          addWhere_ (row.name ==. bindParam ("New Org" :: Text))
+          select_ row
+        defaultOrg <- querySingleRow $ do
           row <- addFrom_ (fromBase_ UDO.userDefaultOrganizationsTable)
           addWhere_ (row.userId ==. bindParam actor.id)
           select_ row
+        return (newOrg, defaultOrg)
+
+    case resp of
+      RespondRedirect RedirectFound loc -> loc `shouldBe` usePathTemplate showOrganizationPath (OrganizationById newOrg.id)
+      _ -> fail "Expected redirect to organization show page"
+
     defaultOrg.organizationId `shouldBe` existingOrg.id
 
   it "fails if organization name is only numbers" $ \runner -> do
