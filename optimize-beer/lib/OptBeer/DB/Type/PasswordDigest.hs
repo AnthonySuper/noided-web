@@ -14,8 +14,6 @@ instance PGType PasswordDigest where
   pgTypeName = pgTypeNameNewtype @Text
 
 instance AsBindParam PasswordDigest where
-  type BoundType PasswordDigest = BoundType Text
-  type BoundNullability PasswordDigest = NonNull
   bindParamEncoder = bindParamEncoderNewtype @Text
   inspectBindParam = const "<CENSORED>"
 

@@ -50,6 +50,10 @@ module Noided.Form
     formValues,
     traverseFormValues,
 
+    -- *** Of unknown kind
+    SomeFormSubmission (..),
+    multipartFromSomeSubmission,
+
     -- ** Form Keys
     FormCanonicalKey (..),
     FormCanonicalPiece (..),

@@ -6,7 +6,6 @@ import Effectful
 import Effectful.Dispatch.Dynamic
 import Effectful.State.Static.Local
 import Web.Cookie (SetCookie)
-import Web.Cookie qualified as Cookie
 
 -- | Effect for writing cookies.
 data WriteCookie :: Effect where

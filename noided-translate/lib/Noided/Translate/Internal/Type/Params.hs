@@ -32,6 +32,9 @@ paramToPluralizationForm = \case
 class AsTranslateParam t where
   asTranslateParam :: t -> TranslateParam
 
+instance AsTranslateParam String where
+  asTranslateParam = ParamFragment . pack
+
 instance AsTranslateParam TranslateParam where
   asTranslateParam = id
 

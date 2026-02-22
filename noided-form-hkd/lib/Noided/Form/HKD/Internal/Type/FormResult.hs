@@ -1,7 +1,10 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Noided.Form.HKD.Internal.Type.FormResult where
 
 import Data.Kind
 import Data.Sequence qualified as Seq
+import GHC.Records
 import Noided.Form.HKD.Internal.Type.HKDFieldType
 import Optics.Core
 
@@ -12,6 +15,9 @@ data FormResult field where
   ListResult ::
     Seq.Seq (FormResult inner) ->
     FormResult (ListField inner)
+
+instance (v ~ t) => HasField "val" (FormResult (InputField t)) v where
+  getField (InputResult r) = r
 
 _InputResult :: Iso' (FormResult (InputField t)) t
 _InputResult = iso (\(InputResult r) -> r) InputResult

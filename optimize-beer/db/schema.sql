@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict FYgDbf7AKVvdnkQzif81caObnjebS7GnU2NsLq34WICzPMEUfb4Qh4E6W2e2nTB
+\restrict GrVWzRoYfLdFoy7SPoR2kiVidzIPm7lnIDvFoGNWWXTrAIfQuM6eqQSoH06nnLZ
 
--- Dumped from database version 17.6 (Postgres.app)
+-- Dumped from database version 18.0 (Postgres.app)
 -- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
@@ -23,7 +23,7 @@ SET row_security = off;
 -- Name: case_insensitive; Type: COLLATION; Schema: public; Owner: -
 --
 
-CREATE COLLATION public.case_insensitive (provider = icu, deterministic = false, locale = 'und');
+CREATE COLLATION public.case_insensitive (provider = icu, deterministic = false, locale = 'und-u-ks-level2');
 
 
 --
@@ -162,15 +162,15 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict FYgDbf7AKVvdnkQzif81caObnjebS7GnU2NsLq34WICzPMEUfb4Qh4E6W2e2nTB
+\unrestrict GrVWzRoYfLdFoy7SPoR2kiVidzIPm7lnIDvFoGNWWXTrAIfQuM6eqQSoH06nnLZ
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict zTg1jXicJSpCUCZm23fjRguxzN76ecTFLJVsmWWNh6kTiSQrsqqXc8MGBmvlSBR
+\restrict e8xguSqIw5ikRUhcm7EmycmefhmfpPPaWwotEhOYdtR64NbDIs3rqMh2wlGxt3u
 
--- Dumped from database version 17.6 (Postgres.app)
+-- Dumped from database version 18.0 (Postgres.app)
 -- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
@@ -201,5 +201,5 @@ INSERT INTO public.schema_migrations (filename) VALUES
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zTg1jXicJSpCUCZm23fjRguxzN76ecTFLJVsmWWNh6kTiSQrsqqXc8MGBmvlSBR
+\unrestrict e8xguSqIw5ikRUhcm7EmycmefhmfpPPaWwotEhOYdtR64NbDIs3rqMh2wlGxt3u
 
