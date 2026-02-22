@@ -49,6 +49,20 @@ The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) inst
     -   **Always** use `{-# LANGUAGE NoFieldSelectors #-}` and `{-# LANGUAGE OverloadedRecordDot #-}` in modules that work with multiple HKD types.
     -   Use `DuplicateRecordFields` to allow multiple types to define the same field names.
 
+## Form Development Workflow
+
+When implementing a new form, you must complete the following steps to ensure technical and aesthetic integrity:
+
+1.  **Define the Form Type**: Create a module in `OptBeer.Form.Type`.
+2.  **Implement Validation**: Create a module in `OptBeer.Form.Validate`.
+3.  **Create the Renderer**: Create a module in `OptBeer.Form.Render`.
+4.  **Add Translations**: Add the necessary keys to `config/translations/`.
+    -   Check if common fields (like `email` or `password`) already exist in the global `form.attributes` scope before adding them to a specific form scope.
+5.  **Write a Renderer Test**: Every new form renderer **must** have a corresponding spec in `test/OptBeer/Form/Render/`.
+    -   Use `assertHasNoBadTranslations` to ensure all fields and labels are properly localized.
+    -   This is our primary defense against "broken" UIs in production.
+6.  **Write an Action Test**: Create a functional test in `test/OptBeer/Action/` to verify the form submission logic, database side-effects, and redirects.
+
 ## Testing Best Practices
 
 ### Database Isolation
