@@ -124,6 +124,7 @@ library
 
         OptBeer.Page.Type
         OptBeer.Page.Layout
+        OptBeer.Page.Error
         OptBeer.Action
 
         OptBeer.Error.BadRequest

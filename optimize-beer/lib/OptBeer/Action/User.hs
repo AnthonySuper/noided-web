@@ -47,7 +47,13 @@ userActions =
     <> actPost usersPath createUserAction
 
 wrapForm :: (Monad m) => HtmlT m a -> HtmlT m a
-wrapForm = form_ []
+wrapForm act = form_ [method_ "post", action_ "/users", class_ "form"] $ do
+  res <- act
+  div_ [class_ "form-butons"] $
+    button_
+      [class_ "button", type_ "submit"]
+      "Submit"
+  return res
 
 blankFormPage :: (FetchMessages m, FetchHtmlFormatters m) => HtmlT m ()
 blankFormPage =

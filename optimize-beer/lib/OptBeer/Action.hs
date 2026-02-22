@@ -4,21 +4,38 @@ module OptBeer.Action (optBeerActions) where
 
 import Data.Function
 import Data.Functor.Identity
+import Data.Text (pack)
 import Effectful
+import Noided.Sql (SessionError)
 import Noided.Web.Effect
 import Noided.Web.PageAction
 import OptBeer.Action.User (userActions)
+import OptBeer.Effect.HashPassword
+import OptBeer.Error.BadRequest (BadRequest (..))
+import OptBeer.Page.Error
 import OptBeer.Page.Layout (pageLayout)
 import OptBeer.Page.Type (mapResponsesToPage)
 
-optBeerActions :: (FetchMessagesE :> es, GetServerEnv :> es, IOE :> es) => PageRoutes Identity (Eff es)
+optBeerActions ::
+  ( FetchMessagesE :> es,
+    GetServerEnv :> es,
+    GetRequestBody :> es,
+    RunTransaction :> es,
+    IOE :> es
+  ) =>
+  PageRoutes Identity (Eff es)
 optBeerActions =
   beforeTransform
+    & pagesHandleError handleBadRequest
+    & pagesHandleError handleSessionError
     & pagesAddLayout pageLayout
     & mapResponsesToPage
     & pagesAroundAction runFrontendAssets
     & pagesAroundAction (runFetchHtmlFormattersE mempty)
   where
+    handleBadRequest cs (BadRequest msg) = respondBadRequest cs msg
+    handleSessionError cs (err :: SessionError) = respondInternalError cs (pack $ show err)
+
     runFrontendAssets act = do
       env <- getServerEnv
       case env of
@@ -29,4 +46,4 @@ optBeerActions =
             Left _ -> runFrontendAssetsProd "/static/" (ViteManifest mempty) act
             Right m -> runFrontendAssetsProd "/static/" m act
     beforeTransform =
-      userActions
+      pagesAroundAction runHashPasswordBCrypt userActions
