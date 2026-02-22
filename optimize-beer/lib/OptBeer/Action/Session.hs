@@ -197,8 +197,8 @@ logoutAction (RPNil :: RouteParams '[]) = do
 logAttempt :: T.UTCTime -> ActorId -> Maybe Text -> IPRange -> Bool -> TransactM err ()
 logAttempt (now :: T.UTCTime) (userId :: ActorId) (userAgent :: Maybe Text) (remoteIp :: IPRange) (successful :: Bool) = do
   let vals =
-        values_
-          [ #userId
+        singleValue_
+          ( #userId
               :==> mutateVal_ (bindParam userId)
               :::%? #userAgent
               :==> mutateVal_ (bindParam userAgent)
@@ -209,7 +209,7 @@ logAttempt (now :: T.UTCTime) (userId :: ActorId) (userAgent :: Maybe Text) (rem
               :::%? #successful
               :==> mutateVal_ (bindParam successful)
               :::%? EmptyWrappedRow
-          ]
+          )
   _ <- querySingleRow $ insertReturningAll loginAttemptsTable vals
   return ()
 
@@ -222,8 +222,8 @@ createSession now userId userAgent remoteIp = do
   let validUntil = addUTCTime sessionTtl now
       validDuring = Range (Incl now) (Excl validUntil)
       vals =
-        values_
-          [ #userId
+        singleValue_
+          ( #userId
               :==> mutateVal_ (bindParam userId)
               :::%? #userAgent
               :==> mutateVal_ (bindParam userAgent)
@@ -232,7 +232,7 @@ createSession now userId userAgent remoteIp = do
               :::%? #validDuring
               :==> mutateVal_ (bindParam validDuring)
               :::%? EmptyWrappedRow
-          ]
+          )
   querySingleRow $ insertReturningAll sessionsTable vals
 
 sockAddrToIPRange :: SockAddr -> IPRange

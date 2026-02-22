@@ -8,6 +8,7 @@ module Noided.Sql.Internal.Insert.InsertValues
   ( InsertValues (..),
     defaultValues_,
     values_,
+    singleValue_,
     insertSelect_,
     writeInsertValues,
     InsertForTable,
@@ -65,6 +66,13 @@ values_ ::
   NE.NonEmpty (WrappedRow labels MutationExpr) ->
   InsertValues labels
 values_ = ValuesList
+
+-- | Use a single row of values to insert.
+singleValue_ ::
+  (labels ~ x ': xs) =>
+  WrappedRow labels MutationExpr ->
+  InsertValues labels
+singleValue_ = ValuesList . NE.singleton
 
 -- | Insert from the results of a SELECT query.
 insertSelect_ ::

@@ -8,6 +8,7 @@ module Noided.Sql.Insert
     InsertValues,
     defaultValues_,
     values_,
+    singleValue_,
     insertSelect_,
     InsertForTable,
   )

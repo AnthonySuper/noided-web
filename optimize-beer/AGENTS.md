@@ -49,6 +49,19 @@ The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) inst
     -   **Always** use `{-# LANGUAGE NoFieldSelectors #-}` and `{-# LANGUAGE OverloadedRecordDot #-}` in modules that work with multiple HKD types.
     -   Use `DuplicateRecordFields` to allow multiple types to define the same field names.
 
+## Localization (i18n)
+
+We prioritize a fully localizable UI. Hardcoded user-facing strings in Haskell modules are discouraged.
+
+### Localization Workflow
+
+1.  **Define Translation Keys**: Add new keys to the appropriate YAML files in `optimize-beer/config/translations/en/`.
+2.  **Use `renderTranslated`**: In Lucid templates, use `renderTranslated` with a list of potential keys.
+    ```haskell
+    h1_ $ renderTranslated ["home.title"] mempty
+    ```
+3.  **Verification**: Always add a test case to ensure no `noided-bad-translation` elements are rendered. For pages, this can be done by checking the output of a `PageResponse` in a spec.
+
 ## Form Development Workflow
 
 When implementing a new form, you must complete the following steps to ensure technical and aesthetic integrity:
@@ -90,14 +103,26 @@ To prevent test data from polluting the database, all tests should run inside a 
 
 ### Direct Row Construction
 When setting up test data or performing manual inserts, you don't always need to construct a full HKD record. You can use `WrappedRow` syntax to specify only the columns you care about.
--   Use `values_` with the label operator `:==>` and the mutation helper `mutateVal_`.
+-   Use `singleValue_` with the label operator `:==>` and the mutation helper `mutateVal_` when inserting only one row. This avoids the need for list brackets.
+-   Use `values_` when you need to insert multiple rows at once.
 -   Chain multiple fields in a single row using the `:::%?` operator and end with `EmptyWrappedRow`.
--   **Important**: `values_` takes a `NonEmpty` list of *rows*. Even if you are only inserting one row, it must be inside a list (if `OverloadedLists` is on) or wrapped with `:| []`.
--   Example (with `OverloadedLists`):
+-   **Important**: `values_` takes a `NonEmpty` list of *rows*.
+-   Example (Single Row):
+    ```haskell
+    let vals = singleValue_
+          ( #name :==> mutateVal_ (bindParam @Text "Alice")
+            :::%? #email :==> mutateVal_ (bindParam @Text "alice@example.com")
+            :::%? EmptyWrappedRow
+          )
+    ```
+-   Example (Multiple Rows with `OverloadedLists`):
     ```haskell
     let vals = values_
           [ #name :==> mutateVal_ (bindParam @Text "Alice")
             :::%? #email :==> mutateVal_ (bindParam @Text "alice@example.com")
+            :::%? EmptyWrappedRow
+          , #name :==> mutateVal_ (bindParam @Text "Bob")
+            :::%? #email :==> mutateVal_ (bindParam @Text "bob@example.com")
             :::%? EmptyWrappedRow
           ]
     ```

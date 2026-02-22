@@ -1,0 +1,13 @@
+en:
+  home:
+    hero:
+      title: "optimize.beer"
+      tagline: "Take the guesswork out of your brew."
+    org_prompt:
+      title: "Almost there!"
+      body: "To start using optimize.beer, you'll need to create or join an organization."
+      cta: "Create an Organization"
+    coming_soon:
+      title: "Coming Soon"
+      body: "We're crafting something special. Sign up to be the first to know when we launch."
+      cta: "Create an Account"

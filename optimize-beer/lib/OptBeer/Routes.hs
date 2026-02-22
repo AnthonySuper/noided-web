@@ -19,3 +19,9 @@ sessionsPath = "sessions" :/ PathEnd
 
 logoutPath :: PathTemplate '[]
 logoutPath = "logout" :/ PathEnd
+
+organizationsPath :: PathTemplate '[]
+organizationsPath = "organizations" :/ PathEnd
+
+newOrganizationPath :: PathTemplate '[]
+newOrganizationPath = "organizations" :/ "new" :/ PathEnd

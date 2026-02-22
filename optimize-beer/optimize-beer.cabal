@@ -154,10 +154,13 @@ library
 
         OptBeer.Form.Type.CreateUser
         OptBeer.Form.Type.CreateSession
+        OptBeer.Form.Type.CreateOrganization
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Validate.CreateSession
+        OptBeer.Form.Validate.CreateOrganization
         OptBeer.Form.Render.CreateUser
         OptBeer.Form.Render.CreateSession
+        OptBeer.Form.Render.CreateOrganization
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Routes
@@ -166,6 +169,7 @@ library
         OptBeer.Action.Home
         OptBeer.Action.User
         OptBeer.Action.Session
+        OptBeer.Action.Organization
 
 
 
@@ -241,6 +245,7 @@ test-suite optimize-beer-test
             OptBeer.Form.Render.SpecHelper
             OptBeer.Form.Render.CreateUserSpec
             OptBeer.Form.Render.CreateSessionSpec
+            OptBeer.Form.Render.CreateOrganizationSpec
 
             OptBeer.Form.Validate.CreateUserSpec
 
@@ -248,6 +253,8 @@ test-suite optimize-beer-test
             OptBeer.Action.SpecHelper
             OptBeer.Action.UserSpec
             OptBeer.Action.SessionSpec
+            OptBeer.Action.OrganizationSpec
+            OptBeer.Action.HomeSpec
 
 
     -- LANGUAGE extensions used by modules in this package.
