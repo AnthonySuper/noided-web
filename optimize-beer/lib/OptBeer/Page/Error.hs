@@ -54,6 +54,37 @@ respondError status cs msg = respondPage status (errorPage cs msg)
 respondBadRequest :: CallStack -> Text -> PageResponse Page
 respondBadRequest cs msg = respondError badRequest400 cs msg
 
+-- | Create a 401 Unauthorized response with the error page.
+respondUnauthorized :: CallStack -> Text -> PageResponse Page
+respondUnauthorized cs msg = respondError unauthorized401 cs msg
+
+-- | Create a 403 Forbidden response with the error page.
+respondForbidden :: CallStack -> Text -> PageResponse Page
+respondForbidden cs msg = respondError forbidden403 cs msg
+
+-- | Create a 404 Not Found response with the error page.
+respondNotFound :: CallStack -> Text -> PageResponse Page
+respondNotFound cs msg = respondError notFound404 cs msg
+
+-- | Create a 409 Conflict response with the error page.
+respondConflict :: CallStack -> Text -> PageResponse Page
+respondConflict cs msg = respondError conflict409 cs msg
+
+-- | Create a 418 I Am A Teapot response with the error page.
+respondIAmATeapot :: CallStack -> Text -> PageResponse Page
+respondIAmATeapot cs msg = respondError imATeapot418 cs msg
+
+-- | Create a 429 Too Many Requests response with the error page.
+respondTooManyRequests :: CallStack -> Text -> PageResponse Page
+respondTooManyRequests cs msg = respondError tooManyRequests429 cs msg
+
+-- | Create a 451 Unavailable For Legal Reasons response with the error page.
+respondUnavailableForLegalReasons :: CallStack -> Text -> PageResponse Page
+respondUnavailableForLegalReasons cs msg = respondError unavailableForLegalReasons451 cs msg
+
+unavailableForLegalReasons451 :: Status
+unavailableForLegalReasons451 = mkStatus 451 "Unavailable For Legal Reasons"
+
 -- | Create a 500 Internal Server Error response with the error page.
 respondInternalError :: CallStack -> Text -> PageResponse Page
 respondInternalError cs msg = respondError internalServerError500 cs msg

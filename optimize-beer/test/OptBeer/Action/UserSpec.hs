@@ -15,7 +15,6 @@ import OptBeer.Action.User
 import OptBeer.DB.Table.Actor qualified as Actor
 import OptBeer.DB.Table.User qualified as User
 import OptBeer.Effect.HashPassword
-import OptBeer.Error.BadRequest (BadRequest)
 import OptBeer.Page.Type (Page)
 import Test.Hspec
 

@@ -118,6 +118,8 @@ library
 
       Noided.Web.Internal.PageAction
 
+      Noided.Web.Error
+
       Noided.Web.Internal.Class.Endpoint
 
 

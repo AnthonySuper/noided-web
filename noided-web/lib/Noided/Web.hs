@@ -16,6 +16,9 @@ module Noided.Web
 
     -- * Effects
     module Noided.Web.Effect,
+
+    -- * HTTP Errors
+    module Noided.Web.Error,
   )
 where
 
@@ -35,6 +38,7 @@ import Noided.Server.Internal.Type.Server (someActionsToRouter)
 import Noided.Web.Application
 import Noided.Web.ApplicationConfig
 import Noided.Web.Effect
+import Noided.Web.Error
 import Noided.Web.PageAction
 import Noided.Web.Response
 

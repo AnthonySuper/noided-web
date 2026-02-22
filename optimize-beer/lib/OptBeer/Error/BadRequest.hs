@@ -1,10 +1,3 @@
-module OptBeer.Error.BadRequest where
+module OptBeer.Error.BadRequest (BadRequest (..)) where
 
-import Data.Text
-import GHC.Generics
-import Noided.Validation (ValidationError)
-
--- | Bad request error: a request was not valid.
-newtype BadRequest = BadRequest {reqMsg :: Text}
-  deriving (Show, Read, Eq, Ord, Generic)
-  deriving anyclass (ValidationError)
+import Noided.Web.Error (BadRequest (..))
