@@ -144,6 +144,7 @@ library
       Noided.Sql.Internal.SqlExpr.Bool
       Noided.Sql.Internal.SqlExpr.Inet
       Noided.Sql.Internal.SqlExpr.Numeric
+      Noided.Sql.Internal.SqlExpr.Range
       Noided.Sql.Internal.SqlExpr.Text
 
       Noided.Sql.Internal.HKDTableDef

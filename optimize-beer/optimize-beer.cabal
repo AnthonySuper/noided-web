@@ -140,6 +140,7 @@ library
         OptBeer.Error.BadRequest
 
         OptBeer.Effect.HashPassword
+        OptBeer.Effect.CurrentActor
         OptBeer.Type.Hashword
 
         OptBeer.ValidationError.DoesNotMatchConfirmation
