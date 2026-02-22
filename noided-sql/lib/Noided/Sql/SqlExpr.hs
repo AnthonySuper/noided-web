@@ -74,6 +74,28 @@ module Noided.Sql.SqlExpr
     substr_,
     replace_,
 
+    -- * Inet functions
+    (<<.),
+    (<<=.),
+    (>>.),
+    (>>=.),
+    inetOverlaps_,
+    abbrev_,
+    broadcast_,
+    family_,
+    host_,
+    hostmask_,
+    inetMerge_,
+    inetSameFamily_,
+    masklen_,
+    netmask_,
+    network_,
+    setMasklen_,
+    inetToText_,
+    inetAddOffset_,
+    inetSubOffset_,
+    inetSubInet_,
+
     -- * Aggregate functions
     AggregateExpr,
     agg,
@@ -99,6 +121,7 @@ import Noided.Sql.Internal.Class.AsBindParam
 import Noided.Sql.Internal.Class.SqlNumeric
 import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.SqlExpr.Bool
+import Noided.Sql.Internal.SqlExpr.Inet
 import Noided.Sql.Internal.SqlExpr.Numeric
 import Noided.Sql.Internal.SqlExpr.Text
 import Noided.Sql.Internal.Type.AggregateExpr

@@ -3,6 +3,7 @@
 
 module Noided.Sql.Internal.Class.AsHaskellValue where
 
+import Data.IP (IPRange)
 import Data.Int
 import Data.Kind
 import Data.Proxy
@@ -79,3 +80,6 @@ instance AsHaskellValue UTCTime where
 
 instance AsHaskellValue LocalTime where
   decodeHaskellValue _ = Dec.timestamp
+
+instance AsHaskellValue IPRange where
+  decodeHaskellValue _ = Dec.inet
