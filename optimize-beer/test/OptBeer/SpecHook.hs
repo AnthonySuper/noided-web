@@ -3,7 +3,6 @@
 
 module OptBeer.SpecHook (hook) where
 
-import Control.Arrow
 import Control.Exception (Exception, throwIO)
 import Data.Pool (Pool, defaultPoolConfig, newPool)
 import Data.Text qualified as T
