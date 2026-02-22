@@ -66,25 +66,25 @@ createUserFromForm input = do
 createUserWithHashword :: Hashword -> CreateUserF FormInput -> TransactM (FormErrors (SubformField CreateUserF)) (Actor, User)
 createUserWithHashword (hashword :: Hashword) input = do
   validated <- validateForm createUserValidator input >>= either MonadError.throwError pure
-  actor <- querySingleRow $ insertReturningAll actorsTable (values_ [#name :==> mutateVal_ (bindParam validated.name.val) :::%? EmptyWrappedRow])
+  actor <- querySingleRow $ insertReturningAll actorsTable (singleValue_ (#name :==> mutateVal_ (bindParam validated.name.val) :::%? EmptyWrappedRow))
   let userVals =
-        values_
-          [ #id
+        singleValue_
+          ( #id
               :==> mutateVal_ (bindParam actor.id)
               :::%? #email
               :==> mutateVal_ (bindParam validated.email.val)
               :::%? EmptyWrappedRow
-          ]
+          )
   user <- querySingleRow $ insertReturningAll usersTable userVals
 
   let pwVals =
-        values_
-          [ #userId
+        singleValue_
+          ( #userId
               :==> mutateVal_ (bindParam user.id)
               :::%? #passwordDigest
               :==> mutateVal_ (bindParam $ hashwordToPasswordHash hashword)
               :::%? EmptyWrappedRow
-          ]
+          )
   _ <- querySingleRow $ insertReturningAll userPasswordsTable pwVals
 
   return (actor, user)

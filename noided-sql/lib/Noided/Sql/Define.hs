@@ -104,6 +104,7 @@ module Noided.Sql.Define
     -- * Defining Column Types
     PGType (..),
     AsBindParam (..),
+    EncoderOf (..),
     AsHaskellValue (..),
     decodeNewtypeWrapper,
     pgTypeNameNewtype,

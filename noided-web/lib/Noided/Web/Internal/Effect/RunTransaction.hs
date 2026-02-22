@@ -5,6 +5,7 @@ module Noided.Web.Internal.Effect.RunTransaction where
 import Effectful
 import Effectful.Dispatch.Dynamic
 import Effectful.Error.Static
+import Data.Void
 import Hasql.Connection (Connection)
 import Hasql.Errors
 import Noided.Sql.Internal.Type.TransactM
@@ -42,6 +43,28 @@ runTransactionEither' iso act = do
 
 runTransactionEither :: (Error SessionError :> es, RunTransaction :> es) => TransactM a b -> Eff es (Either a b)
 runTransactionEither = runTransactionEither' Serializable
+
+runInfallibleTransaction' ::
+  ( Error SessionError :> es,
+    RunTransaction :> es
+  ) =>
+  TransactionIsolation ->
+  TransactM Void b ->
+  Eff es b
+runInfallibleTransaction' iso act = do
+  res <- runTransactionToResult' iso act
+  case res of
+    SessionErr e -> throwError e
+    TransactErr e -> absurd e
+    TransactOK r -> return r
+
+runInfallibleTransaction ::
+  ( Error SessionError :> es,
+    RunTransaction :> es
+  ) =>
+  TransactM Void b ->
+  Eff es b
+runInfallibleTransaction = runInfallibleTransaction' Serializable
 
 runTransaction' ::
   ( Error a :> es,

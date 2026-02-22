@@ -1,0 +1,5 @@
+en:
+  organization:
+    create:
+      button: "Create Organization"
+    idLabel: "ID:"

@@ -121,38 +121,49 @@ library
         OptBeer.DB.Ids.ActorId
         OptBeer.DB.Ids.SessionId
         OptBeer.DB.Ids.LoginAttemptId
+        OptBeer.DB.Ids.OrganizationId
         OptBeer.DB.Type.PasswordDigest
+        OptBeer.DB.Type.OrganizationAccessLevel
 
         OptBeer.DB.Table.Actor
         OptBeer.DB.Table.User
         OptBeer.DB.Table.UserPassword
         OptBeer.DB.Table.Session
         OptBeer.DB.Table.LoginAttempt
+        OptBeer.DB.Table.Organization
+        OptBeer.DB.Table.OrganizationUserAccess
+        OptBeer.DB.Table.UserDefaultOrganization
         OptBeer.DB.Table.Timestamps
 
         OptBeer.Page.Type
         OptBeer.Page.Layout
         OptBeer.Page.Error
         OptBeer.Page.Home
+        OptBeer.Page.Organization.Show
         OptBeer.Action
         OptBeer.Action.Base
 
         OptBeer.Effect.HashPassword
         OptBeer.Effect.CurrentActor
         OptBeer.Type.Hashword
+        OptBeer.Type.OrganizationIdent
 
         OptBeer.ValidationError.DoesNotMatchConfirmation
         OptBeer.ValidationError.InvalidCredentials
         OptBeer.ValidationError.ValueTaken
         OptBeer.ValidationError.PasswordComplexity
+        OptBeer.ValidationError.OnlyNumbers
         OptBeer.Validate.Password
 
         OptBeer.Form.Type.CreateUser
         OptBeer.Form.Type.CreateSession
+        OptBeer.Form.Type.CreateOrganization
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Validate.CreateSession
+        OptBeer.Form.Validate.CreateOrganization
         OptBeer.Form.Render.CreateUser
         OptBeer.Form.Render.CreateSession
+        OptBeer.Form.Render.CreateOrganization
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Routes
@@ -161,6 +172,7 @@ library
         OptBeer.Action.Home
         OptBeer.Action.User
         OptBeer.Action.Session
+        OptBeer.Action.Organization
 
 
 
@@ -226,12 +238,17 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.UserPasswordSpec
             OptBeer.DB.Table.SessionSpec
             OptBeer.DB.Table.LoginAttemptSpec
+            OptBeer.DB.Table.OrganizationSpec
+            OptBeer.DB.Table.OrganizationUserAccessSpec
+            OptBeer.DB.Table.UserDefaultOrganizationSpec
+            OptBeer.DB.Type.OrganizationAccessLevelSpec
             OptBeer.DB.Table.SpecHelper
 
             OptBeer.Form.Render.SpecHook
             OptBeer.Form.Render.SpecHelper
             OptBeer.Form.Render.CreateUserSpec
             OptBeer.Form.Render.CreateSessionSpec
+            OptBeer.Form.Render.CreateOrganizationSpec
 
             OptBeer.Form.Validate.CreateUserSpec
 
@@ -239,6 +256,8 @@ test-suite optimize-beer-test
             OptBeer.Action.SpecHelper
             OptBeer.Action.UserSpec
             OptBeer.Action.SessionSpec
+            OptBeer.Action.OrganizationSpec
+            OptBeer.Action.HomeSpec
 
 
     -- LANGUAGE extensions used by modules in this package.

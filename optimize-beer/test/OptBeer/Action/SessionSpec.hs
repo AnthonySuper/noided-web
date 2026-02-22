@@ -28,37 +28,36 @@ loginSpec = describe "loginAction" $ do
   it "successfully logs in with correct credentials" $ \runner -> do
     now <- T.getCurrentTime
     -- 1. Setup: Create a user
-    (_, user) <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-      runTransaction @() $ do
+    (_, user) <- runDBSetup runner $ do
         actor <-
           querySingleRow $
             insertReturningAll
               Actor.actorsTable
-              (values_ [#name :==> mutateVal_ (bindParam ("logintest" :: Text)) :::%? EmptyWrappedRow])
+              (singleValue_ (#name :==> mutateVal_ (bindParam ("logintest" :: Text)) :::%? EmptyWrappedRow))
         user <-
           querySingleRow $
             insertReturningAll
               User.usersTable
-              ( values_
-                  [ #id
+              ( singleValue_
+                  ( #id
                       :==> mutateVal_ (bindParam actor.id)
                       :::%? #email
                       :==> mutateVal_ (bindParam ("login@example.com" :: Text))
                       :::%? EmptyWrappedRow
-                  ]
+                  )
               )
         let hw = UnsafeHashwordNothing "password123"
         _ <-
           querySingleRow $
             insertReturningAll
               UP.userPasswordsTable
-              ( values_
-                  [ #userId
+              ( singleValue_
+                  ( #userId
                       :==> mutateVal_ (bindParam user.id)
                       :::%? #passwordDigest
                       :==> mutateVal_ (bindParam $ hashwordToPasswordHash hw)
                       :::%? EmptyWrappedRow
-                  ]
+                  )
               )
         return (actor, user)
 
@@ -89,8 +88,7 @@ loginSpec = describe "loginAction" $ do
       _ -> fail "Expected redirect to /, got something else"
 
     -- 3. Verify: Check session and login attempt
-    runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-      (session, attempt) <- runTransaction @() $ do
+    (session, attempt) <- runDBSetup runner $ do
         session <- querySingleRow $ do
           row <- addFrom_ (fromBase_ Session.sessionsTable)
           addWhere_ (row.userId ==. bindParam user.id)
@@ -101,34 +99,33 @@ loginSpec = describe "loginAction" $ do
           addWhere_ (row.userId ==. bindParam user.id)
           select_ row
         return (session, attempt)
-      liftIO $ do
-        session.userId `shouldBe` user.id
-        attempt.successful `shouldBe` True
-        attempt.userId `shouldBe` user.id
+
+    session.userId `shouldBe` user.id
+    attempt.successful `shouldBe` True
+    attempt.userId `shouldBe` user.id
 
 logoutSpec :: TransactingSpec
 logoutSpec = describe "logoutAction" $ do
   it "successfully logs out and deletes the session" $ \runner -> do
     now <- T.getCurrentTime
     -- 1. Setup: Create a user and a session
-    (user, session) <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-      runTransaction @() $ do
+    (user, session) <- runDBSetup runner $ do
         actor <-
           querySingleRow $
             insertReturningAll
               Actor.actorsTable
-              (values_ [#name :==> mutateVal_ (bindParam ("logouttest" :: Text)) :::%? EmptyWrappedRow])
+              (singleValue_ (#name :==> mutateVal_ (bindParam ("logouttest" :: Text)) :::%? EmptyWrappedRow))
         user <-
           querySingleRow $
             insertReturningAll
               User.usersTable
-              ( values_
-                  [ #id
+              ( singleValue_
+                  ( #id
                       :==> mutateVal_ (bindParam actor.id)
                       :::%? #email
                       :==> mutateVal_ (bindParam ("logout@example.com" :: Text))
                       :::%? EmptyWrappedRow
-                  ]
+                  )
               )
         let validUntil = addUTCTime sessionTtl now
             validDuring = Range (Incl now) (Excl validUntil)
@@ -136,8 +133,8 @@ logoutSpec = describe "logoutAction" $ do
           querySingleRow $
             insertReturningAll
               Session.sessionsTable
-              ( values_
-                  [ #userId
+              ( singleValue_
+                  ( #userId
                       :==> mutateVal_ (bindParam user.id)
                       :::%? #userAgent
                       :==> mutateVal_ (bindParam (Nothing :: Maybe Text))
@@ -146,7 +143,7 @@ logoutSpec = describe "logoutAction" $ do
                       :::%? #validDuring
                       :==> mutateVal_ (bindParam validDuring)
                       :::%? EmptyWrappedRow
-                  ]
+                  )
               )
         return (user, session)
 
@@ -165,8 +162,7 @@ logoutSpec = describe "logoutAction" $ do
       _ -> fail "Expected redirect to /, got something else"
 
     -- 3. Verify: Session should be gone
-    mSession <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-      runTransaction @() $ do
+    mSession <- runDBSetup runner $ do
         queryMaybe $ do
           row <- addFrom_ (fromBase_ Session.sessionsTable)
           addWhere_ (row.id ==. bindParam session.id)

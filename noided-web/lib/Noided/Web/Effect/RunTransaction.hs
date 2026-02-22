@@ -7,9 +7,11 @@ module Noided.Web.Effect.RunTransaction
     runTransaction,
     runTransactionEither,
     runTransactionToResult,
+    runInfallibleTransaction,
     runTransaction',
     runTransactionEither',
     runTransactionToResult',
+    runInfallibleTransaction',
     timeTransactions,
     runRunTransactionFromConnection,
   )

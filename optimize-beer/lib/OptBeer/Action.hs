@@ -10,6 +10,7 @@ import Noided.Sql (SessionError)
 import Noided.Web.Effect
 import Noided.Web.PageAction
 import OptBeer.Action.Home (homeActions)
+import OptBeer.Action.Organization (organizationActions)
 import OptBeer.Action.Session (sessionActions)
 import OptBeer.Action.User (userActions)
 import OptBeer.Effect.CurrentActor
@@ -76,4 +77,5 @@ optBeerActions =
       pagesAroundAction runHashPasswordBCrypt $
         userActions
           <> sessionActions
+          <> organizationActions
           <> homeActions

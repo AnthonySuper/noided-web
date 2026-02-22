@@ -1,14 +1,14 @@
 en:
   form:
     attributes:
+      name:
+        name: "Name"
       email:
         name: "Email"
       password:
         name: "Password"
     CreateUser:
       attributes:
-        name:
-          name: "Name"
         confirmEmail:
           name: "Confirm Email"
         confirmPassword:
