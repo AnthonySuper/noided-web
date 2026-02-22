@@ -79,9 +79,28 @@ createUserFromForm input = do
 createUserWithHashword :: Hashword -> CreateUserF FormInput -> TransactM (FormErrors (SubformField CreateUserF)) (Actor, User)
 createUserWithHashword (hashword :: Hashword) input = do
   validated <- validateForm createUserValidator input >>= either MonadError.throwError pure
-  actor <- querySingleRow $ insertReturningAll actorsTable (values_ [#name :==> mutateVal_ (bindParam $ validated.name.val) :::%? EmptyWrappedRow])
-  -- TODO: insert email and password as well.
-  return (actor, undefined :: User)
+  actor <- querySingleRow $ insertReturningAll actorsTable (values_ [#name :==> mutateVal_ (bindParam validated.name.val) :::%? EmptyWrappedRow])
+  let userVals =
+        values_
+          [ #id
+              :==> mutateVal_ (bindParam actor.id)
+              :::%? #email
+              :==> mutateVal_ (bindParam validated.email.val)
+              :::%? EmptyWrappedRow
+          ]
+  user <- querySingleRow $ insertReturningAll usersTable userVals
+
+  let pwVals =
+        values_
+          [ #userId
+              :==> mutateVal_ (bindParam user.id)
+              :::%? #passwordDigest
+              :==> mutateVal_ (bindParam $ hashwordToPasswordHash hashword)
+              :::%? EmptyWrappedRow
+          ]
+  _ <- querySingleRow $ insertReturningAll userPasswordsTable pwVals
+
+  return (actor, user)
 
 createUserAction ::
   ( Error BadRequest :> es,
@@ -103,4 +122,4 @@ createUserAction (RPNil :: RouteParams '[]) = do
         RespondFormErrors
           wrapForm
           (renderFormT createUserRenderer body err)
-    Right res -> return $ error "TODO: redirect to the home page"
+    Right _ -> return $ RespondRedirect RedirectFound "/"
