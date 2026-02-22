@@ -6,6 +6,7 @@ module OptBeer.Action.SessionSpec (spec) where
 
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Time (addUTCTime)
 import Data.Time qualified as T
 import Network.Socket (SockAddr (..))
 import OptBeer.Action.Base
@@ -19,6 +20,7 @@ import OptBeer.DB.Table.UserPassword qualified as UP
 import OptBeer.Effect.HashPassword
 import OptBeer.Page.Type (Page)
 import OptBeer.Type.Hashword
+import PostgreSQL.Binary.Range (Bound (..), Range (..))
 import Test.Hspec
 
 loginSpec :: TransactingSpec
@@ -84,7 +86,7 @@ loginSpec = describe "loginAction" $ do
 
     case resp of
       RespondRedirect RedirectFound "/" -> return ()
-      _ -> fail $ "Expected redirect to /, got something else"
+      _ -> fail "Expected redirect to /, got something else"
 
     -- 3. Verify: Check session and login attempt
     runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
@@ -104,6 +106,74 @@ loginSpec = describe "loginAction" $ do
         attempt.successful `shouldBe` True
         attempt.userId `shouldBe` user.id
 
+logoutSpec :: TransactingSpec
+logoutSpec = describe "logoutAction" $ do
+  it "successfully logs out and deletes the session" $ \runner -> do
+    now <- T.getCurrentTime
+    -- 1. Setup: Create a user and a session
+    (user, session) <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
+      runTransaction @() $ do
+        actor <-
+          querySingleRow $
+            insertReturningAll
+              Actor.actorsTable
+              (values_ [#name :==> mutateVal_ (bindParam ("logouttest" :: Text)) :::%? EmptyWrappedRow])
+        user <-
+          querySingleRow $
+            insertReturningAll
+              User.usersTable
+              ( values_
+                  [ #id
+                      :==> mutateVal_ (bindParam actor.id)
+                      :::%? #email
+                      :==> mutateVal_ (bindParam ("logout@example.com" :: Text))
+                      :::%? EmptyWrappedRow
+                  ]
+              )
+        let validUntil = addUTCTime sessionTtl now
+            validDuring = Range (Incl now) (Excl validUntil)
+        session <-
+          querySingleRow $
+            insertReturningAll
+              Session.sessionsTable
+              ( values_
+                  [ #userId
+                      :==> mutateVal_ (bindParam user.id)
+                      :::%? #userAgent
+                      :==> mutateVal_ (bindParam (Nothing :: Maybe Text))
+                      :::%? #remoteIp
+                      :==> mutateVal_ (bindParam (sockAddrToIPRange (SockAddrInet 0 0)))
+                      :::%? #validDuring
+                      :==> mutateVal_ (bindParam validDuring)
+                      :::%? EmptyWrappedRow
+                  ]
+              )
+        return (user, session)
+
+    -- 2. Act: Logout
+    resp <- runEff
+      . runFailingError @SessionError
+      . runWithRunner runner
+      . runWithCurrentSessionId (Just session.id)
+      . runStaticTime now
+      . runIgnoringCookies
+      $ do
+        logoutAction RPNil
+
+    case resp of
+      RespondRedirect RedirectFound "/" -> return ()
+      _ -> fail $ "Expected redirect to /, got something else"
+
+    -- 3. Verify: Session should be gone
+    mSession <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
+      runTransaction @() $ do
+        queryMaybe $ do
+          row <- addFrom_ (fromBase_ Session.sessionsTable)
+          addWhere_ (row.id ==. bindParam session.id)
+          select_ row
+    mSession `shouldBe` Nothing
+
 spec :: TransactingSpec
 spec = do
   loginSpec
+  logoutSpec

@@ -7,10 +7,12 @@
 
 module OptBeer.Effect.CurrentActor where
 
+import Data.Aeson (decode)
+import Data.ByteString.Lazy (fromStrict)
+import Data.Text.Encoding (encodeUtf8)
 import Data.Time (UTCTime)
 import Effectful
 import Effectful.Dispatch.Static
-import Effectful.Error.Static
 import Noided.Sql
 import Noided.Web
 import OptBeer.DB.Ids.SessionId
@@ -24,27 +26,45 @@ type instance DispatchOf CurrentActor = Static NoSideEffects
 
 newtype instance StaticRep CurrentActor = CurrentActor (Maybe Actor)
 
+-- | Effect for accessing the current session ID.
+data CurrentSession :: Effect
+
+type instance DispatchOf CurrentSession = Static NoSideEffects
+
+newtype instance StaticRep CurrentSession = CurrentSession (Maybe SessionId)
+
 -- | Get the current actor, if authenticated.
 getCurrentActor :: (CurrentActor :> es) => Eff es (Maybe Actor)
 getCurrentActor = do
   CurrentActor ma <- getStaticRep
   return ma
 
+-- | Get the current session ID, if authenticated.
+getCurrentSessionId :: (CurrentSession :> es) => Eff es (Maybe SessionId)
+getCurrentSessionId = do
+  CurrentSession msid <- getStaticRep
+  return msid
+
 -- | Run the 'CurrentActor' effect with a provided actor.
 runWithCurrentActor :: Maybe Actor -> Eff (CurrentActor : es) a -> Eff es a
 runWithCurrentActor ma = evalStaticRep (CurrentActor ma)
 
--- | Run the 'CurrentActor' effect by looking up the session in the database.
+-- | Run the 'CurrentSession' effect with a provided session ID.
+runWithCurrentSessionId :: Maybe SessionId -> Eff (CurrentSession : es) a -> Eff es a
+runWithCurrentSessionId msid = evalStaticRep (CurrentSession msid)
+
+-- | Run both 'CurrentActor' and 'CurrentSession' effects by looking up the session in the database.
 runWithCurrentActorFromSession ::
   ( GetCookies :> es,
     RunTransaction :> es,
     CurrentTime :> es,
     IOE :> es
   ) =>
-  Eff (CurrentActor : es) a ->
+  Eff (CurrentActor : CurrentSession : es) a ->
   Eff es a
 runWithCurrentActorFromSession act = do
-  mSid <- getSecureCookie "sessionId"
+  textSid <- getSecureCookie "sessionId"
+  let mSid = textSid >>= decode . fromStrict . encodeUtf8
   mActor <- case mSid of
     Nothing -> return Nothing
     Just (sid :: SessionId) -> do
@@ -54,7 +74,7 @@ runWithCurrentActorFromSession act = do
         TransactErr _ -> return Nothing
         TransactOK ma -> return ma
 
-  runWithCurrentActor mActor act
+  runWithCurrentSessionId mSid . runWithCurrentActor mActor $ act
 
 fetchActorFromSession :: UTCTime -> SessionId -> TransactM e (Maybe Actor)
 fetchActorFromSession now sid = queryMaybe $ do

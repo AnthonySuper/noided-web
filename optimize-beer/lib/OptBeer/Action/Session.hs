@@ -1,7 +1,15 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-module OptBeer.Action.Session where
+module OptBeer.Action.Session
+  ( sessionActions,
+    logoutAction,
+    loginAction,
+    newSessionAction,
+    sessionTtl,
+    sockAddrToIPRange,
+  )
+where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Aeson (encode)
@@ -26,7 +34,7 @@ import OptBeer.Effect.HashPassword
 import OptBeer.Form.Render.CreateSession
 import OptBeer.Form.Type.CreateSession
 import OptBeer.Form.Validate.CreateSession (createSessionValidator)
-import OptBeer.Routes (newSessionPath, sessionsPath)
+import OptBeer.Routes (logoutPath, newSessionPath, sessionsPath)
 import OptBeer.Type.Hashword
 import OptBeer.ValidationError.InvalidCredentials (InvalidCredentials (InvalidCredentials))
 import Optics
@@ -45,12 +53,14 @@ sessionActions ::
     HashPassword :> es,
     RunTransaction :> es,
     CurrentTime :> es,
+    CurrentSession :> es,
     IOE :> es
   ) =>
   PageRoutes renderM (Eff es)
 sessionActions =
   actGet newSessionPath newSessionAction
     <> actPost sessionsPath loginAction
+    <> actPost logoutPath logoutAction
 
 wrapForm :: (Monad m) => HtmlT m a -> HtmlT m a
 wrapForm act = form_ [method_ "post", action_ "/sessions", class_ "form"] $ do
@@ -150,6 +160,39 @@ loginAction (RPNil :: RouteParams '[]) = do
             Cookie.setCookieExpires = Just validUntil
           }
       return $ RespondRedirect RedirectFound "/"
+
+logoutAction ::
+  ( Error SessionError :> es,
+    WriteCookie :> es,
+    CurrentTime :> es,
+    CurrentSession :> es,
+    RunTransaction :> es,
+    IOE :> es
+  ) =>
+  RouteParams '[] ->
+  Eff es (PageResponse renderM)
+logoutAction (RPNil :: RouteParams '[]) = do
+  msid <- getCurrentSessionId
+  now <- getCurrentTime
+  case msid of
+    Nothing -> return ()
+    Just sid -> do
+      _ <- runTransactionToResult $ do
+        queryMaybe $ deleteReturning sessionsTable $ \row -> do
+          addWhere_ (row.id ==. bindParam sid)
+          return $ Element row.id
+      return ()
+
+  setCookie $
+    Cookie.defaultSetCookie
+      { Cookie.setCookieName = "sessionId",
+        Cookie.setCookieValue = "",
+        Cookie.setCookieExpires = Just (T.UTCTime (T.fromGregorian 1970 1 1) 0),
+        Cookie.setCookieHttpOnly = True,
+        Cookie.setCookieSecure = True,
+        Cookie.setCookieSameSite = Just Cookie.sameSiteLax
+      }
+  return $ RespondRedirect RedirectFound "/"
 
 logAttempt :: T.UTCTime -> ActorId -> Maybe Text -> IPRange -> Bool -> TransactM err ()
 logAttempt (now :: T.UTCTime) (userId :: ActorId) (userAgent :: Maybe Text) (remoteIp :: IPRange) (successful :: Bool) = do

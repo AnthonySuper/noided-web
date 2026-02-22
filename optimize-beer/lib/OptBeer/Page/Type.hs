@@ -15,6 +15,7 @@ import Noided.Web.PageAction
 import Noided.Web.Response
 import OptBeer.Effect.CurrentActor
 import OptBeer.DB.Table.Actor
+import OptBeer.DB.Ids.SessionId
 import Optics
 
 -- | A page env.
@@ -27,7 +28,8 @@ data PageEnv
     pageTitle :: !(Maybe Text),
     serverEnv :: !ServerEnv,
     assets :: !AssetLinks,
-    currentActor :: !(Maybe Actor)
+    currentActor :: !(Maybe Actor),
+    currentSessionId :: !(Maybe SessionId)
   }
   deriving (Generic)
 
@@ -51,7 +53,8 @@ readPageEnv ::
     FetchHtmlFormattersE :> es,
     GetServerEnv :> es,
     FrontendAssets :> es,
-    CurrentActor :> es
+    CurrentActor :> es,
+    CurrentSession :> es
   ) =>
   Eff es PageEnv
 readPageEnv =
@@ -62,13 +65,15 @@ readPageEnv =
     <*> getServerEnv
     <*> getAssetLinks "frontend/main.ts"
     <*> getCurrentActor
+    <*> getCurrentSessionId
 
 mapResponsesToPage ::
   ( FetchMessagesE :> es,
     FetchHtmlFormattersE :> es,
     GetServerEnv :> es,
     FrontendAssets :> es,
-    CurrentActor :> es
+    CurrentActor :> es,
+    CurrentSession :> es
   ) =>
   PageRoutes Page (Eff es) ->
   PageRoutes Identity (Eff es)

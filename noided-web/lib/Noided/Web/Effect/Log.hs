@@ -5,6 +5,8 @@ module Noided.Web.Effect.Log
   ( Log,
     logMessage,
     logText,
+    LoggedMessage (..),
+    LogLevel (..),
 
     -- * Running loggers
     runIgnoringLogs,

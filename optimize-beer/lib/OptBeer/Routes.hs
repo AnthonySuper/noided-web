@@ -16,3 +16,6 @@ usersPath = "users" :/ PathEnd
 
 sessionsPath :: PathTemplate '[]
 sessionsPath = "sessions" :/ PathEnd
+
+logoutPath :: PathTemplate '[]
+logoutPath = "logout" :/ PathEnd

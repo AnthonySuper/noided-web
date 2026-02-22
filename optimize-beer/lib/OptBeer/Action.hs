@@ -4,6 +4,7 @@ module OptBeer.Action (optBeerActions) where
 
 import Data.Function
 import Data.Functor.Identity
+import Data.Text
 import Data.Text (pack)
 import Effectful
 import Noided.Sql (SessionError)
@@ -23,10 +24,12 @@ import OptBeer.Page.Type
 
 optBeerActions ::
   ( FetchMessagesE :> es,
+    Log :> es,
     GetServerEnv :> es,
     GetRequestBody :> es,
     GetRemoteIp :> es,
     GetHeaders :> es,
+    GetCookies :> es,
     RunTransaction :> es,
     CurrentTime :> es,
     Signing :> es,
@@ -43,7 +46,6 @@ optBeerActions =
     & pagesHandleError handleBadRequest
     & mapResponsesToPage
     & pagesAroundAction runWithCurrentActorFromSession
-    & pagesAroundAction runWithActualCookies
     & pagesAroundAction runFrontendAssets
     & pagesAroundAction (runFetchHtmlFormattersE mempty)
   where

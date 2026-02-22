@@ -3,6 +3,7 @@
 @import './style/error.css';
 @import './style/buttons.css';
 @import './style/home.css';
+@import './style/layout.css';
 
 :root {
   --font-sans: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
@@ -25,7 +26,6 @@ body {
 
 main {
   margin: var(--base-space);
-  max-width: 1200px;
 }
 
 h1, h2, h3, h4, h5, h6 {

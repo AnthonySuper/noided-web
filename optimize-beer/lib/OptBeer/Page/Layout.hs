@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE NoFieldSelectors #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoFieldSelectors #-}
 
 module OptBeer.Page.Layout where
 
@@ -9,8 +9,23 @@ import Control.Monad (forM_)
 import Control.Monad.Reader.Class
 import Data.Text (Text)
 import Lucid
-import OptBeer.Page.Type
 import Noided.Web.Effect.FrontendAssets
+import Noided.Web.Html
+import OptBeer.DB.Table.Actor
+import OptBeer.Page.Type
+
+pageHeader :: HtmlT Page ()
+pageHeader = header_ [id_ "overall-header"] $ do
+  h1_ [id_ "header-name"] $
+    a_ [href_ "/"] "Optimize.beer"
+  r <- ask
+  case r.currentActor of
+    Nothing ->
+      a_ [href_ "/sessions/new", id_ "header-login"] $
+        renderTranslated ["layout.login"] mempty
+    Just actor ->
+      span_ [id_ "header-actor"] $
+        toHtml actor.name
 
 pageLayout :: HtmlT Page a -> HtmlT Page a
 pageLayout inner = doctypehtml_ $ do
@@ -29,4 +44,5 @@ pageLayout inner = doctypehtml_ $ do
           toHtml t
           " | Optimize.beer"
   body_ $ do
+    pageHeader
     main_ [id_ "overall-main"] inner
