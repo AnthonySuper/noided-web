@@ -57,7 +57,6 @@ jobs:
       with:
         path: |
           ${{ steps.setup.outputs.cabal-store }}
-          dist-newstyle
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.ghc }}-
@@ -70,10 +69,26 @@ jobs:
       with:
         path: |
           ${{ steps.setup.outputs.cabal-store }}
-          dist-newstyle
         key: ${{ steps.restore-deps-cache.outputs.cache-primary-key }}
+    - name: Restore cached ofiles
+      uses: actions/cache/restore@v4
+      id: restore-ofiles-cache
+      env:
+        cache-name: cache-cabal-ofiles
+      with:
+        path: |
+          dist-newstyle/
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.ghc }}-
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
+    - name: Save ofiles cache
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          dist-newstyle/
+        key: ${{ steps.restore-ofiles-cache.outputs.cache-primary-key }}
 
     - name: Run tests
       env:
