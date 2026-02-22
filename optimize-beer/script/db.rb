@@ -174,8 +174,7 @@ class Commands < Thor
     schema, _ = Open3.capture2("pg_dump", "--schema-only", "--no-comments", "--no-owner", *pg_dump_args)
     migrations, _ = Open3.capture2("pg_dump", "-t", "schema_migrations", "--section=data", "--column-inserts", "--rows-per-insert=1000", "--no-owner", *pg_dump_args)
     schema_file.open("w") do |stream|
-      stream.puts(schema)
-      stream.puts(migrations)
+      stream.puts(clean_pg_dump(schema + migrations))
     end
   end
 
@@ -191,6 +190,17 @@ class Commands < Thor
     def schema_file = db_folder + Pathname("schema.sql")
     def with_database(&)
       db_config.databases_for(environment).each { |db| db.with_connection(&) }
+    end
+
+    def clean_pg_dump(output)
+      output
+        .gsub(/^--\n-- PostgreSQL database dump( complete)?\n--\n/, "")
+        .gsub(/^\\(un)?restrict \S+\n/, "")
+        .gsub(/^-- Dumped (from|by) .+\n/, "")
+        .gsub(/^SET \S.*\n/, "")
+        .gsub(/^SELECT pg_catalog\.set_config\(.*\n/, "")
+        .gsub(/\n{3,}/, "\n\n")
+        .strip
     end
   end
 
