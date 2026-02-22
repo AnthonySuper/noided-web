@@ -5,13 +5,10 @@ module OptBeer.Action (optBeerActions) where
 import Data.Function
 import Data.Functor.Identity
 import Data.Text
-import Data.Text (pack)
 import Effectful
 import Noided.Sql (SessionError)
 import Noided.Web.Effect
-import Noided.Web.Html
 import Noided.Web.PageAction
-import Noided.Web.Response
 import OptBeer.Action.Home (homeActions)
 import OptBeer.Action.Session (sessionActions)
 import OptBeer.Action.User (userActions)
