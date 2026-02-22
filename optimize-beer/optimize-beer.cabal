@@ -232,6 +232,7 @@ test-suite optimize-beer-test
             OptBeer.Form.Render.SpecHook
             OptBeer.Form.Render.SpecHelper
             OptBeer.Form.Render.CreateUserSpec
+            OptBeer.Form.Render.CreateSessionSpec
 
             OptBeer.Form.Validate.CreateUserSpec
 
