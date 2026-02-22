@@ -28,12 +28,23 @@ import OptBeer.Error.BadRequest (BadRequest (BadRequest))
 import OptBeer.Form.Render.CreateUser
 import OptBeer.Form.Type.CreateUser
 import OptBeer.Form.Validate.CreateUser (createUserValidator, fieldInputToOpaquePassword)
-import OptBeer.Routes (newUserPath)
+import OptBeer.Routes (newUserPath, usersPath)
 import OptBeer.Type.Hashword
 import Optics
 
-userActions :: (FetchMessages renderM, FetchHtmlFormatters renderM, Monad actionM) => PageRoutes renderM actionM
-userActions = actGet newUserPath newUserAction
+userActions ::
+  ( FetchMessages renderM,
+    FetchHtmlFormatters renderM,
+    Error BadRequest :> es,
+    Error SessionError :> es,
+    GetRequestBody :> es,
+    HashPassword :> es,
+    RunTransaction :> es
+  ) =>
+  PageRoutes renderM (Eff es)
+userActions =
+  actGet newUserPath newUserAction
+    <> actPost usersPath createUserAction
 
 wrapForm :: (Monad m) => HtmlT m a -> HtmlT m a
 wrapForm = form_ []
