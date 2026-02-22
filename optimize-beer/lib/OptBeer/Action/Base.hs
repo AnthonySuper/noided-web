@@ -16,7 +16,6 @@ module OptBeer.Action.Base
     module Noided.Web,
     module Noided.Web.Html.FormRender,
     module OptBeer.Effect.CurrentActor,
-    module OptBeer.Error.BadRequest,
   )
 where
 
@@ -31,7 +30,6 @@ import Noided.Validation
 import Noided.Web
 import Noided.Web.Html.FormRender
 import OptBeer.Effect.CurrentActor
-import OptBeer.Error.BadRequest
 
 -- | Helper to extract an HKD form from a request body.
 hkdFormBody ::

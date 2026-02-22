@@ -48,6 +48,7 @@ common deps
        noided-form,
        noided-pathname,
        noided-sql,
+       noided-validation,
        noided-web-html,
        noided-translate
 
@@ -117,6 +118,8 @@ library
       Noided.Web.Internal.Type.FrontendAssets
 
       Noided.Web.Internal.PageAction
+
+      Noided.Web.Error
 
       Noided.Web.Internal.Class.Endpoint
 

@@ -14,7 +14,7 @@ import OptBeer.Action.Session (sessionActions)
 import OptBeer.Action.User (userActions)
 import OptBeer.Effect.CurrentActor
 import OptBeer.Effect.HashPassword
-import OptBeer.Error.BadRequest (BadRequest (..))
+import Noided.Web.Error
 import OptBeer.Page.Error
 import OptBeer.Page.Layout (pageLayout)
 import OptBeer.Page.Type
@@ -38,6 +38,13 @@ optBeerActions =
   beforeTransform
     & pagesAddLayout pageLayout
     & pagesHandleError handleBadRequest
+    & pagesHandleError handleUnauthorized
+    & pagesHandleError handleForbidden
+    & pagesHandleError handleNotFound
+    & pagesHandleError handleConflict
+    & pagesHandleError handleIAmATeapot
+    & pagesHandleError handleTooManyRequests
+    & pagesHandleError handleUnavailableForLegalReasons
     & pagesAroundAction runSettingCookies
     & pagesHandleError handleSessionError
 
@@ -47,6 +54,13 @@ optBeerActions =
     & pagesAroundAction (runFetchHtmlFormattersE mempty)
   where
     handleBadRequest cs (BadRequest msg) = respondBadRequest cs msg
+    handleUnauthorized cs (Unauthorized msg) = respondUnauthorized cs msg
+    handleForbidden cs (Forbidden msg) = respondForbidden cs msg
+    handleNotFound cs (NotFound msg) = respondNotFound cs msg
+    handleConflict cs (Conflict msg) = respondConflict cs msg
+    handleIAmATeapot cs (IAmATeapot msg) = respondIAmATeapot cs msg
+    handleTooManyRequests cs (TooManyRequests msg) = respondTooManyRequests cs msg
+    handleUnavailableForLegalReasons cs (UnavailableForLegalReasons msg) = respondUnavailableForLegalReasons cs msg
     handleSessionError cs (err :: SessionError) = respondInternalError cs (pack $ show err)
 
     runFrontendAssets act = do
