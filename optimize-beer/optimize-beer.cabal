@@ -137,8 +137,6 @@ library
         OptBeer.Action
         OptBeer.Action.Base
 
-        OptBeer.Error.BadRequest
-
         OptBeer.Effect.HashPassword
         OptBeer.Effect.CurrentActor
         OptBeer.Type.Hashword

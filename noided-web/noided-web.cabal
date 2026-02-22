@@ -48,6 +48,7 @@ common deps
        noided-form,
        noided-pathname,
        noided-sql,
+       noided-validation,
        noided-web-html,
        noided-translate
 
