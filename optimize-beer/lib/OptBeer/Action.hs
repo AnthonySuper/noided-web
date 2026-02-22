@@ -9,6 +9,7 @@ import Effectful
 import Noided.Sql (SessionError)
 import Noided.Web.Effect
 import Noided.Web.PageAction
+import OptBeer.Action.Home (homeActions)
 import OptBeer.Action.User (userActions)
 import OptBeer.Effect.HashPassword
 import OptBeer.Error.BadRequest (BadRequest (..))
@@ -47,3 +48,4 @@ optBeerActions =
             Right m -> runFrontendAssetsProd "/static/" m act
     beforeTransform =
       pagesAroundAction runHashPasswordBCrypt userActions
+        <> homeActions
