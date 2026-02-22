@@ -61,7 +61,7 @@ type TransactingSpec = SpecWith TransactionRunner
 -- Note that:
 --
 -- 1. A connection will be checked out from the pool for the duration of the action
--- 2. This connection will execute *withtin a transaction* for the duration of the action.
+-- 2. This connection will execute *within a transaction* for the duration of the action.
 --    This transaction will be marked as `REPEATABLE READ`.
 --    This transaction will be rolled back at the end of the example.
 --    We do this by running raw commands using Hasql upon checking out a connection, and then immediately before checking it back in.
