@@ -217,6 +217,7 @@ test-suite optimize-beer-test
 
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper
+            OptBeer.Action.UserSpec
 
 
     -- LANGUAGE extensions used by modules in this package.

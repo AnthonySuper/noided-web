@@ -1,6 +1,13 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module OptBeer.Action.SpecHelper (TransactionRunner, runWithRunner, usingTransactionRunner, runFailingError) where
+module OptBeer.Action.SpecHelper
+  ( TransactionRunner,
+    runWithRunner,
+    usingTransactionRunner,
+    runFailingError,
+    TransactingSpec,
+  )
+where
 
 import Control.Exception
 import Data.Pool (Pool)
@@ -8,7 +15,6 @@ import Data.Typeable
 import Effectful
 import Effectful.Error.Static
 import GHC.Generics
-import GHC.Stack
 import Hasql.Connection (Connection)
 import Noided.Web
 import Test.Hspec
@@ -18,7 +24,8 @@ data WrappedError e = WrapError {callStack :: CallStack, wrapped :: e}
 
 instance (Typeable e, Show e) => Exception (WrappedError e)
 
--- | Run failing on error by throwing an exception wrapped in `WrappedError`.
+-- | Run failing on error by throwing an exception wrapped in `WrappedError` in IO.
+-- Most useful if you want to just fail a spec when it happens.
 runFailingError ::
   forall e es a.
   (Typeable e, Show e, IOE :> es) =>
