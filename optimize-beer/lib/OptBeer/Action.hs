@@ -8,15 +8,18 @@ import Data.Text (pack)
 import Effectful
 import Noided.Sql (SessionError)
 import Noided.Web.Effect
+import Noided.Web.Html
 import Noided.Web.PageAction
+import Noided.Web.Response
 import OptBeer.Action.Home (homeActions)
 import OptBeer.Action.Session (sessionActions)
 import OptBeer.Action.User (userActions)
+import OptBeer.Effect.CurrentActor
 import OptBeer.Effect.HashPassword
 import OptBeer.Error.BadRequest (BadRequest (..))
 import OptBeer.Page.Error
 import OptBeer.Page.Layout (pageLayout)
-import OptBeer.Page.Type (mapResponsesToPage)
+import OptBeer.Page.Type
 
 optBeerActions ::
   ( FetchMessagesE :> es,
@@ -33,13 +36,16 @@ optBeerActions ::
   PageRoutes Identity (Eff es)
 optBeerActions =
   beforeTransform
-    & pagesHandleError handleBadRequest
-    & pagesHandleError handleSessionError
     & pagesAddLayout pageLayout
+    & pagesHandleError handleBadRequest
+    & pagesAroundAction runSettingCookies
+    & pagesHandleError handleSessionError
+    & pagesHandleError handleBadRequest
     & mapResponsesToPage
+    & pagesAroundAction runWithCurrentActorFromSession
+    & pagesAroundAction runWithActualCookies
     & pagesAroundAction runFrontendAssets
     & pagesAroundAction (runFetchHtmlFormattersE mempty)
-    & pagesAroundAction runSettingCookies
   where
     handleBadRequest cs (BadRequest msg) = respondBadRequest cs msg
     handleSessionError cs (err :: SessionError) = respondInternalError cs (pack $ show err)

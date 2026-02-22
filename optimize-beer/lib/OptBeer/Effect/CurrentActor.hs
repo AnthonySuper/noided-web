@@ -1,21 +1,21 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.Effect.CurrentActor where
 
+import Data.Time (UTCTime)
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static
-import Data.Time (UTCTime)
-import OptBeer.DB.Table.Actor
-import OptBeer.DB.Table.Session
-import OptBeer.DB.Ids.SessionId
 import Noided.Sql
 import Noided.Web
+import OptBeer.DB.Ids.SessionId
+import OptBeer.DB.Table.Actor
+import OptBeer.DB.Table.Session
 
 -- | Effect for accessing the currently authenticated actor.
 data CurrentActor :: Effect
@@ -39,7 +39,6 @@ runWithCurrentActorFromSession ::
   ( GetCookies :> es,
     RunTransaction :> es,
     CurrentTime :> es,
-    Error SessionError :> es,
     IOE :> es
   ) =>
   Eff (CurrentActor : es) a ->
@@ -50,9 +49,10 @@ runWithCurrentActorFromSession act = do
     Nothing -> return Nothing
     Just (sid :: SessionId) -> do
       now <- getCurrentTime
-      runTransactionEither (fetchActorFromSession now sid) >>= \case
-        Left _ -> return Nothing
-        Right ma -> return ma
+      runTransactionToResult (fetchActorFromSession now sid) >>= \case
+        SessionErr _ -> return Nothing
+        TransactErr _ -> return Nothing
+        TransactOK ma -> return ma
 
   runWithCurrentActor mActor act
 

@@ -13,6 +13,8 @@ import Noided.Web.Effect
 import Noided.Web.Html
 import Noided.Web.PageAction
 import Noided.Web.Response
+import OptBeer.Effect.CurrentActor
+import OptBeer.DB.Table.Actor
 import Optics
 
 -- | A page env.
@@ -24,7 +26,8 @@ data PageEnv
     htmlFormatters :: !HtmlFormatters,
     pageTitle :: !(Maybe Text),
     serverEnv :: !ServerEnv,
-    assets :: !AssetLinks
+    assets :: !AssetLinks,
+    currentActor :: !(Maybe Actor)
   }
   deriving (Generic)
 
@@ -43,7 +46,14 @@ instance FetchHtmlFormatters Page where
 readPageTitle :: Eff es (Maybe Text)
 readPageTitle = return Nothing
 
-readPageEnv :: (FetchMessagesE :> es, FetchHtmlFormattersE :> es, GetServerEnv :> es, FrontendAssets :> es) => Eff es PageEnv
+readPageEnv ::
+  ( FetchMessagesE :> es,
+    FetchHtmlFormattersE :> es,
+    GetServerEnv :> es,
+    FrontendAssets :> es,
+    CurrentActor :> es
+  ) =>
+  Eff es PageEnv
 readPageEnv =
   MkPageEnv
     <$> fetchMessages
@@ -51,12 +61,14 @@ readPageEnv =
     <*> readPageTitle
     <*> getServerEnv
     <*> getAssetLinks "frontend/main.ts"
+    <*> getCurrentActor
 
 mapResponsesToPage ::
   ( FetchMessagesE :> es,
     FetchHtmlFormattersE :> es,
     GetServerEnv :> es,
-    FrontendAssets :> es
+    FrontendAssets :> es,
+    CurrentActor :> es
   ) =>
   PageRoutes Page (Eff es) ->
   PageRoutes Identity (Eff es)
