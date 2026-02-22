@@ -23,9 +23,12 @@ data SpecHookError
 
 instance Exception SpecHookError
 
--- | A spec hook that gets you a connection pool.
 hook :: SpecWith (Pool Connection) -> Spec
-hook = beforeAll $ do
+hook s = withConnectionPool (parallel s)
+
+-- | A spec hook that gets you a connection pool.
+withConnectionPool :: SpecWith (Pool Connection) -> Spec
+withConnectionPool = beforeAll $ do
   mUrl <- lookupEnv "DATABASE_URL"
   settings <- case mUrl of
     Just url -> return $ connectionString (T.pack url)

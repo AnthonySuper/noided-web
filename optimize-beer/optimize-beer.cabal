@@ -200,6 +200,8 @@ test-suite optimize-beer-test
     build-depends:
           tagsoup
 
+    ghc-options: -threaded -O2 -rtsopts -with-rtsopts=-N
+
     -- Modules included in this executable, other than Main.
     other-modules:
             OptBeer.SpecHook
@@ -214,6 +216,10 @@ test-suite optimize-beer-test
             OptBeer.Form.Render.CreateUserSpec
 
             OptBeer.Form.Validate.CreateUserSpec
+
+            OptBeer.Action.SpecHook
+            OptBeer.Action.SpecHelper
+            OptBeer.Action.UserSpec
 
 
     -- LANGUAGE extensions used by modules in this package.
