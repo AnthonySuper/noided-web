@@ -83,6 +83,7 @@ class DBConfig
     prepare_sequel
 
     connected do |db|
+      db.extension :pg_array
       db.extension :pg_enum
       yield db
     end
@@ -92,8 +93,6 @@ class DBConfig
 
   def prepare_sequel
     Sequel.extension :migration
-    Sequel.extension :pg_array
-    Sequel.extension :pg_enum
 
     mod = Sequel::Schema::CreateTableGenerator
     mod.include(MigrationExtensionCommands) unless mod <= MigrationExtensionCommands
