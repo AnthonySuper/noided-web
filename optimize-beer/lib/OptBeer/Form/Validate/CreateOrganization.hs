@@ -7,6 +7,7 @@ module OptBeer.Form.Validate.CreateOrganization where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
+import Data.Char (isDigit)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Noided.Form.HKD
@@ -14,6 +15,7 @@ import Noided.Sql
 import Noided.Validation
 import OptBeer.DB.Table.Organization
 import OptBeer.Form.Type.CreateOrganization
+import OptBeer.ValidationError.OnlyNumbers
 import OptBeer.ValidationError.ValueTaken
 
 -- | Validates that an organization can be created.
@@ -27,6 +29,9 @@ validateOrganizationName :: FormValidator (TransactM e) (InputField Text)
 validateOrganizationName = validateInput $ \nameText -> do
   when (T.null nameText) $
     failNonfatal Blank
+
+  when (T.all isDigit nameText) $
+    failNonfatal OnlyNumbers
 
   exists <- lift $ queryMaybe $ do
     row <- addFrom_ (fromBase_ organizationsTable)

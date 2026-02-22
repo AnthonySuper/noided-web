@@ -34,12 +34,11 @@ homeActionSpec = describe "homeAction" $ do
       _ -> fail "Expected RespondPage"
 
   it "successfully renders for a logged-in user with no default org" $ \runner -> do
-    actor <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-      runTransaction @() $ do
+    actor <- runDBSetup runner $ do
         querySingleRow $
           insertReturningAll
             Actor.actorsTable
-            (values_ [#name :==> mutateVal_ (bindParam ("homeuser" :: Text)) :::%? EmptyWrappedRow])
+            (singleValue_ (#name :==> mutateVal_ (bindParam ("homeuser" :: Text)) :::%? EmptyWrappedRow))
 
     resp <- runEff
       . runFailingError @SessionError
@@ -53,24 +52,23 @@ homeActionSpec = describe "homeAction" $ do
       _ -> fail "Expected RespondPage"
 
   it "successfully renders for a logged-in user WITH a default org" $ \runner -> do
-    (actor, _) <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-      runTransaction @() $ do
+    (actor, _) <- runDBSetup runner $ do
         actor <- querySingleRow $
           insertReturningAll
             Actor.actorsTable
-            (values_ [#name :==> mutateVal_ (bindParam ("homeuser2" :: Text)) :::%? EmptyWrappedRow])
+            (singleValue_ (#name :==> mutateVal_ (bindParam ("homeuser2" :: Text)) :::%? EmptyWrappedRow))
         _ <- querySingleRow $
           insertReturningAll
             User.usersTable
-            (values_ [#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("homeuser2@example.com" :: Text)) :::%? EmptyWrappedRow])
+            (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("homeuser2@example.com" :: Text)) :::%? EmptyWrappedRow))
         org <- querySingleRow $
           insertReturningAll
             Org.organizationsTable
-            (values_ [#name :==> mutateVal_ (bindParam ("Home Org" :: Text)) :::%? EmptyWrappedRow])
+            (singleValue_ (#name :==> mutateVal_ (bindParam ("Home Org" :: Text)) :::%? EmptyWrappedRow))
         _ <- querySingleRow $
           insertReturningAll
             UDO.userDefaultOrganizationsTable
-            (values_ [#userId :==> mutateVal_ (bindParam actor.id) :::%? #organizationId :==> mutateVal_ (bindParam org.id) :::%? EmptyWrappedRow])
+            (singleValue_ (#userId :==> mutateVal_ (bindParam actor.id) :::%? #organizationId :==> mutateVal_ (bindParam org.id) :::%? EmptyWrappedRow))
         return (actor, org)
 
     resp <- runEff

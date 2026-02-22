@@ -1,6 +1,7 @@
 module OptBeer.Routes where
 
 import Noided.Pathname
+import OptBeer.Type.OrganizationIdent
 
 homePath :: PathTemplate '[]
 homePath = PathEnd
@@ -25,3 +26,6 @@ organizationsPath = "organizations" :/ PathEnd
 
 newOrganizationPath :: PathTemplate '[]
 newOrganizationPath = "organizations" :/ "new" :/ PathEnd
+
+showOrganizationPath :: PathTemplate '[OrganizationIdent]
+showOrganizationPath = "organizations" :/ capPiece :/ PathEnd

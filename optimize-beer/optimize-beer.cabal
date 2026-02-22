@@ -139,17 +139,20 @@ library
         OptBeer.Page.Layout
         OptBeer.Page.Error
         OptBeer.Page.Home
+        OptBeer.Page.Organization.Show
         OptBeer.Action
         OptBeer.Action.Base
 
         OptBeer.Effect.HashPassword
         OptBeer.Effect.CurrentActor
         OptBeer.Type.Hashword
+        OptBeer.Type.OrganizationIdent
 
         OptBeer.ValidationError.DoesNotMatchConfirmation
         OptBeer.ValidationError.InvalidCredentials
         OptBeer.ValidationError.ValueTaken
         OptBeer.ValidationError.PasswordComplexity
+        OptBeer.ValidationError.OnlyNumbers
         OptBeer.Validate.Password
 
         OptBeer.Form.Type.CreateUser

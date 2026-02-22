@@ -3,6 +3,7 @@
 module OptBeer.Action.SpecHelper
   ( TransactionRunner,
     runWithRunner,
+    runDBSetup,
     usingTransactionRunner,
     runFailingError,
     TransactingSpec,
@@ -54,6 +55,10 @@ data TransactionRunner where
 
 runWithRunner :: (IOE :> es) => TransactionRunner -> Eff (RunTransaction : es) a -> Eff es a
 runWithRunner (RunTransaction e) r = e r
+
+-- | Run a database transaction for setup purposes, failing on any error.
+runDBSetup :: TransactionRunner -> TransactM () a -> IO a
+runDBSetup runner action = runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ runTransaction @() action
 
 type TransactingSpec = SpecWith TransactionRunner
 

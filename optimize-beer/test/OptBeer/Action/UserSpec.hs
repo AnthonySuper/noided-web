@@ -41,17 +41,16 @@ createUserSpec = describe "createUserAction" $ do
         _ -> fail "Expected redirect to /"
 
       -- Verify database state
-      (actor, user) <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-        runTransaction @() $ do
-          actor <- querySingleRow $ do
-            row <- addFrom_ (fromBase_ Actor.actorsTable)
-            addWhere_ (row.name ==. bindParam ("testuser" :: Text))
-            select_ row
-          user <- querySingleRow $ do
-            row <- addFrom_ (fromBase_ User.usersTable)
-            addWhere_ (row.email ==. bindParam ("test@example.com" :: Text))
-            select_ row
-          return (actor, user)
+      (actor, user) <- runDBSetup runner $ do
+        actor <- querySingleRow $ do
+          row <- addFrom_ (fromBase_ Actor.actorsTable)
+          addWhere_ (row.name ==. bindParam ("testuser" :: Text))
+          select_ row
+        user <- querySingleRow $ do
+          row <- addFrom_ (fromBase_ User.usersTable)
+          addWhere_ (row.email ==. bindParam ("test@example.com" :: Text))
+          select_ row
+        return (actor, user)
 
       actor.name `shouldBe` "testuser"
       user.email `shouldBe` "test@example.com"
@@ -78,12 +77,11 @@ createUserSpec = describe "createUserAction" $ do
         _ -> fail "Expected RespondFormErrors"
 
       -- Verify database state: no user should have been created
-      mUser <- runEff . runFailingError @SessionError . runFailingError @() . runWithRunner runner $ do
-        runTransaction @() $ do
-          queryMaybe $ do
-            row <- addFrom_ (fromBase_ User.usersTable)
-            addWhere_ (row.email ==. bindParam ("invalid-email" :: Text))
-            select_ row
+      mUser <- runDBSetup runner $ do
+        queryMaybe $ do
+          row <- addFrom_ (fromBase_ User.usersTable)
+          addWhere_ (row.email ==. bindParam ("invalid-email" :: Text))
+          select_ row
       mUser `shouldBe` Nothing
 
 spec :: TransactingSpec

@@ -62,6 +62,32 @@ We prioritize a fully localizable UI. Hardcoded user-facing strings in Haskell m
     ```
 3.  **Verification**: Always add a test case to ensure no `noided-bad-translation` elements are rendered. For pages, this can be done by checking the output of a `PageResponse` in a spec.
 
+## URL Parameters and Identifiers
+
+When designing routes that can take either a numeric ID or a human-readable name (like an organization's name), use a custom identifier type to disambiguate.
+
+### Example: OrganizationIdent
+
+The `OrganizationIdent` type allows fetching an organization by its `OrganizationId` or its `name`.
+-   **Disambiguation Logic**: If the URL piece consists only of digits, it is parsed as an `OrganizationId`. Otherwise, it's treated as a `name`.
+-   **Validation Mandate**: To prevent collisions where a human-readable name could be mistaken for an ID, you **must** add a validation to ensure that the name field does not consist solely of digits.
+
+```haskell
+-- In OptBeer.Form.Validate.CreateOrganization
+when (T.all isDigit nameText) $
+  failNonfatal OnlyNumbers
+```
+
+### Routing with capPiece
+
+Use `capPiece` from `Noided.Pathname` to define capturing parameters in your routes. This is the correct way to handle polymorphic identifiers like `OrganizationIdent`.
+
+```haskell
+-- In OptBeer.Routes
+showOrganizationPath :: PathTemplate '[OrganizationIdent]
+showOrganizationPath = "organizations" :/ capPiece :/ PathEnd
+```
+
 ## Form Development Workflow
 
 When implementing a new form, you must complete the following steps to ensure technical and aesthetic integrity:
@@ -89,6 +115,26 @@ To prevent test data from polluting the database, all tests should run inside a 
         performBusinessLogic -- This can see the inserted user
         ) pool
     ```
+
+### Testing with runDBSetup
+To reduce boilerplate in actions tests, use the `runDBSetup` helper from `OptBeer.Action.SpecHelper` for database setup and verification.
+-   `runDBSetup` automatically handles `runEff`, `runFailingError` for common errors, and wraps the action in `runTransaction @()`.
+-   This is ideal for pre-inserting test data or checking the final state of the database after an action.
+
+Example:
+```haskell
+it "updates the user" $ \runner -> do
+  user <- runDBSetup runner $ do
+    querySingleRow (insertUser ...)
+  
+  -- Run the action being tested
+  ...
+
+  -- Verify results
+  updatedUser <- runDBSetup runner $ do
+    querySingleRow (fetchUser user.id)
+  updatedUser.name `shouldBe` "New Name"
+```
 
 ### Transaction Monad (TransactM)
 -   **Crucial**: `TransactM` does **not** have an instance of `MonadIO`. You cannot use `liftIO` inside a database transaction.
