@@ -9,6 +9,7 @@ import Data.Some.Newtype
 import Effectful
 import Effectful.Dispatch.Static
 import Network.HTTP.Types.Header
+import Network.Socket (SockAddr)
 import Noided.Form
 import Noided.Server
 
@@ -97,3 +98,28 @@ runWithHeadersFromRequest :: (SomeRequest :> es) => Eff (GetHeaders : es) b -> E
 runWithHeadersFromRequest act = do
   r <- someRequest
   withSome r (\rr -> runWithHeaders rr.headers act)
+
+-- | Effect for reading the remote IP of a request.
+data GetRemoteIp :: Effect
+
+type instance DispatchOf GetRemoteIp = Static NoSideEffects
+
+newtype instance StaticRep GetRemoteIp = GRemoteIp SockAddr
+
+-- | Get the remote host address of the request.
+getRemoteIp :: (GetRemoteIp :> es) => Eff es SockAddr
+getRemoteIp = do
+  (GRemoteIp ip) <- getStaticRep
+  return ip
+
+-- | Run with a given remote host address.
+--
+-- This is useful when running actions in tests, where you might not want to have to construct an entire request.
+runWithRemoteIp :: SockAddr -> Eff (GetRemoteIp : es) a -> Eff es a
+runWithRemoteIp = evalStaticRep . GRemoteIp
+
+-- | Run with the actual remote host address from a request.
+runWithRemoteIpFromRequest :: (SomeRequest :> es) => Eff (GetRemoteIp : es) b -> Eff es b
+runWithRemoteIpFromRequest act = do
+  r <- someRequest
+  withSome r (\rr -> runWithRemoteIp rr.remoteHost act)
