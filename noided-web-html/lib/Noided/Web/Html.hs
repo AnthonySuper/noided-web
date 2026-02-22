@@ -56,12 +56,14 @@ module Noided.Web.Html
 
     -- *** With Effectful
     FetchMessagesE (..),
+    runFetchMessagesE,
 
     -- ** Fetch HTML formatters
     FetchHtmlFormatters (..),
 
     -- *** With Effectful
     FetchHtmlFormattersE (..),
+    runFetchHtmlFormattersE,
 
     -- * HTML Formatters
     HtmlFormatter (..),

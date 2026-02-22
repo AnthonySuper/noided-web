@@ -166,6 +166,19 @@ transactDryRun cb action conn = do
     Left err -> pure $ SessionErr err
     Right res -> pure res
 
+-- | Fake running a transaction: run all the commands, but *do not* actually run BEGIN or COMMIT.
+-- This is unsafe as hell, but sometimes useful when writing tests.
+unsafeFakeTransaction :: StatementCallback -> TransactM e a -> C.Connection -> IO (TransactionResult e a)
+unsafeFakeTransaction cb action conn = do
+  sessRes <- C.use conn $ do
+    res <- runTransactM action cb
+    pure $ case res of
+      Left e -> TransactErr e
+      Right a -> TransactOK a
+  case sessRes of
+    Left err -> pure $ SessionErr err
+    Right res -> pure res
+
 -- | Helper to run the monad stack
 runTransactM :: TransactM e a -> StatementCallback -> Session (Either e a)
 runTransactM action cb = do

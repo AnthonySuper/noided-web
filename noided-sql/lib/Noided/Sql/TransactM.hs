@@ -13,6 +13,7 @@ module Noided.Sql.TransactM
     transactSerialized,
     transactRepeatableRead,
     transactDryRun,
+    unsafeFakeTransaction,
 
     -- * Transaction Results
     TransactionResult (..),

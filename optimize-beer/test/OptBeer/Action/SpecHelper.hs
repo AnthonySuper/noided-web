@@ -11,12 +11,21 @@ where
 
 import Control.Exception
 import Data.Pool (Pool)
+import Data.Pool qualified as Pool
 import Data.Typeable
 import Effectful
+import Effectful.Dispatch.Dynamic
 import Effectful.Error.Static
 import GHC.Generics
 import Hasql.Connection (Connection)
+import Hasql.Connection qualified as C
+import Hasql.Decoders qualified as Dec
+import Hasql.Encoders qualified as Enc
+import Hasql.Session (statement)
+import Hasql.Statement (unpreparable)
+import Noided.Sql
 import Noided.Web
+import Noided.Web.Internal.Effect.RunTransaction qualified as RT
 import Test.Hspec
 
 data WrappedError e = WrapError {callStack :: CallStack, wrapped :: e}
@@ -55,8 +64,22 @@ type TransactingSpec = SpecWith TransactionRunner
 -- 2. This connection will execute *withtin a transaction* for the duration of the action.
 --    This transaction will be marked as `REPEATABLE READ`.
 --    This transaction will be rolled back at the end of the example.
+--    We do this by running raw commands using Hasql upon checking out a connection, and then immediately before checking it back in.
 -- 3. Each transaction ran using the runner will be *shared*.
 --    This means that database operations will persist from transaction to transaction.
 --    That makes doing things much easier.
 usingTransactionRunner :: SpecWith TransactionRunner -> SpecWith (Pool Connection)
-usingTransactionRunner = aroundWith (error "TODO: implement me")
+usingTransactionRunner = aroundWith $ \action pool ->
+  Pool.withResource pool $ \conn -> do
+    let begin = statement () $ unpreparable "BEGIN ISOLATION LEVEL REPEATABLE READ" Enc.noParams Dec.noResult
+        rollback = statement () $ unpreparable "ROLLBACK" Enc.noParams Dec.noResult
+
+    _ <- C.use conn begin
+
+    let runTransactionShared :: (IOE :> es) => Eff (RunTransaction : es) a -> Eff es a
+        runTransactionShared = interpret $ \_ (RT.RunTransaction _ act) -> do
+          liftIO $ unsafeFakeTransaction noStatementCallback act conn
+
+    let runner = RunTransaction runTransactionShared
+
+    action runner `finally` C.use conn rollback
