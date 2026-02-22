@@ -95,6 +95,8 @@ common deps
       http-types,
       mtl,
       wai,
+      postgresql-binary,
+      iproute,
 
       noided-form-hkd,
       noided-pathname,
@@ -115,11 +117,15 @@ library
         OptBeer.App
 
         OptBeer.DB.Ids.ActorId
+        OptBeer.DB.Ids.SessionId
+        OptBeer.DB.Ids.LoginAttemptId
         OptBeer.DB.Type.PasswordDigest
 
         OptBeer.DB.Table.Actor
         OptBeer.DB.Table.User
         OptBeer.DB.Table.UserPassword
+        OptBeer.DB.Table.Session
+        OptBeer.DB.Table.LoginAttempt
         OptBeer.DB.Table.Timestamps
 
         OptBeer.Page.Type
@@ -211,6 +217,8 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.ActorSpec
             OptBeer.DB.Table.UserSpec
             OptBeer.DB.Table.UserPasswordSpec
+            OptBeer.DB.Table.SessionSpec
+            OptBeer.DB.Table.LoginAttemptSpec
             OptBeer.DB.Table.SpecHelper
 
             OptBeer.Form.Render.SpecHook

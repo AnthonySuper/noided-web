@@ -8,12 +8,14 @@ import Data.IP (IPRange)
 import Data.Functor.Contravariant
 import Data.Int
 import Data.Kind
+import Data.Scientific (Scientific)
 import Data.Text (Text, intercalate, pack)
 import Data.Time
 import Data.Typeable
 import Data.UUID (UUID)
 import Data.Vector (Vector)
 import Data.Vector qualified as V
+import PostgreSQL.Binary.Range (Range)
 import Hasql.Encoders qualified as Enc
 import Noided.Sql.Internal.Class.PGType
 import Noided.Sql.Internal.Type.Nullability
@@ -115,3 +117,16 @@ instance AsBindParam DiffTime where
 
 instance AsBindParam IPRange where
   bindParamEncoder = EncodeNonNull Enc.inet
+
+instance AsBindParam (Range Int32) where
+  bindParamEncoder = EncodeNonNull Enc.int4range
+instance AsBindParam (Range Int64) where
+  bindParamEncoder = EncodeNonNull Enc.int8range
+instance AsBindParam (Range Scientific) where
+  bindParamEncoder = EncodeNonNull Enc.numrange
+instance AsBindParam (Range LocalTime) where
+  bindParamEncoder = EncodeNonNull Enc.tsrange
+instance AsBindParam (Range UTCTime) where
+  bindParamEncoder = EncodeNonNull Enc.tstzrange
+instance AsBindParam (Range Day) where
+  bindParamEncoder = EncodeNonNull Enc.daterange
