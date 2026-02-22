@@ -2,6 +2,7 @@
 
 module Noided.Sql.Internal.Class.PGType where
 
+import Data.IP (IPRange)
 import Data.Int
 import Data.Proxy
 import Data.Scientific (Scientific)
@@ -78,3 +79,6 @@ instance PGType LocalTime where
 
 instance PGType DiffTime where
   pgTypeName _ = "interval"
+
+instance PGType IPRange where
+  pgTypeName _ = "inet"

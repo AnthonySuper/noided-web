@@ -4,6 +4,7 @@
 
 module Noided.Sql.Internal.Class.AsBindParam where
 
+import Data.IP (IPRange)
 import Data.Functor.Contravariant
 import Data.Int
 import Data.Kind
@@ -111,3 +112,6 @@ instance AsBindParam LocalTime where
 
 instance AsBindParam DiffTime where
   bindParamEncoder = EncodeNonNull Enc.interval
+
+instance AsBindParam IPRange where
+  bindParamEncoder = EncodeNonNull Enc.inet
