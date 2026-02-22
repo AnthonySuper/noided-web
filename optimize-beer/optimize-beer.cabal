@@ -125,6 +125,7 @@ library
         OptBeer.Page.Type
         OptBeer.Page.Layout
         OptBeer.Page.Error
+        OptBeer.Page.Home
         OptBeer.Action
 
         OptBeer.Error.BadRequest
@@ -145,6 +146,7 @@ library
         OptBeer.Routes
 
         -- Action routes
+        OptBeer.Action.Home
         OptBeer.Action.User
 
 
