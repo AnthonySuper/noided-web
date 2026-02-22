@@ -145,7 +145,8 @@ loginAction (RPNil :: RouteParams '[]) = do
             Cookie.setCookieValue = LBS.toStrict (encode session.id),
             Cookie.setCookieHttpOnly = True,
             Cookie.setCookieSecure = True,
-            Cookie.setCookieSameSite = Just Cookie.sameSiteLax
+            Cookie.setCookieSameSite = Just Cookie.sameSiteLax,
+            Cookie.setCookieExpires = Just (validUntil session)
           }
       return $ RespondRedirect RedirectFound "/"
 
@@ -168,10 +169,13 @@ logAttempt (now :: T.UTCTime) (userId :: ActorId) (userAgent :: Maybe Text) (rem
   _ <- querySingleRow $ insertReturningAll loginAttemptsTable vals
   return ()
 
+sessionTtl :: T.NominalDiffTime
+sessionTtl = T.nominalDay
+
 createSession :: T.UTCTime -> ActorId -> Maybe Text -> IPRange -> TransactM err Session
 createSession now userId userAgent remoteIp = do
   -- Session valid for 24 hours
-  let validUntil = addUTCTime (24 * 60 * 60) now
+  let validUntil = addUTCTime sessionTtl now
       validDuring = Range (Incl now) (Excl validUntil)
       vals =
         values_
@@ -190,7 +194,11 @@ createSession now userId userAgent remoteIp = do
 sockAddrToIPRange :: SockAddr -> IPRange
 sockAddrToIPRange s =
   case fromSockAddr s of
-    Nothing -> error "help"
+    Nothing ->
+      -- Fallback for unexpected or non-IP socket addresses (e.g. Unix sockets).
+      -- Use a sentinel IP range rather than crashing the request handler.
+      let sentinelIPv4 = toIPv4 [0, 0, 0, 0]
+       in IPv4Range $ makeAddrRange sentinelIPv4 0
     Just (ip, _) -> case ip of
       IPv4 v4addr -> IPv4Range $ makeAddrRange v4addr 32
       IPv6 v6addr -> IPv6Range $ makeAddrRange v6addr 128

@@ -18,7 +18,14 @@ createSessionRenderer ::
   HtmlFormRendererT m (SubformField CreateSessionF)
 createSessionRenderer =
   fieldWrapModelName "CreateSession" $
-    subformField createSessionRendererT
+    wrapField baseErrorWrapper (subformField createSessionRendererT)
+  where
+    -- Render base (subform-level) errors, such as invalid credential errors,
+    -- before the actual form fields, using the same styling as field errors.
+    baseErrorWrapper inner = do
+      ul_ [class_ "form-field-errors"] $
+        renderBaseErrors (li_ [class_ "form-field-error"])
+      inner
 
 createSessionRendererT ::
   (FetchMessages m, FetchHtmlFormatters m) =>
