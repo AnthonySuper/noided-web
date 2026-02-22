@@ -4,7 +4,6 @@ import Control.Monad.Trans.Class
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
 import Data.ByteString.Lazy qualified as LBS
-import Data.Functor.Identity (Identity)
 import Data.Text
 import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics

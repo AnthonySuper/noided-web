@@ -143,3 +143,23 @@
   inherits: true;
   initial-value: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)";
 }
+
+/* Transitions */
+
+@property --transition-fast {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 0.1s;
+}
+
+@property --transition-base {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 0.2s;
+}
+
+@property --transition-slow {
+  syntax: "<time>";
+  inherits: true;
+  initial-value: 0.5s;
+}

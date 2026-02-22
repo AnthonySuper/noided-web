@@ -4,8 +4,6 @@
 module OptBeer.Action.User where
 
 import Control.Monad.Error.Class qualified as MonadError
-import Data.Aeson
-import Data.Text (pack)
 import Effectful
 import Effectful.Error.Static
 import Lucid
@@ -15,16 +13,12 @@ import Noided.Pathname
 import Noided.Row
 import Noided.Sql
 import Noided.Web
-import Noided.Web.Effect
 import Noided.Web.Html.FormRender
-import Noided.Web.PageAction
-import Noided.Web.Response
 import OptBeer.DB.Table.Actor
 import OptBeer.DB.Table.User
 import OptBeer.DB.Table.UserPassword
 import OptBeer.Effect.HashPassword
 import OptBeer.Error.BadRequest
-import OptBeer.Error.BadRequest (BadRequest (BadRequest))
 import OptBeer.Form.Render.CreateUser
 import OptBeer.Form.Type.CreateUser
 import OptBeer.Form.Validate.CreateUser (createUserValidator, fieldInputToOpaquePassword)
@@ -49,7 +43,7 @@ userActions =
 wrapForm :: (Monad m) => HtmlT m a -> HtmlT m a
 wrapForm act = form_ [method_ "post", action_ "/users", class_ "form"] $ do
   res <- act
-  div_ [class_ "form-butons"] $
+  div_ [class_ "form-buttons"] $
     button_
       [class_ "button", type_ "submit"]
       "Submit"
