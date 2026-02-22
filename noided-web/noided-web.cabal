@@ -27,6 +27,7 @@ common deps
        uuid,
        http-types,
        bytestring,
+       network,
        cryptohash-sha512,
        base64-bytestring,
        memory,

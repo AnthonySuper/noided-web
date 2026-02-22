@@ -52,6 +52,7 @@ applicationInterpretCommon ::
   Application
     ( Eff
         ( WriteHeader
+            : GetRemoteIp
             : GetHeaders
             : GetQueryParams
             : GetRequestBody
@@ -66,7 +67,8 @@ applicationInterpretCommon =
 applicationInterpretRequest ::
   Application
     ( Eff
-        ( GetHeaders
+        ( GetRemoteIp
+            : GetHeaders
             : GetQueryParams
             : GetRequestBody
             : es
@@ -75,6 +77,7 @@ applicationInterpretRequest ::
   Application (Eff es)
 applicationInterpretRequest = applicationAroundAll $ \act req ->
   act req
+    & runWithRemoteIp req.remoteHost
     & runWithHeaders req.headers
     & runWithQueryParams req.queryParams
     & runWithRequestBody req.body

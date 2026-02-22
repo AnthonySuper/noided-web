@@ -46,6 +46,7 @@ useNoidedApplication ::
           FetchMessagesE,
           TimeEvent,
           WriteHeader,
+          GetRemoteIp,
           GetHeaders,
           GetQueryParams,
           GetRequestBody,

@@ -22,6 +22,12 @@ module Noided.Web.Effect.SomeRequest
     getHeaders,
     runWithHeaders,
     runWithHeadersFromRequest,
+
+    -- * Remote IP
+    GetRemoteIp,
+    getRemoteIp,
+    runWithRemoteIp,
+    runWithRemoteIpFromRequest,
   )
 where
 
