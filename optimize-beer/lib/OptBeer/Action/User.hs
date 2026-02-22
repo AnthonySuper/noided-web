@@ -4,21 +4,12 @@
 module OptBeer.Action.User where
 
 import Control.Monad.Error.Class qualified as MonadError
-import Effectful
-import Effectful.Error.Static
 import Lucid
-import Noided.Form
-import Noided.Form.HKD
-import Noided.Pathname
-import Noided.Row
-import Noided.Sql
-import Noided.Web
-import Noided.Web.Html.FormRender
+import OptBeer.Action.Base
 import OptBeer.DB.Table.Actor
 import OptBeer.DB.Table.User
 import OptBeer.DB.Table.UserPassword
 import OptBeer.Effect.HashPassword
-import OptBeer.Error.BadRequest
 import OptBeer.Form.Render.CreateUser
 import OptBeer.Form.Type.CreateUser
 import OptBeer.Form.Validate.CreateUser (createUserValidator, fieldInputToOpaquePassword)
@@ -58,21 +49,6 @@ newUserAction :: (FetchMessages renderM, FetchHtmlFormatters renderM, Monad m) =
 newUserAction (RPNil :: RouteParams '[]) =
   return $
     respondPage200 blankFormPage
-
-hkdFormBody ::
-  ( Error BadRequest :> es,
-    GetRequestBody :> es,
-    HKDForm t
-  ) =>
-  Eff es (t FormInput)
-hkdFormBody = do
-  reqBody <- getRequestBody
-  case reqBody of
-    NoBody -> throwError $ BadRequest "no body"
-    FormBody sfb -> return $ parseForm $ multipartFromSomeSubmission sfb
-    JSONBody _ -> throwError $ BadRequest "json body unexpected"
-    MalformedBody v -> throwError $ BadRequest v
-    UnknownBody _ -> throwError $ BadRequest "unknown body type"
 
 createUserFromForm ::
   ( Error SessionError :> es,

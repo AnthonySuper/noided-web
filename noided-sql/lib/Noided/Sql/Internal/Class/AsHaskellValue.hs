@@ -17,6 +17,7 @@ import Hasql.Decoders qualified as Dec
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.SqlType
+import PostgreSQL.Binary.Range (Range)
 
 type AsHaskellValue :: Type -> Constraint
 class (Typeable pgType, Typeable (HaskellTypeOf pgType)) => AsHaskellValue pgType where
@@ -83,3 +84,15 @@ instance AsHaskellValue LocalTime where
 
 instance AsHaskellValue IPRange where
   decodeHaskellValue _ = Dec.inet
+
+instance AsHaskellValue (Range Int32) where decodeHaskellValue _ = Dec.int4range
+
+instance AsHaskellValue (Range Int64) where decodeHaskellValue _ = Dec.int8range
+
+instance AsHaskellValue (Range Scientific) where decodeHaskellValue _ = Dec.numrange
+
+instance AsHaskellValue (Range LocalTime) where decodeHaskellValue _ = Dec.tsrange
+
+instance AsHaskellValue (Range UTCTime) where decodeHaskellValue _ = Dec.tstzrange
+
+instance AsHaskellValue (Range Day) where decodeHaskellValue _ = Dec.daterange

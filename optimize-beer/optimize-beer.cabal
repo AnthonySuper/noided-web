@@ -95,6 +95,10 @@ common deps
       http-types,
       mtl,
       wai,
+      postgresql-binary,
+      iproute,
+      network,
+      cookie,
 
       noided-form-hkd,
       noided-pathname,
@@ -115,11 +119,15 @@ library
         OptBeer.App
 
         OptBeer.DB.Ids.ActorId
+        OptBeer.DB.Ids.SessionId
+        OptBeer.DB.Ids.LoginAttemptId
         OptBeer.DB.Type.PasswordDigest
 
         OptBeer.DB.Table.Actor
         OptBeer.DB.Table.User
         OptBeer.DB.Table.UserPassword
+        OptBeer.DB.Table.Session
+        OptBeer.DB.Table.LoginAttempt
         OptBeer.DB.Table.Timestamps
 
         OptBeer.Page.Type
@@ -127,6 +135,7 @@ library
         OptBeer.Page.Error
         OptBeer.Page.Home
         OptBeer.Action
+        OptBeer.Action.Base
 
         OptBeer.Error.BadRequest
 
@@ -134,13 +143,17 @@ library
         OptBeer.Type.Hashword
 
         OptBeer.ValidationError.DoesNotMatchConfirmation
+        OptBeer.ValidationError.InvalidCredentials
         OptBeer.ValidationError.ValueTaken
         OptBeer.ValidationError.PasswordComplexity
         OptBeer.Validate.Password
 
         OptBeer.Form.Type.CreateUser
+        OptBeer.Form.Type.CreateSession
         OptBeer.Form.Validate.CreateUser
+        OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Render.CreateUser
+        OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Routes
@@ -148,6 +161,7 @@ library
         -- Action routes
         OptBeer.Action.Home
         OptBeer.Action.User
+        OptBeer.Action.Session
 
 
 
@@ -211,17 +225,21 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.ActorSpec
             OptBeer.DB.Table.UserSpec
             OptBeer.DB.Table.UserPasswordSpec
+            OptBeer.DB.Table.SessionSpec
+            OptBeer.DB.Table.LoginAttemptSpec
             OptBeer.DB.Table.SpecHelper
 
             OptBeer.Form.Render.SpecHook
             OptBeer.Form.Render.SpecHelper
             OptBeer.Form.Render.CreateUserSpec
+            OptBeer.Form.Render.CreateSessionSpec
 
             OptBeer.Form.Validate.CreateUserSpec
 
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper
             OptBeer.Action.UserSpec
+            OptBeer.Action.SessionSpec
 
 
     -- LANGUAGE extensions used by modules in this package.

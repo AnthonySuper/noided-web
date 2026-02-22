@@ -70,7 +70,8 @@ common deps
         vector,
         template-haskell,
         scientific,
-        iproute
+        iproute,
+        postgresql-binary
 
 common extensions
     default-extensions:

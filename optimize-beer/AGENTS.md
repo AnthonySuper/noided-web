@@ -49,6 +49,20 @@ The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) inst
     -   **Always** use `{-# LANGUAGE NoFieldSelectors #-}` and `{-# LANGUAGE OverloadedRecordDot #-}` in modules that work with multiple HKD types.
     -   Use `DuplicateRecordFields` to allow multiple types to define the same field names.
 
+## Form Development Workflow
+
+When implementing a new form, you must complete the following steps to ensure technical and aesthetic integrity:
+
+1.  **Define the Form Type**: Create a module in `OptBeer.Form.Type`.
+2.  **Implement Validation**: Create a module in `OptBeer.Form.Validate`.
+3.  **Create the Renderer**: Create a module in `OptBeer.Form.Render`.
+4.  **Add Translations**: Add the necessary keys to `config/translations/`.
+    -   Check if common fields (like `email` or `password`) already exist in the global `form.attributes` scope before adding them to a specific form scope.
+5.  **Write a Renderer Test**: Every new form renderer **must** have a corresponding spec in `test/OptBeer/Form/Render/`.
+    -   Use `assertHasNoBadTranslations` to ensure all fields and labels are properly localized.
+    -   This is our primary defense against "broken" UIs in production.
+6.  **Write an Action Test**: Create a functional test in `test/OptBeer/Action/` to verify the form submission logic, database side-effects, and redirects.
+
 ## Testing Best Practices
 
 ### Database Isolation
@@ -63,17 +77,50 @@ To prevent test data from polluting the database, all tests should run inside a 
         ) pool
     ```
 
-### Direct Row Construction
-When setting up test data, you don't always need to construct a full HKD record (like `User { ... }`). You can use `WrappedRow` syntax to specify only the columns you care about.
--   Use `values_` with the label operator `:==>` and the mutation helper `mutateVal_`.
+### Transaction Monad (TransactM)
+-   **Crucial**: `TransactM` does **not** have an instance of `MonadIO`. You cannot use `liftIO` inside a database transaction.
+-   This is a deliberate design choice to ensure transactions are deterministic and can be retried safely.
+-   **Timestamps**: Because you cannot call `getCurrentTime` inside `TransactM`, you must fetch the current time *before* starting the transaction and pass it in as an argument.
 -   Example:
     ```haskell
-    let insertActor = insertReturning actorsTable
-          (values_ ((#name :==> mutateVal_ (bindParam @Text "Alice") :::%? EmptyWrappedRow) :| [])
-          (\row -> row.id)
+    now <- getCurrentTime
+    runTransaction $ do
+      performActionWithTime now
     ```
--   `values_` takes a `Data.List.NonEmpty.NonEmpty`, so it is sometimes easier to turn on the `OverloadedLists`
-    extension so that you can use a list literal to build its argument.
+
+### Direct Row Construction
+When setting up test data or performing manual inserts, you don't always need to construct a full HKD record. You can use `WrappedRow` syntax to specify only the columns you care about.
+-   Use `values_` with the label operator `:==>` and the mutation helper `mutateVal_`.
+-   Chain multiple fields in a single row using the `:::%?` operator and end with `EmptyWrappedRow`.
+-   **Important**: `values_` takes a `NonEmpty` list of *rows*. Even if you are only inserting one row, it must be inside a list (if `OverloadedLists` is on) or wrapped with `:| []`.
+-   Example (with `OverloadedLists`):
+    ```haskell
+    let vals = values_
+          [ #name :==> mutateVal_ (bindParam @Text "Alice")
+            :::%? #email :==> mutateVal_ (bindParam @Text "alice@example.com")
+            :::%? EmptyWrappedRow
+          ]
+    ```
+
+### Querying Multiple Tables
+When selecting from multiple tables or returning multiple values from `SelectM`:
+-   Use the `:-:` operator to combine multiple HKD structures in a `select_` or `return` statement.
+-   The result will be wrapped in the `:--:` data constructor for pattern matching.
+-   Example:
+    ```haskell
+    userAndPw <- queryMaybe $ do
+      user <- addFrom_ (fromBase_ usersTable)
+      pw <- addFrom_ (fromBase_ userPasswordsTable)
+      addWhere_ (user.id ==. pw.userId)
+      return $ user :-: pw
+    case userAndPw of
+      Just (u :--: p) -> ...
+    ```
+
+### Range Types
+-   When working with PostgreSQL ranges (like `tstzrange`), use the `Range` type from `PostgreSQL.Binary.Range`.
+-   The bounds are constructed using `Incl` (inclusive) and `Excl` (exclusive).
+-   Example: `Range (Incl start) (Excl end)`
 
 ### Translation Testing
 When testing renderers, we want to ensure that all required translation keys exist.

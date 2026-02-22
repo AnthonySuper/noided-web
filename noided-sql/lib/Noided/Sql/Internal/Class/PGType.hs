@@ -9,6 +9,7 @@ import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Data.Time
 import Data.UUID (UUID)
+import PostgreSQL.Binary.Range (Range)
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.SqlType
 
@@ -82,3 +83,10 @@ instance PGType DiffTime where
 
 instance PGType IPRange where
   pgTypeName _ = "inet"
+
+instance PGType (Range Int32) where pgTypeName _ = "int4range"
+instance PGType (Range Int64) where pgTypeName _ = "int8range"
+instance PGType (Range Scientific) where pgTypeName _ = "numrange"
+instance PGType (Range LocalTime) where pgTypeName _ = "tsrange"
+instance PGType (Range UTCTime) where pgTypeName _ = "tstzrange"
+instance PGType (Range Day) where pgTypeName _ = "daterange"

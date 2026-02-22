@@ -1,15 +1,16 @@
 en:
   form:
+    attributes:
+      email:
+        name: "Email"
+      password:
+        name: "Password"
     CreateUser:
       attributes:
         name:
           name: "Name"
-        email:
-          name: "Email"
         confirmEmail:
           name: "Confirm Email"
-        password:
-          name: "Password"
         confirmPassword:
           name: "Confirm Password"
   password_policy:
