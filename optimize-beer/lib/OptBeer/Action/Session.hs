@@ -4,44 +4,34 @@
 module OptBeer.Action.Session where
 
 import Control.Monad.Error.Class qualified as MonadError
-import Data.ByteString.Char8 qualified as B8
+import Data.Aeson (encode)
+import Data.ByteString.Lazy qualified as LBS
 import Data.IP
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Password.Bcrypt qualified as BC
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import Data.Time (addUTCTime)
 import Data.Time qualified as T
-import Effectful
-import Effectful.Error.Static
 import Lucid
 import Network.HTTP.Types.Header (hUserAgent)
 import Network.Socket (SockAddr (..))
-import Noided.Form
-import Noided.Form.HKD
-import Noided.Pathname
-import Noided.Row
-import Noided.Sql
-import Noided.Web
-import Noided.Web.Html.FormRender
+import OptBeer.Action.Base
 import OptBeer.DB.Ids.ActorId
 import OptBeer.DB.Table.LoginAttempt
 import OptBeer.DB.Table.Session
 import OptBeer.DB.Table.User
 import OptBeer.DB.Table.UserPassword
 import OptBeer.Effect.HashPassword
-import OptBeer.Error.BadRequest
 import OptBeer.Form.Render.CreateSession
 import OptBeer.Form.Type.CreateSession
 import OptBeer.Form.Validate.CreateSession (createSessionValidator)
 import OptBeer.Routes (newSessionPath, sessionsPath)
 import OptBeer.Type.Hashword
+import OptBeer.ValidationError.InvalidCredentials (InvalidCredentials (InvalidCredentials))
 import Optics
 import PostgreSQL.Binary.Range (Bound (..), Range (..))
 import Web.Cookie qualified as Cookie
-import Data.Aeson (encode)
-import Data.ByteString.Lazy qualified as LBS
 
 sessionActions ::
   ( FetchMessages renderM,
@@ -78,20 +68,17 @@ newSessionAction (RPNil :: RouteParams '[]) =
       wrapForm $
         renderFormT createSessionRenderer emptyCreateSessionForm mempty
 
-hkdFormBody ::
-  ( Error BadRequest :> es,
-    GetRequestBody :> es,
-    HKDForm t
-  ) =>
-  Eff es (t FormInput)
-hkdFormBody = do
-  reqBody <- getRequestBody
-  case reqBody of
-    NoBody -> throwError $ BadRequest "no body"
-    FormBody sfb -> return $ parseForm $ multipartFromSomeSubmission sfb
-    JSONBody _ -> throwError $ BadRequest "json body unexpected"
-    MalformedBody v -> throwError $ BadRequest v
-    UnknownBody _ -> throwError $ BadRequest "unknown body type"
+invalidCredentialsErrors :: FormErrors (SubformField CreateSessionF)
+invalidCredentialsErrors =
+  (mempty :: FormErrors (SubformField CreateSessionF))
+    & #baseErrors
+    .~ singletonError InvalidCredentials
+
+collapseLefts :: Either a (Either a b) -> Either a b
+collapseLefts = \case
+  Left e -> Left e
+  Right (Left e) -> Left e
+  Right (Right a) -> Right a
 
 loginAction ::
   ( Error BadRequest :> es,
@@ -140,24 +127,18 @@ loginAction (RPNil :: RouteParams '[]) = do
                 return $ Right session
               BC.PasswordCheckFail -> do
                 logAttempt now user.id userAgent remoteIp False
-                return $ Left ()
-          Nothing -> return $ Left ()
-      Nothing -> return $ Left ()
+                return $ Left invalidCredentialsErrors
+          Nothing -> return $ Left invalidCredentialsErrors
+      Nothing -> return $ Left invalidCredentialsErrors
 
-  case result of
-    Left _ ->
+  case collapseLefts result of
+    Left errs ->
       -- On validation failure
       return $
         RespondFormErrors
           wrapForm
-          (renderFormT createSessionRenderer body mempty)
-    Right (Left ()) ->
-      -- On credential failure
-      return $
-        RespondFormErrors
-          wrapForm
-          (renderFormT createSessionRenderer body mempty) -- TODO: Add generic error
-    Right (Right session) -> do
+          (renderFormT createSessionRenderer body errs)
+    Right session -> do
       setCookie $
         Cookie.defaultSetCookie
           { Cookie.setCookieName = "sessionId",
@@ -168,7 +149,8 @@ loginAction (RPNil :: RouteParams '[]) = do
           }
       return $ RespondRedirect RedirectFound "/"
 
-logAttempt now userId userAgent remoteIp successful = do
+logAttempt :: T.UTCTime -> ActorId -> Maybe Text -> IPRange -> Bool -> TransactM err ()
+logAttempt (now :: T.UTCTime) (userId :: ActorId) (userAgent :: Maybe Text) (remoteIp :: IPRange) (successful :: Bool) = do
   let vals =
         values_
           [ #userId
@@ -186,6 +168,7 @@ logAttempt now userId userAgent remoteIp successful = do
   _ <- querySingleRow $ insertReturningAll loginAttemptsTable vals
   return ()
 
+createSession :: T.UTCTime -> ActorId -> Maybe Text -> IPRange -> TransactM err Session
 createSession now userId userAgent remoteIp = do
   -- Session valid for 24 hours
   let validUntil = addUTCTime (24 * 60 * 60) now

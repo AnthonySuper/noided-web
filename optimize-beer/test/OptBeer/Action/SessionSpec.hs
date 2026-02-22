@@ -7,13 +7,8 @@ module OptBeer.Action.SessionSpec (spec) where
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Time qualified as T
-import Effectful
 import Network.Socket (SockAddr (..))
-import Noided.Form
-import Noided.Pathname
-import Noided.Row
-import Noided.Sql
-import Noided.Web
+import OptBeer.Action.Base
 import OptBeer.Action.Session
 import OptBeer.Action.SpecHelper
 import OptBeer.DB.Table.Actor qualified as Actor
@@ -22,10 +17,8 @@ import OptBeer.DB.Table.Session qualified as Session
 import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Table.UserPassword qualified as UP
 import OptBeer.Effect.HashPassword
-import OptBeer.Error.BadRequest (BadRequest)
 import OptBeer.Page.Type (Page)
 import OptBeer.Type.Hashword
-import Optics
 import Test.Hspec
 
 loginSpec :: TransactingSpec

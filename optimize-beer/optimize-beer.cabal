@@ -135,6 +135,7 @@ library
         OptBeer.Page.Error
         OptBeer.Page.Home
         OptBeer.Action
+        OptBeer.Action.Base
 
         OptBeer.Error.BadRequest
 
