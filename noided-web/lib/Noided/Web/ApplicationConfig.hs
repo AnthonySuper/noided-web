@@ -18,6 +18,7 @@ import Data.Pool qualified as Pool
 import Effectful
 import Hasql.Connection
 import Noided.Web.Internal.Effect.Log
+import Noided.Web.Internal.Effect.Signing
 import Noided.Web.Internal.Effect.Translate
 import Noided.Web.Internal.Effect.UseConnection
 import Noided.Web.Internal.Type.ApplicationConfig
@@ -29,14 +30,15 @@ import System.IO (stdout)
 -- | Use an application config to gain access to an interpreter with some common effects.
 withInterpretersFromConfig ::
   ApplicationConfig ->
-  ((forall a es. (IOE :> es) => Eff (HasTranslations : UseConnection : Log : es) a -> Eff es a) -> IO b) ->
+  ((forall a es. (IOE :> es) => Eff (Signing : HasTranslations : UseConnection : Log : es) a -> Eff es a) -> IO b) ->
   IO b
 withInterpretersFromConfig cfg cb = do
   pool <- configToPool cfg
   withLoggerFromConfig cfg $ \logger -> do
     translationRunnerFromConfig cfg logger $ \runTranslations ->
       cb
-        ( runTranslations
+        ( runWithMainSignerAndFallbacks cfg.primarySigner cfg.secondarySigners
+            >>> runTranslations
             >>> runUsingConnectionPool pool
             >>> runUsingLogger logger
         )

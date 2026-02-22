@@ -8,5 +8,11 @@ homePath = PathEnd
 newUserPath :: PathTemplate '[]
 newUserPath = "users" :/ "new" :/ PathEnd
 
+newSessionPath :: PathTemplate '[]
+newSessionPath = "sessions" :/ "new" :/ PathEnd
+
 usersPath :: PathTemplate '[]
 usersPath = "users" :/ PathEnd
+
+sessionsPath :: PathTemplate '[]
+sessionsPath = "sessions" :/ PathEnd

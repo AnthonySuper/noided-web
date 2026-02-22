@@ -25,12 +25,15 @@ module Noided.Sql
     module Noided.Sql.Delete,
     module Noided.Sql.Merge,
     module Noided.Sql.SqlExpr,
+    (:-:) (..),
+    (:--:) (..),
   )
 where
 
 import Noided.Sql.Define
 import Noided.Sql.Delete
 import Noided.Sql.Insert
+import Noided.Sql.Internal.Type.Tie
 import Noided.Sql.Merge
 import Noided.Sql.Select
 import Noided.Sql.SqlExpr

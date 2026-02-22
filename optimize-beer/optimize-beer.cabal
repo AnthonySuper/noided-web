@@ -97,6 +97,8 @@ common deps
       wai,
       postgresql-binary,
       iproute,
+      network,
+      cookie,
 
       noided-form-hkd,
       noided-pathname,
@@ -140,13 +142,17 @@ library
         OptBeer.Type.Hashword
 
         OptBeer.ValidationError.DoesNotMatchConfirmation
+        OptBeer.ValidationError.InvalidCredentials
         OptBeer.ValidationError.ValueTaken
         OptBeer.ValidationError.PasswordComplexity
         OptBeer.Validate.Password
 
         OptBeer.Form.Type.CreateUser
+        OptBeer.Form.Type.CreateSession
         OptBeer.Form.Validate.CreateUser
+        OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Render.CreateUser
+        OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Routes
@@ -154,6 +160,7 @@ library
         -- Action routes
         OptBeer.Action.Home
         OptBeer.Action.User
+        OptBeer.Action.Session
 
 
 
@@ -230,6 +237,7 @@ test-suite optimize-beer-test
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper
             OptBeer.Action.UserSpec
+            OptBeer.Action.SessionSpec
 
 
     -- LANGUAGE extensions used by modules in this package.

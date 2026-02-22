@@ -50,6 +50,7 @@ useNoidedApplication ::
           GetHeaders,
           GetQueryParams,
           GetRequestBody,
+          Signing,
           HasTranslations,
           UseConnection,
           Log,
