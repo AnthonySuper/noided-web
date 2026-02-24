@@ -124,6 +124,8 @@ library
         OptBeer.DB.Ids.OrganizationId
         OptBeer.DB.Type.PasswordDigest
         OptBeer.DB.Type.OrganizationAccessLevel
+        OptBeer.DB.Type.Unit
+        OptBeer.DB.Type.UnitCategory
 
         OptBeer.DB.Table.Actor
         OptBeer.DB.Table.User
@@ -242,6 +244,8 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.OrganizationUserAccessSpec
             OptBeer.DB.Table.UserDefaultOrganizationSpec
             OptBeer.DB.Type.OrganizationAccessLevelSpec
+            OptBeer.DB.Type.UnitSpec
+            OptBeer.DB.Type.UnitCategorySpec
             OptBeer.DB.Table.SpecHelper
 
             OptBeer.Form.Render.SpecHook
