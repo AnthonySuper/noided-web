@@ -122,6 +122,7 @@ library
         OptBeer.DB.Ids.SessionId
         OptBeer.DB.Ids.LoginAttemptId
         OptBeer.DB.Ids.OrganizationId
+        OptBeer.DB.Ids.ItemId
         OptBeer.DB.Type.PasswordDigest
         OptBeer.DB.Type.OrganizationAccessLevel
         OptBeer.DB.Type.Unit
@@ -135,6 +136,7 @@ library
         OptBeer.DB.Table.Organization
         OptBeer.DB.Table.OrganizationUserAccess
         OptBeer.DB.Table.UserDefaultOrganization
+        OptBeer.DB.Table.Item
         OptBeer.DB.Table.Timestamps
 
         OptBeer.Page.Type
@@ -243,6 +245,7 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.OrganizationSpec
             OptBeer.DB.Table.OrganizationUserAccessSpec
             OptBeer.DB.Table.UserDefaultOrganizationSpec
+            OptBeer.DB.Table.ItemSpec
             OptBeer.DB.Type.OrganizationAccessLevelSpec
             OptBeer.DB.Type.UnitSpec
             OptBeer.DB.Type.UnitCategorySpec
