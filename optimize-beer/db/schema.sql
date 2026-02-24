@@ -52,6 +52,54 @@ CREATE TYPE public.unit_category AS ENUM (
 );
 
 --
+-- Name: to_canonical_qty(numeric, public.unit); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.to_canonical_qty(qty numeric, u public.unit) RETURNS numeric
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $$
+  SELECT (CASE u
+    WHEN 'gram' THEN qty
+    WHEN 'kilogram' THEN qty * 1000
+    WHEN 'ounce' THEN qty * 28.3495
+    WHEN 'pound' THEN qty * 453.592
+    WHEN 'milliliter' THEN qty
+    WHEN 'liter' THEN qty * 1000
+    WHEN 'hectoliter' THEN qty * 100000
+    WHEN 'fluid_ounce' THEN qty * 29.5735
+    WHEN 'gallon' THEN qty * 3785.41
+    WHEN 'us_beer_barrel' THEN qty * 117348
+    WHEN 'each' THEN qty
+    WHEN 'minute' THEN qty
+    WHEN 'hour' THEN qty * 60
+  END)::NUMERIC(20,6);
+$$;
+
+--
+-- Name: to_unit_category(public.unit); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.to_unit_category(u public.unit) RETURNS public.unit_category
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $$
+  SELECT CASE u
+    WHEN 'gram' THEN 'mass'::unit_category
+    WHEN 'kilogram' THEN 'mass'::unit_category
+    WHEN 'ounce' THEN 'mass'::unit_category
+    WHEN 'pound' THEN 'mass'::unit_category
+    WHEN 'milliliter' THEN 'volume'::unit_category
+    WHEN 'liter' THEN 'volume'::unit_category
+    WHEN 'hectoliter' THEN 'volume'::unit_category
+    WHEN 'fluid_ounce' THEN 'volume'::unit_category
+    WHEN 'gallon' THEN 'volume'::unit_category
+    WHEN 'us_beer_barrel' THEN 'volume'::unit_category
+    WHEN 'each' THEN 'count'::unit_category
+    WHEN 'minute' THEN 'time'::unit_category
+    WHEN 'hour' THEN 'time'::unit_category
+  END;
+$$;
+
+--
 -- Name: actors; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -392,4 +440,5 @@ INSERT INTO public.schema_migrations (filename) VALUES
 	('202602220302_create_sessions_table.rb'),
 	('202602221947_create_organization_tables.rb'),
 	('202602240135_create_unit_category_enum.rb'),
-	('202602240137_create_unit_enum.rb');
+	('202602240137_create_unit_enum.rb'),
+	('202602240144_create_canonicalize_unit_function.rb');
