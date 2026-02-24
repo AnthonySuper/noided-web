@@ -21,6 +21,37 @@ CREATE TYPE public.organization_access_level AS ENUM (
 );
 
 --
+-- Name: unit; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.unit AS ENUM (
+    'gram',
+    'kilogram',
+    'ounce',
+    'pound',
+    'milliliter',
+    'liter',
+    'hectoliter',
+    'fluid_ounce',
+    'gallon',
+    'us_beer_barrel',
+    'each',
+    'minute',
+    'hour'
+);
+
+--
+-- Name: unit_category; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.unit_category AS ENUM (
+    'mass',
+    'volume',
+    'time',
+    'count'
+);
+
+--
 -- Name: actors; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -359,4 +390,6 @@ INSERT INTO public.schema_migrations (filename) VALUES
 	('202602210202_create_user_passwords_table.rb'),
 	('202602220255_create_login_attempts_table.rb'),
 	('202602220302_create_sessions_table.rb'),
-	('202602221947_create_organization_tables.rb');
+	('202602221947_create_organization_tables.rb'),
+	('202602240135_create_unit_category_enum.rb'),
+	('202602240137_create_unit_enum.rb');
