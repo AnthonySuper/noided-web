@@ -170,7 +170,7 @@ class Commands < Thor
   desc "dump_schema", "dump the DB schema"
   def dump_schema
     $logger.info { "Dumping schema with args: #{pg_dump_args.inspect} "}
-    schema, _ = Open3.capture2("pg_dump", "--schema-only", "--no-comments", "--no-owner", *pg_dump_args)
+    schema, _ = Open3.capture2("pg_dump", "--schema-only", "--no-owner", *pg_dump_args)
     migrations, _ = Open3.capture2("pg_dump", "-t", "schema_migrations", "--section=data", "--column-inserts", "--rows-per-insert=1000", "--no-owner", *pg_dump_args)
     schema_file.open("w") do |stream|
       stream.puts(clean_pg_dump(schema + migrations))

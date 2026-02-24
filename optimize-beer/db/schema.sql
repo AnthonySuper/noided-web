@@ -76,6 +76,12 @@ CREATE FUNCTION public.to_canonical_qty(qty numeric, u public.unit) RETURNS nume
 $$;
 
 --
+-- Name: FUNCTION to_canonical_qty(qty numeric, u public.unit); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.to_canonical_qty(qty numeric, u public.unit) IS 'converts a quantity in some unit-of-measure to its equivalent quantity in the base unit (gram, ml, each, minute)';
+
+--
 -- Name: to_unit_category(public.unit); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -98,6 +104,12 @@ CREATE FUNCTION public.to_unit_category(u public.unit) RETURNS public.unit_categ
     WHEN 'hour' THEN 'time'::unit_category
   END;
 $$;
+
+--
+-- Name: FUNCTION to_unit_category(u public.unit); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.to_unit_category(u public.unit) IS 'returns the category of a given unit';
 
 --
 -- Name: actors; Type: TABLE; Schema: public; Owner: -
