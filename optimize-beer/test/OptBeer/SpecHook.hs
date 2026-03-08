@@ -13,14 +13,14 @@ import Hasql.Connection.Settings (connectionString)
 import Hasql.Errors
 import System.Environment (getEnvironment)
 import System.Exit (ExitCode (..))
-import System.Process (CreateProcess (..), createProcess, proc, waitForProcess)
+import System.Process (CreateProcess (..), proc, readCreateProcessWithExitCode)
 import Test.Hspec
 import TestContainers qualified as TC
 import TestContainers.Hspec (withContainers)
 
 data SpecHookError
   = ConnectionAcquisitionFailed ConnectionError
-  | MigrationFailed Int
+  | MigrationFailed Int String -- ^ exit code and combined stdout+stderr
   deriving (Show)
 
 instance Exception SpecHookError
@@ -60,22 +60,24 @@ setupContainer = do
         10 -- 10 resources per stripe
 
 -- | Shell out to the Ruby migration script, pointing it at the given
--- @DATABASE_URL@.
+-- @DATABASE_URL@.  Paths are relative to the package root (@optimize-beer/@),
+-- which is the working directory used by @cabal test@.
 runMigrations :: String -> IO ()
 runMigrations dbUrl = do
   currentEnv <- getEnvironment
   let overrides =
         [ ("DATABASE_URL", dbUrl),
           ("OPTIMIZE_BEER_ENV", "test"),
-          ("BUNDLE_GEMFILE", "optimize-beer/Gemfile")
+          -- Point bundler at the Gemfile in the package root.
+          ("BUNDLE_GEMFILE", "Gemfile")
         ]
       -- New values first; nubBy keeps the first occurrence per key, so the
       -- overrides take precedence over any identically-named vars inherited
       -- from the parent process environment.
       mergedEnv = nubBy ((==) `on` fst) (overrides ++ currentEnv)
-      processSpec = (proc "ruby" ["optimize-beer/script/db.rb", "migrate"]) {env = Just mergedEnv}
-  (_, _, _, ph) <- createProcess processSpec
-  exitCode <- waitForProcess ph
+      -- Script path is relative to the package root (optimize-beer/).
+      processSpec = (proc "ruby" ["script/db.rb", "migrate"]) {env = Just mergedEnv}
+  (exitCode, out, err) <- readCreateProcessWithExitCode processSpec ""
   case exitCode of
     ExitSuccess -> return ()
-    ExitFailure n -> throwIO (MigrationFailed n)
+    ExitFailure n -> throwIO (MigrationFailed n (out <> err))
