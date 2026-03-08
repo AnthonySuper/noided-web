@@ -32,6 +32,11 @@ class DBConfigs
     when /production/
       $logger.info { "Yielding production database..." }
       yield @configs.fetch("production")
+    when /test/i
+      $logger.info { "Yielding test database from DATABASE_URL..." }
+      # nil config signals DBConfig#connected to use DATABASE_URL instead of
+      # the YAML-based connection parameters.
+      yield DBConfig.new(nil)
     end
   end
 
@@ -150,7 +155,7 @@ class Commands < Thor
     with_database do |db|
       Sequel::Migrator.run(db, migrations_folder, use_transactions: true)
     end
-    dump_schema unless environment&.match?(/production/i)
+    dump_schema unless environment&.match?(/production|test/i)
   end
 
   desc "rollback", "rollback the last migration"

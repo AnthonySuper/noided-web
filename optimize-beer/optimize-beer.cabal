@@ -229,7 +229,9 @@ test-suite optimize-beer-test
     default-language: GHC2021
 
     build-depends:
-          tagsoup
+          tagsoup,
+          testcontainers,
+          process
 
     ghc-options: -threaded -O2 -rtsopts -with-rtsopts=-N
 
