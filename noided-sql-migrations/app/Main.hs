@@ -23,7 +23,7 @@ import System.FilePath ((</>), takeDirectory)
 import System.Process (readProcess)
 
 data Command
-  = New Text
+  = New FilePath Text
   | Migrate FilePath
   | Rollback FilePath Int
 
@@ -31,7 +31,7 @@ main :: IO ()
 main = do
   cmd <- execParser opts
   case cmd of
-    New name -> handleNew name
+    New dir name -> handleNew dir name
     Migrate dir -> handleMigrate dir
     Rollback dir n -> handleRollback dir n
   where
@@ -40,17 +40,16 @@ main = do
 
 commandParser :: Parser Command
 commandParser = subparser
-  ( command "new" (info (New <$> argument str (metavar "NAME")) (progDesc "Create a new migration"))
+  ( command "new" (info (New <$> strOption (long "dir" <> short 'd' <> help "Migrations directory" <> showDefault <> value "db/migrations") <*> argument str (metavar "NAME")) (progDesc "Create a new migration"))
   <> command "migrate" (info (Migrate <$> strOption (long "dir" <> short 'd' <> help "Migrations directory" <> showDefault <> value "db/migrations")) (progDesc "Run pending migrations"))
   <> command "rollback" (info (Rollback <$> strOption (long "dir" <> short 'd' <> help "Migrations directory" <> showDefault <> value "db/migrations") <*> option auto (long "steps" <> short 'n' <> help "Number of migrations to roll back" <> showDefault <> value 1)) (progDesc "Roll back migrations"))
   )
 
-handleNew :: Text -> IO ()
-handleNew name = do
+handleNew :: FilePath -> Text -> IO ()
+handleNew dir name = do
   now <- getCurrentTime
   let timestamp = formatTime defaultTimeLocale "%Y%m%d%H%M" now
   let filename = timestamp <> "_" <> T.unpack (T.replace " " "_" name) <> ".sql"
-  let dir = "db/migrations"
   createDirectoryIfMissing True dir
   let path = dir </> filename
   TIO.writeFile path "-- Write your migration SQL here\n"
