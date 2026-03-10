@@ -220,3 +220,17 @@ ALTER TABLE ONLY public.user_passwords
     ADD CONSTRAINT user_passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES public.actors(id) ON DELETE CASCADE;
+
+-- Applied migrations
+INSERT INTO schema_migrations (filename) VALUES ('202602210012_create_case_insensitive_collation');
+INSERT INTO schema_migrations (filename) VALUES ('202602210049_create_identifier_collation');
+INSERT INTO schema_migrations (filename) VALUES ('202602210052_create_actors_table');
+INSERT INTO schema_migrations (filename) VALUES ('202602210201_create_users_table');
+INSERT INTO schema_migrations (filename) VALUES ('202602210202_create_user_passwords_table');
+INSERT INTO schema_migrations (filename) VALUES ('202602220255_create_login_attempts_table');
+INSERT INTO schema_migrations (filename) VALUES ('202602220302_create_sessions_table');
+INSERT INTO schema_migrations (filename) VALUES ('202602221947_create_organization_tables');
+INSERT INTO schema_migrations (filename) VALUES ('202602240135_create_unit_category_enum');
+INSERT INTO schema_migrations (filename) VALUES ('202602240137_create_unit_enum');
+INSERT INTO schema_migrations (filename) VALUES ('202602240144_create_canonicalize_unit_function');
+INSERT INTO schema_migrations (filename) VALUES ('202602240158_create_items_table');

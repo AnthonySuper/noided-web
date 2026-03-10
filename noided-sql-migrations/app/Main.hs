@@ -5,6 +5,7 @@ module Main where
 import Data.List (isPrefixOf)
 import Data.Semigroup (sconcat)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
@@ -70,7 +71,7 @@ handleMigrate dir = withConnection $ \conn -> do
       exitFailure
     TransactOK () -> do
       putStrLn "Migrations applied successfully"
-      dumpSchema dir
+      dumpSchema dir conn
 
 handleRollback :: FilePath -> Int -> IO ()
 handleRollback dir n = withConnection $ \conn -> do
@@ -87,25 +88,36 @@ handleRollback dir n = withConnection $ \conn -> do
       exitFailure
     TransactOK () -> do
       putStrLn "Rollback successful"
-      dumpSchema dir
+      dumpSchema dir conn
 
-dumpSchema :: FilePath -> IO ()
-dumpSchema migrationsDir = do
+dumpSchema :: FilePath -> C.Connection -> IO ()
+dumpSchema migrationsDir conn = do
   dbUrl <- lookupEnv "DATABASE_URL"
   case dbUrl of
     Just url -> do
       putStrLn "Dumping schema..."
+      let config = defaultMigrationConfig migrationsDir
+      
       -- Use pg_dump to get the schema
       let pgDumpArgs = [url, "--schema-only", "--no-owner", "--no-privileges"]
       schema <- readProcess "pg_dump" pgDumpArgs ""
       
+      -- Get applied migrations to generate INSERTS
+      appliedRes <- transactSerialized noStatementCallback (getAppliedMigrations config) conn
+      let insertStatements = case appliedRes of
+            TransactOK applied -> 
+              if Set.null applied
+                then ""
+                else "\n-- Applied migrations\n" <> 
+                     T.unlines [ "INSERT INTO " <> trackingTableName config <> " (filename) VALUES ('" <> v <> "');" | v <- Set.toList applied ]
+            _ -> ""
+
       -- Filter the schema output
       let filteredSchema = filterSchema schema
       
       -- Determine the schema.sql path
-      -- If migrationsDir is "optimize-beer/db/migrations", schemaPath should be "optimize-beer/db/schema.sql"
       let schemaPath = takeDirectory migrationsDir </> "schema.sql"
-      TIO.writeFile schemaPath (T.pack filteredSchema)
+      TIO.writeFile schemaPath (T.pack filteredSchema <> insertStatements)
       putStrLn $ "Schema dumped to " <> schemaPath
     Nothing -> putStrLn "Skipping schema dump: DATABASE_URL not set"
 
