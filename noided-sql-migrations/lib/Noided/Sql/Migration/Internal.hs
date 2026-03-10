@@ -106,6 +106,12 @@ parseRawToFiles RawMigrationFile{..} =
     Up -> MigrationFiles rVersion rName (Just rPath) Nothing
     Down -> MigrationFiles rVersion rName Nothing (Just rPath)
 
+-- | Get the unique identifier for a migration (\"<version>_<name>\").
+-- This is used as the primary key in the tracking table so that two migrations
+-- sharing the same version timestamp but with different names are tracked separately.
+migrationId :: Migration -> Text
+migrationId Migration {..} = version <> "_" <> name
+
 -- | Read the content of paired migration files.
 readMigration :: MigrationFiles -> IO Migration
 readMigration MigrationFiles {..} = do
