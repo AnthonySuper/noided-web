@@ -1,30 +1,38 @@
 # Agent Instructions for `noided-web`
 
+## Code Quality
+
+-   **Warnings**: The project **must** compile without warnings.
+-   **Shadowing**: Avoid shadowing variables, especially those imported from common libraries like `Control.Monad`.
+
 ## Database Migrations (optimize-beer)
 
-The `optimize-beer` sub-project uses a Ruby-based migration system (Sequel) instead of Haskell-native migrations.
+The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migration system.
 
 ### Preferred Workflow
 
-1.  **Generate a migration**: Use the `script/db.rb` script.
+1.  **Generate a migration**: Use `cabal run noided-migrate -- new`.
     ```bash
-    ./optimize-beer/script/db.rb gen_migration <migration_name>
+    cabal run noided-migrate -- new <migration_name>
     ```
-    This creates a new file in `optimize-beer/db/migrations/`.
+    This creates a new timestamped `.sql` file in `optimize-beer/db/migrations/`.
 
-2.  **Apply migrations**: Run the `migrate` command.
+2.  **Apply migrations**: Use `cabal run noided-migrate -- migrate`.
     ```bash
-    ./optimize-beer/script/db.rb migrate
+    DATABASE_URL=postgres://... cabal run noided-migrate -- migrate --dir optimize-beer/db/migrations
     ```
-    This will:
-    - Apply migrations to both `development` and `test` databases (as configured in `config/db.yml`).
-    - Automatically update `optimize-beer/db/schema.sql` by running `pg_dump`.
+    This will apply any pending migrations. Each migration runs in its own serializable transaction. Migrations prefixed with `-- no-transaction` (e.g. `ALTER TYPE ... ADD VALUE`) are applied outside of any transaction.
 
 ### Migration Conventions
 
--   **Timestamps**: Use the `timestamps` helper instead of manual columns. This adds `created_at` and `updated_at` with `timestamptz` and default `now()`.
+-   **Timestamps**: Manually add `created_at` and `updated_at` columns with `TIMESTAMPTZ` and default `NOW()` if needed.
+    ```sql
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    ```
 -   **Collations**: Use `identifier` collation for names/identifiers where case-insensitive (but case-preserving) behavior is desired.
--   **Enums**: Use PostgreSQL enums where appropriate; the script supports the `pg_enum` extension.
+-   **Enums**: Use PostgreSQL enums (`CREATE TYPE ... AS ENUM (...)`) where appropriate.
+
 
 ### Common Pitfalls
 
@@ -126,7 +134,7 @@ Example:
 it "updates the user" $ \runner -> do
   user <- runDBSetup runner $ do
     querySingleRow (insertUser ...)
-  
+
   -- Run the action being tested
   ...
 

@@ -39,12 +39,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '4.0.1'
-        bundler-cache: true
-        working-directory: optimize-beer
+    - name: Install PostgreSQL client
+      run: |
+         - name: Install pg_dump 18
+    run: |
+        # Add PostgreSQL apt repository key and repository
+        curl -fsSL https://www.postgresql.org | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+        echo "deb http://apt.postgresql.org $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/postgresql.list
+        # Update apt lists and install the specific version 18 client
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client-18
 
     - name: Create databases
       run: |
@@ -108,6 +112,14 @@ jobs:
 
     - name: Build all packages
       run: cabal build --enable-tests --enable-benchmarks all
+
+    - name: Apply migrations
+      run: |
+        export DATABASE_URL=postgresql://postgres:password@localhost:5432/optimize_beer_development
+        cabal run noided-migrate -- migrate --dir optimize-beer/db/migrations
+        export DATABASE_URL=postgresql://postgres:password@localhost:5432/optimize_beer_test
+        cabal run noided-migrate -- migrate --dir optimize-beer/db/migrations
+
     - name: Save ofiles cache
       uses: actions/cache/save@v4
       with:
@@ -136,9 +148,12 @@ jobs:
         echo "  - noided-row"
         echo "  - noided-translate"
         echo "  - noided-validation"
+        echo "  - noided-sql-migrations (noided-migrate)"
+        echo "  - optimize-beer"
         echo ""
         echo "Common commands:"
         echo "  cabal build all          - Build all packages"
         echo "  cabal test all           - Run all tests"
         echo "  cabal build <package>    - Build a specific package"
         echo "  cabal test <package>     - Test a specific package"
+        echo "  cabal run noided-migrate -- migrate - Run migrations"
