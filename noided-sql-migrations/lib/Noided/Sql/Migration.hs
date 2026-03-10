@@ -55,7 +55,7 @@ runMigrationsLogic config migrations conn = do
 
   case appliedRes of
     TransactOK applied -> do
-      let pending = filter (\m -> not (Set.member (version m) applied)) migrations
+      let pending = filter (\m -> not (Set.member (migrationId m) applied)) migrations
       foldM
         ( \acc migration ->
             case acc of
@@ -98,7 +98,7 @@ rollbackMigrationLogic config migrations n conn = do
   case appliedRes of
     TransactOK applied -> do
       -- We only want to roll back migrations that ARE applied, in reverse order
-      let toRollback = take n $ reverse $ filter (\m -> Set.member (version m) applied) migrations
+      let toRollback = take n $ reverse $ filter (\m -> Set.member (migrationId m) applied) migrations
       foldM
         ( \acc migration ->
             case acc of
@@ -166,8 +166,8 @@ getAppliedMigrations MigrationConfig {..} = do
 -- | Run a single migration and record it in the tracking table.
 -- This function is idempotent: it checks if the migration has already been applied.
 applyMigration :: MigrationConfig -> Migration -> TransactM err ()
-applyMigration config@MigrationConfig {..} Migration {..} = do
-  alreadyApplied <- isMigrationApplied config version
+applyMigration config@MigrationConfig {..} migration@Migration {..} = do
+  alreadyApplied <- isMigrationApplied config (migrationId migration)
   unless alreadyApplied $ do
     -- 1. Execute the migration SQL
     execQueryRaw $ unsafeQueryFromScript upContent
@@ -177,14 +177,14 @@ applyMigration config@MigrationConfig {..} Migration {..} = do
       UnsafeSqlQ
         { syntax = "INSERT INTO " <> quoteIdentifier trackingTableName <> " (filename) VALUES ($1);",
           paramsInspected = [version],
-          params = contramap (const version) (Enc.param (Enc.nonNullable Enc.text)),
+          params = contramap (const $ migrationId migration) (Enc.param (Enc.nonNullable Enc.text)),
           decoder = Dec.noResult
         }
 
 -- | Roll back a single migration and remove it from the tracking table.
 rollbackMigration :: MigrationConfig -> Migration -> TransactM err ()
-rollbackMigration config@MigrationConfig {..} Migration {..} = do
-  alreadyApplied <- isMigrationApplied config version
+rollbackMigration config@MigrationConfig {..} migration@Migration {..} = do
+  alreadyApplied <- isMigrationApplied config (migrationId migration)
   when alreadyApplied $ do
     -- 1. Execute the migration SQL (if provided)
     case downContent of
@@ -196,7 +196,7 @@ rollbackMigration config@MigrationConfig {..} Migration {..} = do
       UnsafeSqlQ
         { syntax = "DELETE FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;",
           paramsInspected = [version],
-          params = contramap (const version) (Enc.param (Enc.nonNullable Enc.text)),
+          params = contramap (const $ migrationId migration) (Enc.param (Enc.nonNullable Enc.text)),
           decoder = Dec.noResult
         }
 
