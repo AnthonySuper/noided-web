@@ -4,6 +4,8 @@
 module Noided.Sql.Migration.Internal where
 
 import Control.Applicative ((<|>))
+import Control.Exception (throwIO)
+import Control.Monad (foldM)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
@@ -53,23 +55,41 @@ defaultMigrationConfig dir =
 
 -- | Discover and sort migrations in a directory.
 -- Groups files by version and name.
+-- Fails with an error if duplicate UP or DOWN files are found for the same version.
 discoverMigrations :: FilePath -> IO [Migration]
 discoverMigrations dir = do
   files <- listDirectory dir
   let sqlFiles = filter (\f -> takeExtension f == ".sql") files
   let rawFiles = mapMaybe (parseRawMigrationFile . (dir </>)) sqlFiles
-  
-  let grouped = Map.fromListWith mergeFiles $ map (\r -> ((rVersion r, rName r), parseRawToFiles r)) rawFiles
+  let pairs = map (\r -> ((rVersion r, rName r), parseRawToFiles r)) rawFiles
+
+  grouped <- foldM insertFile Map.empty pairs
   let migrationFiles = Map.elems grouped
-  
+
   mapM readMigration $ sortOn mVersion migrationFiles
   where
-    mergeFiles f1 f2 = MigrationFiles
-      { mVersion = mVersion f1
-      , mName = mName f1
-      , mUpPath = mUpPath f1 <|> mUpPath f2
-      , mDownPath = mDownPath f1 <|> mDownPath f2
-      }
+    insertFile acc (key, mf) =
+      case Map.lookup key acc of
+        Nothing -> pure $ Map.insert key mf acc
+        Just existing -> do
+          merged <- mergeFiles existing mf
+          pure $ Map.insert key merged acc
+
+    mergeFiles f1 f2 = do
+      upPath <- checkDuplicate "UP" (mVersion f1) (mUpPath f1) (mUpPath f2)
+      downPath <- checkDuplicate "DOWN" (mVersion f1) (mDownPath f1) (mDownPath f2)
+      pure MigrationFiles
+        { mVersion = mVersion f1
+        , mName = mName f1
+        , mUpPath = upPath
+        , mDownPath = downPath
+        }
+
+    checkDuplicate direction version (Just p1) (Just p2) =
+      throwIO $ userError $
+        "Duplicate " <> direction <> " migration file for version "
+          <> T.unpack version <> ": " <> p1 <> " and " <> p2
+    checkDuplicate _ _ p1 p2 = pure (p1 <|> p2)
 
 -- | Raw information about a single migration file.
 data RawMigrationFile = RawMigrationFile
