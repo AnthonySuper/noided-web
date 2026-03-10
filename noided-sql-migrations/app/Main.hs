@@ -2,8 +2,6 @@
 
 module Main where
 
-import Control.Monad (when)
-import Data.ByteString.Char8 qualified as BS
 import Data.Semigroup (sconcat)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text (Text)
@@ -17,7 +15,7 @@ import Noided.Sql.Migration.Internal
 import Noided.Sql.TransactM
 import Options.Applicative
 import System.Directory (createDirectoryIfMissing)
-import System.Environment (getEnv, lookupEnv)
+import System.Environment (lookupEnv)
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
 
@@ -80,7 +78,7 @@ handleMigrate dir = do
       migrations <- mapM readMigration migrationFiles
       let config = defaultMigrationConfig dir
       
-      res <- transactSerialized noStatementCallback (runMigrations config migrations) conn
+      res <- runMigrationsInTransactions config migrations conn
       case res of
         SessionErr err -> do
           putStrLn $ "Session error: " <> show err
