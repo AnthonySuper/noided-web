@@ -24,7 +24,8 @@ common deps
         mtl,
         transformers,
         containers,
-        vector
+        vector,
+        process
 
 library
     import:           warnings, deps

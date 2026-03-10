@@ -3,7 +3,7 @@
 
 module Noided.Sql.Migration where
 
-import Control.Monad (foldM, unless, void)
+import Control.Monad (foldM, unless, void, when)
 import Data.Char (ord)
 import Data.Int (Int64)
 import Data.Set (Set)
@@ -53,13 +53,56 @@ runMigrationsLogic config migrations conn = do
         ( \acc migration ->
             case acc of
               TransactOK () ->
-                if noTransaction migration
+                if upNoTransaction migration
                   then unsafeFakeTransaction noStatementCallback (applyMigration config migration) conn
                   else transactSerialized noStatementCallback (applyMigration config migration) conn
               _ -> pure acc
         )
         (TransactOK ())
         pending
+    SessionErr e -> pure $ SessionErr e
+    TransactErr e -> pure $ TransactErr e
+
+-- | Roll back the last N migrations.
+rollbackMigrationsInTransactions :: MigrationConfig -> [Migration] -> Int -> C.Connection -> IO (TransactionResult err ())
+rollbackMigrationsInTransactions config migrations n conn = do
+  -- 1. Acquire advisory lock (session-level)
+  lockRes <- transactSerialized noStatementCallback (acquireAdvisoryLock config) conn
+  case lockRes of
+    TransactOK () -> do
+      -- 2. Run rollback logic
+      res <- rollbackMigrationLogic config migrations n conn
+      -- 3. Release advisory lock
+      _ <- transactSerialized noStatementCallback (releaseAdvisoryLock config) conn
+      pure res
+    err -> pure (void err)
+
+rollbackMigrationLogic :: MigrationConfig -> [Migration] -> Int -> C.Connection -> IO (TransactionResult err ())
+rollbackMigrationLogic config migrations n conn = do
+  appliedRes <-
+    transactSerialized
+      noStatementCallback
+      ( do
+          ensureMigrationTable config
+          getAppliedMigrations config
+      )
+      conn
+
+  case appliedRes of
+    TransactOK applied -> do
+      -- We only want to roll back migrations that ARE applied, in reverse order
+      let toRollback = take n $ reverse $ filter (\m -> Set.member (version m) applied) migrations
+      foldM
+        ( \acc migration ->
+            case acc of
+              TransactOK () ->
+                if downNoTransaction migration
+                  then unsafeFakeTransaction noStatementCallback (rollbackMigration config migration) conn
+                  else transactSerialized noStatementCallback (rollbackMigration config migration) conn
+              _ -> pure acc
+        )
+        (TransactOK ())
+        toRollback
     SessionErr e -> pure $ SessionErr e
     TransactErr e -> pure $ TransactErr e
 
@@ -120,12 +163,35 @@ applyMigration config@MigrationConfig {..} Migration {..} = do
   alreadyApplied <- isMigrationApplied config version
   unless alreadyApplied $ do
     -- 1. Execute the migration SQL
-    execQueryRaw $ unsafeQueryFromScript content
+    execQueryRaw $ unsafeQueryFromScript upContent
 
     -- 2. Record the migration in the tracking table
     execQueryRaw $
-      unsafeQueryFromScript $
-        "INSERT INTO " <> trackingTableName <> " (filename) VALUES ('" <> version <> "');"
+      UnsafeSqlQ
+        { syntax = "INSERT INTO " <> trackingTableName <> " (filename) VALUES ('" <> version <> "');",
+          paramsInspected = [],
+          params = Enc.noParams,
+          decoder = Dec.noResult
+        }
+
+-- | Roll back a single migration and remove it from the tracking table.
+rollbackMigration :: MigrationConfig -> Migration -> TransactM err ()
+rollbackMigration config@MigrationConfig {..} Migration {..} = do
+  alreadyApplied <- isMigrationApplied config version
+  when alreadyApplied $ do
+    -- 1. Execute the migration SQL (if provided)
+    case downContent of
+      Just content -> execQueryRaw $ unsafeQueryFromScript content
+      Nothing -> pure ()
+
+    -- 2. Remove the migration from the tracking table
+    execQueryRaw $
+      UnsafeSqlQ
+        { syntax = "DELETE FROM " <> trackingTableName <> " WHERE filename = '" <> version <> "';",
+          paramsInspected = [],
+          params = Enc.noParams,
+          decoder = Dec.noResult
+        }
 
 -- | Check if a specific migration version has already been applied.
 isMigrationApplied :: MigrationConfig -> Text -> TransactM err Bool

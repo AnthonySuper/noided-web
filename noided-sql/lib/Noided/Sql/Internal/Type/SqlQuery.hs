@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -7,7 +8,7 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 import Hasql.Decoders qualified as Dec
 import Hasql.Encoders qualified as Enc
-import Hasql.Session (Session, statement)
+import Hasql.Session (Session, script, statement)
 import Hasql.Statement (Statement, unpreparable)
 import Noided.Sql.Internal.Class.Query
 import Noided.Sql.Internal.Type.PGDecoder (decoderToColumn)
@@ -15,31 +16,35 @@ import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.Syntax
 
 -- | An opaque SQL query, returning rows of some type.
-data SqlQuery decoded
-  = UnsafeSqlQ
-  { syntax :: Text,
-    paramsInspected :: [Text],
-    params :: Enc.Params (),
-    decoder :: Dec.Result decoded
-  }
+data SqlQuery decoded where
+  UnsafeSqlQ ::
+    { syntax :: Text,
+      paramsInspected :: [Text],
+      params :: Enc.Params (),
+      decoder :: Dec.Result decoded
+    } ->
+    SqlQuery decoded
+  ScriptSqlQ ::
+    { scriptSyntax :: Text
+    } ->
+    SqlQuery ()
 
 -- | Unsafely build a query from a script.
 -- This should be used to do command-level functions, creating savepoints and the like.
 unsafeQueryFromScript :: Text -> SqlQuery ()
-unsafeQueryFromScript script =
-  UnsafeSqlQ {syntax = script, paramsInspected = [], params = mempty, decoder = Dec.noResult}
-
-sqlQueryToHasqlStatement :: SqlQuery decoded -> Statement () decoded
-sqlQueryToHasqlStatement sql = unpreparable sql.syntax sql.params sql.decoder
+unsafeQueryFromScript s = ScriptSqlQ {scriptSyntax = s}
 
 sqlQueryToHasqlSession :: SqlQuery result -> Session result
-sqlQueryToHasqlSession = statement () . sqlQueryToHasqlStatement
+sqlQueryToHasqlSession (UnsafeSqlQ s _ p d) = statement () $ unpreparable s p d
+sqlQueryToHasqlSession (ScriptSqlQ s) = script s
 
 sqlQuerySyntax :: SqlQuery decoded -> Text
-sqlQuerySyntax = syntax
+sqlQuerySyntax (UnsafeSqlQ s _ _ _) = s
+sqlQuerySyntax (ScriptSqlQ s) = s
 
 sqlQueryInspectedBinds :: SqlQuery decoded -> [Text]
-sqlQueryInspectedBinds = paramsInspected
+sqlQueryInspectedBinds (UnsafeSqlQ _ i _ _) = i
+sqlQueryInspectedBinds (ScriptSqlQ _) = []
 
 buildQueryFromRow ::
   (ExecutableQuery query) =>

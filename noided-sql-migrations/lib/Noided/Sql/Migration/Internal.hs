@@ -3,27 +3,37 @@
 
 module Noided.Sql.Migration.Internal where
 
+import Control.Applicative ((<|>))
 import Data.List (sortOn)
+import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import System.Directory (listDirectory)
 import System.FilePath (takeBaseName, takeExtension, (</>))
 
--- | A migration that is ready to be applied.
+-- | The direction of a migration.
+data MigrationDirection = Up | Down
+  deriving (Show, Eq, Ord)
+
+-- | A migration that is ready to be applied or rolled back.
 data Migration = Migration
   { version :: Text,
     name :: Text,
-    content :: Text,
-    noTransaction :: Bool
+    upContent :: Text,
+    upNoTransaction :: Bool,
+    downContent :: Maybe Text,
+    downNoTransaction :: Bool
   }
   deriving (Show, Eq)
 
--- | Information about a migration file found on disk.
-data MigrationFile = MigrationFile
-  { filePath :: FilePath,
-    fileVersion :: Text,
-    fileName :: Text
+-- | Information about migration files found on disk for a single version.
+data MigrationFiles = MigrationFiles
+  { mVersion :: Text,
+    mName :: Text,
+    mUpPath :: Maybe FilePath,
+    mDownPath :: Maybe FilePath
   }
   deriving (Show, Eq)
 
@@ -41,35 +51,82 @@ defaultMigrationConfig dir =
       trackingTableName = "schema_migrations"
     }
 
--- | Discover and sort migration files in a directory.
--- Expects files in the format: YYYYMMDDHHMM_name.sql
-discoverMigrations :: FilePath -> IO [MigrationFile]
+-- | Discover and sort migrations in a directory.
+-- Groups files by version and name.
+discoverMigrations :: FilePath -> IO [Migration]
 discoverMigrations dir = do
   files <- listDirectory dir
   let sqlFiles = filter (\f -> takeExtension f == ".sql") files
-  let migrationFiles = map (parseMigrationFile . (dir </>)) sqlFiles
-  pure $ sortOn fileVersion migrationFiles
+  let rawFiles = mapMaybe (parseRawMigrationFile . (dir </>)) sqlFiles
+  
+  let grouped = Map.fromListWith mergeFiles $ map (\r -> ((rVersion r, rName r), parseRawToFiles r)) rawFiles
+  let migrationFiles = Map.elems grouped
+  
+  mapM readMigration $ sortOn mVersion migrationFiles
+  where
+    mergeFiles f1 f2 = MigrationFiles
+      { mVersion = mVersion f1
+      , mName = mName f1
+      , mUpPath = mUpPath f1 <|> mUpPath f2
+      , mDownPath = mDownPath f1 <|> mDownPath f2
+      }
 
--- | Parse a file path into a 'MigrationFile'.
-parseMigrationFile :: FilePath -> MigrationFile
-parseMigrationFile path =
-  let baseName = T.pack $ takeBaseName path
+-- | Raw information about a single migration file.
+data RawMigrationFile = RawMigrationFile
+  { rVersion :: Text,
+    rName :: Text,
+    rDirection :: MigrationDirection,
+    rPath :: FilePath
+  }
+
+-- | Parse a file path into a 'RawMigrationFile'.
+parseRawMigrationFile :: FilePath -> Maybe RawMigrationFile
+parseRawMigrationFile path =
+  let fullBaseName = T.pack $ takeBaseName path
+      (baseName, direction) = 
+        if ".up" `T.isSuffixOf` fullBaseName
+          then (T.dropEnd 3 fullBaseName, Up)
+          else if ".down" `T.isSuffixOf` fullBaseName
+                 then (T.dropEnd 5 fullBaseName, Down)
+                 else (fullBaseName, Up)
       (versionPart, namePart) = T.breakOn "_" baseName
-   in MigrationFile
-        { filePath = path,
-          fileVersion = versionPart,
-          fileName = T.drop 1 namePart -- Remove the leading underscore
-        }
+   in if T.null namePart
+        then Nothing
+        else Just RawMigrationFile
+               { rVersion = versionPart,
+                 rName = T.drop 1 namePart, -- Remove the leading underscore
+                 rDirection = direction,
+                 rPath = path
+               }
 
--- | Read the content of a migration file.
-readMigration :: MigrationFile -> IO Migration
-readMigration MigrationFile {..} = do
-  content <- TIO.readFile filePath
-  let noTx = "-- no-transaction" `T.isPrefixOf` T.stripStart content
+-- | Convert a 'RawMigrationFile' into 'MigrationFiles'.
+parseRawToFiles :: RawMigrationFile -> MigrationFiles
+parseRawToFiles RawMigrationFile{..} =
+  case rDirection of
+    Up -> MigrationFiles rVersion rName (Just rPath) Nothing
+    Down -> MigrationFiles rVersion rName Nothing (Just rPath)
+
+-- | Read the content of paired migration files.
+readMigration :: MigrationFiles -> IO Migration
+readMigration MigrationFiles {..} = do
+  (upContent, upNoTx) <- case mUpPath of
+    Just path -> do
+      c <- TIO.readFile path
+      pure (c, "-- no-transaction" `T.isPrefixOf` T.stripStart c)
+    Nothing -> error $ "Missing UP migration for version " <> T.unpack mVersion
+    
+  (downContent, downNoTx) <- case mDownPath of
+    Just path -> do
+      c <- TIO.readFile path
+      pure (Just c, "-- no-transaction" `T.isPrefixOf` T.stripStart c)
+    Nothing -> pure (Nothing, False)
+
   pure $
     Migration
-      { version = fileVersion,
-        name = fileName,
-        content = content,
-        noTransaction = noTx
+      { version = mVersion,
+        name = mName,
+        upContent = upContent,
+        upNoTransaction = upNoTx,
+        downContent = downContent,
+        downNoTransaction = downNoTx
       }

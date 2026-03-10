@@ -1,5 +1,10 @@
 # Agent Instructions for `noided-web`
 
+## Code Quality
+
+-   **Warnings**: The project **must** compile without warnings.
+-   **Shadowing**: Avoid shadowing variables, especially those imported from common libraries like `Control.Monad`.
+
 ## Database Migrations (optimize-beer)
 
 The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migration system.
@@ -129,7 +134,7 @@ Example:
 it "updates the user" $ \runner -> do
   user <- runDBSetup runner $ do
     querySingleRow (insertUser ...)
-  
+
   -- Run the action being tested
   ...
 
