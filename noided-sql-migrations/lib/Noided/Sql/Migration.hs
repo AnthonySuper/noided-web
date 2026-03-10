@@ -5,6 +5,7 @@ module Noided.Sql.Migration where
 
 import Control.Monad (foldM, unless, void, when)
 import Data.Char (ord)
+import Data.Functor.Contravariant (contramap)
 import Data.Int (Int64)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -18,6 +19,12 @@ import Noided.Sql.Internal.Type.SqlQuery (SqlQuery (..), unsafeQueryFromScript)
 import Noided.Sql.Internal.Type.TransactM (execQueryRaw)
 import Noided.Sql.Migration.Internal
 import Noided.Sql.TransactM
+
+-- | Quote a SQL identifier (e.g. table name) using PostgreSQL double-quote syntax.
+-- All embedded double-quote characters are escaped by doubling them.
+-- This prevents SQL injection when embedding identifiers in queries.
+quoteIdentifier :: Text -> Text
+quoteIdentifier t = "\"" <> T.replace "\"" "\"\"" t <> "\""
 
 -- | Run pending migrations, each in its own transaction.
 -- This function uses a PostgreSQL advisory lock to ensure that only one
@@ -137,7 +144,7 @@ ensureMigrationTable :: MigrationConfig -> TransactM err ()
 ensureMigrationTable MigrationConfig {..} =
   execQueryRaw $
     UnsafeSqlQ
-      { syntax = "CREATE TABLE IF NOT EXISTS " <> trackingTableName <> " (filename TEXT PRIMARY KEY);",
+      { syntax = "CREATE TABLE IF NOT EXISTS " <> quoteIdentifier trackingTableName <> " (filename TEXT PRIMARY KEY);",
         paramsInspected = [],
         params = Enc.noParams,
         decoder = Dec.noResult
@@ -149,7 +156,7 @@ getAppliedMigrations MigrationConfig {..} = do
   versions <-
     execQueryRaw $
       UnsafeSqlQ
-        { syntax = "SELECT filename FROM " <> trackingTableName,
+        { syntax = "SELECT filename FROM " <> quoteIdentifier trackingTableName,
           paramsInspected = [],
           params = Enc.noParams,
           decoder = Dec.rowVector (Dec.column (Dec.nonNullable Dec.text))
@@ -168,9 +175,9 @@ applyMigration config@MigrationConfig {..} Migration {..} = do
     -- 2. Record the migration in the tracking table
     execQueryRaw $
       UnsafeSqlQ
-        { syntax = "INSERT INTO " <> trackingTableName <> " (filename) VALUES ('" <> version <> "');",
-          paramsInspected = [],
-          params = Enc.noParams,
+        { syntax = "INSERT INTO " <> quoteIdentifier trackingTableName <> " (filename) VALUES ($1);",
+          paramsInspected = [version],
+          params = contramap (const version) (Enc.param (Enc.nonNullable Enc.text)),
           decoder = Dec.noResult
         }
 
@@ -187,9 +194,9 @@ rollbackMigration config@MigrationConfig {..} Migration {..} = do
     -- 2. Remove the migration from the tracking table
     execQueryRaw $
       UnsafeSqlQ
-        { syntax = "DELETE FROM " <> trackingTableName <> " WHERE filename = '" <> version <> "';",
-          paramsInspected = [],
-          params = Enc.noParams,
+        { syntax = "DELETE FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;",
+          paramsInspected = [version],
+          params = contramap (const version) (Enc.param (Enc.nonNullable Enc.text)),
           decoder = Dec.noResult
         }
 
@@ -199,9 +206,9 @@ isMigrationApplied MigrationConfig {..} v = do
   res <-
     execQueryRaw $
       UnsafeSqlQ
-        { syntax = "SELECT 1 FROM " <> trackingTableName <> " WHERE filename = '" <> v <> "';",
-          paramsInspected = [],
-          params = Enc.noParams,
+        { syntax = "SELECT 1 FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;",
+          paramsInspected = [v],
+          params = contramap (const v) (Enc.param (Enc.nonNullable Enc.text)),
           decoder = Dec.rowVector (Dec.column (Dec.nonNullable Dec.int4))
         }
   pure $ not (V.null res)
