@@ -21,7 +21,7 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
     ```bash
     DATABASE_URL=postgres://... cabal run noided-migrate -- migrate --dir optimize-beer/db/migrations
     ```
-    This will apply any pending migrations within a single transaction.
+    This will apply any pending migrations. Each migration runs in its own serializable transaction. Migrations prefixed with `-- no-transaction` (e.g. `ALTER TYPE ... ADD VALUE`) are applied outside of any transaction.
 
 ### Migration Conventions
 
