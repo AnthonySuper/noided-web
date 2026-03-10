@@ -3,7 +3,7 @@
 
 module Noided.Sql.Migration where
 
-import Control.Monad (foldM, forM_, unless, void)
+import Control.Monad (foldM, unless, void)
 import Data.Char (ord)
 import Data.Int (Int64)
 import Data.Set (Set)
@@ -52,7 +52,10 @@ runMigrationsLogic config migrations conn = do
       foldM
         ( \acc migration ->
             case acc of
-              TransactOK () -> transactSerialized noStatementCallback (applyMigration config migration) conn
+              TransactOK () ->
+                if noTransaction migration
+                  then unsafeFakeTransaction noStatementCallback (applyMigration config migration) conn
+                  else transactSerialized noStatementCallback (applyMigration config migration) conn
               _ -> pure acc
         )
         (TransactOK ())
@@ -85,20 +88,6 @@ releaseAdvisoryLock MigrationConfig {..} =
 -- | Generate a stable 64-bit lock ID from the tracking table name.
 lockId :: Text -> Int64
 lockId = T.foldl' (\h c -> 31 * h + fromIntegral (ord c)) 82395162
-
--- | Run pending migrations.
--- This function takes the migrations already read from disk.
--- Note: This runs ALL pending migrations in a single transaction.
--- For incremental application, use 'runMigrationsInTransactions'.
-runMigrations :: MigrationConfig -> [Migration] -> TransactM err ()
-runMigrations config migrations = do
-  ensureMigrationTable config
-  applied <- getAppliedMigrations config
-
-  let pending = filter (\m -> not (Set.member (version m) applied)) migrations
-
-  forM_ pending $ \migration -> do
-    applyMigration config migration
 
 -- | Ensure the tracking table exists.
 ensureMigrationTable :: MigrationConfig -> TransactM err ()

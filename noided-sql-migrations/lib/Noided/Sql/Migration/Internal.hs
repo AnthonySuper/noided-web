@@ -14,7 +14,8 @@ import System.FilePath (takeBaseName, takeExtension, (</>))
 data Migration = Migration
   { version :: Text,
     name :: Text,
-    content :: Text
+    content :: Text,
+    noTransaction :: Bool
   }
   deriving (Show, Eq)
 
@@ -64,9 +65,11 @@ parseMigrationFile path =
 readMigration :: MigrationFile -> IO Migration
 readMigration MigrationFile {..} = do
   content <- TIO.readFile filePath
+  let noTx = "-- no-transaction" `T.isPrefixOf` T.stripStart content
   pure $
     Migration
       { version = fileVersion,
         name = fileName,
-        content = content
+        content = content,
+        noTransaction = noTx
       }
