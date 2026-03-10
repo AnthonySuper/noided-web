@@ -41,8 +41,14 @@ jobs:
 
     - name: Install PostgreSQL client
       run: |
+         - name: Install pg_dump 18
+    run: |
+        # Add PostgreSQL apt repository key and repository
+        curl -fsSL https://www.postgresql.org | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+        echo "deb http://apt.postgresql.org $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/postgresql.list
+        # Update apt lists and install the specific version 18 client
         sudo apt-get update
-        sudo apt-get install -y postgresql-client
+        sudo apt-get install -y postgresql-client-18
 
     - name: Create databases
       run: |
