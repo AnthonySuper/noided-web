@@ -170,6 +170,7 @@ library
         OptBeer.Form.Render.CreateUser
         OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.CreateOrganization
+        OptBeer.Form.Render.CreateItem
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Routes

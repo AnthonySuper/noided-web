@@ -27,6 +27,8 @@ module Noided.Web.Html
     renderFieldErrors,
     renderInputTag,
     renderInputTag',
+    renderSelectTag,
+    renderEnumSelectTag,
     renderTextareaTag,
     renderTextareaTag',
     renderLabelTag,

@@ -11,16 +11,20 @@ module Noided.Web.Html.Internal.FormRenderer where
 
 import Control.Monad.Trans.Class
 import Data.HKD
+import Data.Proxy
 import Data.Semigroup
-import Data.Text (Text)
+import Data.Text (Text, pack)
+import Data.Typeable
 import Lucid
 import Lucid.Base
 import Noided.Form
 import Noided.Form.HKD
+import Noided.Translate
 import Noided.Validation
 import Noided.Web.Html.Internal.Class.DomId
 import Noided.Web.Html.Internal.Class.FetchHtmlFormatters
 import Noided.Web.Html.Internal.Class.FetchMessages
+import Noided.Web.Html.Internal.Translate
 import Noided.Web.Html.Internal.Type.DomIdWriter
 import Noided.Web.Html.Internal.Type.FormContext
 import Noided.Web.Html.Internal.Type.FormRendererT
@@ -236,6 +240,52 @@ renderInputTag ::
   [Attributes] ->
   HtmlFieldT (InputField t) m ()
 renderInputTag = renderInputTag' toQueryParam
+
+-- | Render a select tag with the given options.
+renderSelectTag ::
+  (Monad m, ToHttpApiData t) =>
+  -- | Base attributes to add to the select tag
+  [Attributes] ->
+  -- | Options to render (value, label)
+  [(t, HtmlFieldT (InputField t) m ())] ->
+  HtmlFieldT (InputField t) m ()
+renderSelectTag attrs options = do
+  iattrs <- inputAttributesBase
+  currentVal <- inputFieldValue
+  let currentText = fieldValueToInputAttributeValue' toQueryParam currentVal
+  select_ (attrs <> [iattrs]) $ do
+    mapM_ (renderOption currentText) options
+  where
+    renderOption currentText (val, label) = do
+      let valText = toQueryParam val
+      option_ ([value_ valText] ++ [selected_ "selected" | Just valText == currentText]) label
+
+-- | Render a select tag for an enum.
+-- The labels will be translated using the following keys (in order):
+--
+--     * @ enum.<Type>.<Value>.name @
+renderEnumSelectTag ::
+  forall t m.
+  ( Monad m,
+    ToHttpApiData t,
+    Bounded t,
+    Enum t,
+    Typeable t,
+    Show t,
+    FetchMessages m,
+    FetchHtmlFormatters m
+  ) =>
+  -- | Base attributes to add to the select tag
+  [Attributes] ->
+  HtmlFieldT (InputField t) m ()
+renderEnumSelectTag attrs = renderSelectTag attrs options
+  where
+    options = [(u, renderEnumLabel u) | u <- [minBound .. maxBound]]
+    typeName = pack . show . typeRep $ Proxy @t
+    renderEnumLabel u =
+      let valName = pack (show u)
+          key = "enum" <> textToMessageKey typeName <> textToMessageKey valName <> "name"
+       in renderTranslated [key] mempty
 
 renderTextareaTag' ::
   (Monad m) =>
