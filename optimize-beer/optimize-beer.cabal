@@ -166,6 +166,7 @@ library
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Validate.CreateOrganization
+        OptBeer.Form.Validate.CreateItem
         OptBeer.Form.Render.CreateUser
         OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.CreateOrganization
@@ -259,6 +260,7 @@ test-suite optimize-beer-test
             OptBeer.Form.Render.CreateOrganizationSpec
 
             OptBeer.Form.Validate.CreateUserSpec
+            OptBeer.Form.Validate.CreateItemSpec
 
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper
