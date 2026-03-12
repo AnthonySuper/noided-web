@@ -162,7 +162,7 @@ Prefer using `runTransaction` over `runTransactionToResult` in most actions.
     ```
 
 ### Direct Row Construction
-When setting up test data or performing manual inserts, you don't always need to construct a full HKD record. You can use `WrappedRow` syntax to specify only the columns you care about.
+When setting up test data or performing manual inserts, you don't always need to construct a full HKD record. You can use `WrappedRow` syntax (exported from `Noided.Row`) to specify only the columns you care about.
 -   Use `singleValue_` with the label operator `:==>` and the mutation helper `mutateVal_` when inserting only one row. This avoids the need for list brackets.
 -   Use `values_` when you need to insert multiple rows at once.
 -   Chain multiple fields in a single row using the `:::%?` operator and end with `EmptyWrappedRow`.
