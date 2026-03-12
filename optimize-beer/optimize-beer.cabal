@@ -162,6 +162,7 @@ library
         OptBeer.Form.Type.CreateUser
         OptBeer.Form.Type.CreateSession
         OptBeer.Form.Type.CreateOrganization
+        OptBeer.Form.Type.CreateItem
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Validate.CreateOrganization
