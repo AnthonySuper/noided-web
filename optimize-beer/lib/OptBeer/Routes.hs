@@ -29,3 +29,9 @@ newOrganizationPath = "organizations" :/ "new" :/ PathEnd
 
 showOrganizationPath :: PathTemplate '[OrganizationIdent]
 showOrganizationPath = "organizations" :/ capPiece :/ PathEnd
+
+createItemPath :: PathTemplate '[OrganizationIdent]
+createItemPath = "organizations" :/ capPiece :/ "items" :/ PathEnd
+
+newItemPath :: PathTemplate '[OrganizationIdent]
+newItemPath = "organizations" :/ capPiece :/ "items" :/ "new" :/ PathEnd

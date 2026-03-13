@@ -3,6 +3,7 @@
 module OptBeer.Action.Base
   ( -- * Common helpers
     hkdFormBody,
+    requireActor,
 
     -- * Common re-exports
     module Effectful,
@@ -29,6 +30,7 @@ import Noided.Sql
 import Noided.Validation
 import Noided.Web
 import Noided.Web.Html.FormRender
+import OptBeer.DB.Table.Actor (Actor)
 import OptBeer.Effect.CurrentActor
 
 -- | Helper to extract an HKD form from a request body.
@@ -46,3 +48,11 @@ hkdFormBody = do
     JSONBody _ -> throwError $ BadRequest "json body unexpected"
     MalformedBody v -> throwError $ BadRequest v
     UnknownBody _ -> throwError $ BadRequest "unknown body type"
+
+-- | Helper to ensure a user is logged in.
+requireActor :: (Error Unauthorized :> es, CurrentActor :> es) => Eff es Actor
+requireActor = do
+  mActor <- getCurrentActor
+  case mActor of
+    Nothing -> throwError $ Unauthorized "You must be logged in."
+    Just a -> return a

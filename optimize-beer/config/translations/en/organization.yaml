@@ -1,5 +1,11 @@
 en:
   organization:
+    idLabel: "Organization ID:"
+    items:
+      title: "Inventory Items"
+      create:
+        title: "Add New Item"
+        button: "Create Item"
+        link: "Add New Item"
     create:
       button: "Create Organization"
-    idLabel: "ID:"

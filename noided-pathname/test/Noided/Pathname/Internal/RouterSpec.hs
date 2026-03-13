@@ -6,6 +6,7 @@
 module Noided.Pathname.Internal.RouterSpec (spec) where
 
 import Data.Maybe (isJust, isNothing)
+import Data.Text (Text)
 import Data.Type.Equality
 import Noided.Pathname.Internal.PathCaptures
 import Noided.Pathname.Internal.PathTemplate
@@ -130,6 +131,18 @@ crudRoutesSpec = describe "CRUD-style routes" $ do
   it "prefers static 'new' over dynamic capture" $
     fmap routedResult (firstRouterMatch ["resources", "new"] router) `shouldBe` Just (RouteResult RPNil newVal)
 
+overlapRoutesSpec :: Spec
+overlapRoutesSpec = describe "overlapping static and dynamic routes" $ do
+  let staticVal = RoutedShowConst ("static" :: String)
+      dynamicVal = RoutedShowConst ("dynamic" :: String)
+      router =
+        singletonRouter (StaticPiece "match" :/ PathEnd) staticVal
+          <> singletonRouter (capPiece @Text :/ PathEnd) dynamicVal
+  it "prefers static piece over dynamic capture when both match" $
+    fmap routedResult (firstRouterMatch ["match"] router) `shouldBe` Just (RouteResult RPNil staticVal)
+  it "still matches dynamic capture when static doesn't match" $
+    fmap routedResult (firstRouterMatch ["other"] router) `shouldBe` Just (RouteResult ("other" :-$ RPNil) dynamicVal)
+
 multiCaptureSpec :: Spec
 multiCaptureSpec = describe "multiple captures in a route" $ do
   let pathTemplate = StaticPiece "users" :/ capPiece @Int :/ StaticPiece "posts" :/ capPiece @Int :/ PathEnd
@@ -170,6 +183,7 @@ spec = do
   multipleDynamicRoutesSpec
   mixedRoutesSpec
   crudRoutesSpec
+  overlapRoutesSpec
   multiCaptureSpec
   edgeCasesSpec
   inspectionSpec

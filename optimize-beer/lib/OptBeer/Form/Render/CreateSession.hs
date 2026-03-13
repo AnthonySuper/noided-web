@@ -23,7 +23,7 @@ createSessionRenderer =
     -- Render base (subform-level) errors, such as invalid credential errors,
     -- before the actual form fields, using the same styling as field errors.
     baseErrorWrapper inner = do
-      ul_ [class_ "form-field-errors"] $
+      _ <- ul_ [class_ "form-field-errors"] $
         renderBaseErrors (li_ [class_ "form-field-error"])
       inner
 
@@ -42,7 +42,8 @@ createSessionRendererT =
     fieldWrapper inputAct = div_ [class_ "form-field-wrapper"] $ do
       hasError <- fieldHasError
       when hasError $ do
-        ul_ [class_ "form-field-errors"] $
+        _ <- ul_ [class_ "form-field-errors"] $
           renderFieldErrors (li_ [class_ "form-field-error"])
+        pure ()
       renderLabelTag [class_ "form-field-label"]
       inputAct

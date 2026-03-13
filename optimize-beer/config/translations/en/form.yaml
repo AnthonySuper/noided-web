@@ -13,6 +13,40 @@ en:
           name: "Confirm Email"
         confirmPassword:
           name: "Confirm Password"
+    CreateItem:
+      attributes:
+        description:
+          name: "Description"
+        defaultUnit:
+          name: "Default Unit"
+  enum:
+    Unit:
+      Gram:
+        name: "Grams (g)"
+      Kilogram:
+        name: "Kilograms (kg)"
+      Ounce:
+        name: "Ounces (oz)"
+      Pound:
+        name: "Pounds (lb)"
+      Milliliter:
+        name: "Milliliters (ml)"
+      Liter:
+        name: "Liters (l)"
+      Hectoliter:
+        name: "Hectoliters (hl)"
+      FluidOunce:
+        name: "Fluid Ounces (fl oz)"
+      Gallon:
+        name: "Gallons (gal)"
+      UsBeerBarrel:
+        name: "US Beer Barrels (bbl)"
+      Each:
+        name: "Each"
+      Minute:
+        name: "Minutes"
+      Hour:
+        name: "Hours"
   password_policy:
     min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
     max_length: "{pluralize($count) { one { At most $count character long } default { At most $count characters long } }}"

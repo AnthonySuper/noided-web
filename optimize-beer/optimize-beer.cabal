@@ -144,6 +144,7 @@ library
         OptBeer.Page.Error
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
+        OptBeer.Page.Item.New
         OptBeer.Action
         OptBeer.Action.Base
 
@@ -162,12 +163,15 @@ library
         OptBeer.Form.Type.CreateUser
         OptBeer.Form.Type.CreateSession
         OptBeer.Form.Type.CreateOrganization
+        OptBeer.Form.Type.CreateItem
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Validate.CreateOrganization
+        OptBeer.Form.Validate.CreateItem
         OptBeer.Form.Render.CreateUser
         OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.CreateOrganization
+        OptBeer.Form.Render.CreateItem
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Routes
@@ -177,6 +181,8 @@ library
         OptBeer.Action.User
         OptBeer.Action.Session
         OptBeer.Action.Organization
+        OptBeer.Action.Organization.Common
+        OptBeer.Action.Item
 
 
 
@@ -256,14 +262,17 @@ test-suite optimize-beer-test
             OptBeer.Form.Render.CreateUserSpec
             OptBeer.Form.Render.CreateSessionSpec
             OptBeer.Form.Render.CreateOrganizationSpec
+            OptBeer.Form.Render.CreateItemSpec
 
             OptBeer.Form.Validate.CreateUserSpec
+            OptBeer.Form.Validate.CreateItemSpec
 
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper
             OptBeer.Action.UserSpec
             OptBeer.Action.SessionSpec
             OptBeer.Action.OrganizationSpec
+            OptBeer.Action.ItemSpec
             OptBeer.Action.HomeSpec
 
 

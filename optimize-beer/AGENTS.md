@@ -56,6 +56,7 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
 -   **Ambiguous Field Names**: Many tables and forms share common field names (e.g., `id`, `name`, `email`).
     -   **Always** use `{-# LANGUAGE NoFieldSelectors #-}` and `{-# LANGUAGE OverloadedRecordDot #-}` in modules that work with multiple HKD types.
     -   Use `DuplicateRecordFields` to allow multiple types to define the same field names.
+    -   **Crucial**: `OverloadedRecordDot` requires the **data constructor** of the form or record to be in scope for dot-notation access to work. If you get cryptic errors about `HasField` not being deduced, ensure you've imported the constructor (e.g., `import OptBeer.Form.Type.CreateItem (CreateItemF(..))`).
 
 ## Localization (i18n)
 
@@ -162,7 +163,7 @@ Prefer using `runTransaction` over `runTransactionToResult` in most actions.
     ```
 
 ### Direct Row Construction
-When setting up test data or performing manual inserts, you don't always need to construct a full HKD record. You can use `WrappedRow` syntax to specify only the columns you care about.
+When setting up test data or performing manual inserts, you don't always need to construct a full HKD record. You can use `WrappedRow` syntax (exported from `Noided.Row`) to specify only the columns you care about.
 -   Use `singleValue_` with the label operator `:==>` and the mutation helper `mutateVal_` when inserting only one row. This avoids the need for list brackets.
 -   Use `values_` when you need to insert multiple rows at once.
 -   Chain multiple fields in a single row using the `:::%?` operator and end with `EmptyWrappedRow`.
