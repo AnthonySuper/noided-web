@@ -10,7 +10,7 @@ import Data.Text (Text)
 import Lucid
 import Noided.Form.HKD
 import OptBeer.Action.Base
-import OptBeer.Action.Organization.Common (fetchOrganization)
+import OptBeer.Action.Organization.Common (fetchMemberOrganization)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
 import OptBeer.DB.Table.Item (itemsTable)
 import OptBeer.DB.Table.Organization qualified as Org
@@ -50,8 +50,7 @@ newItemAction ::
   RouteParams '[OrganizationIdent] ->
   Eff es (PageResponse Page)
 newItemAction (ident :-$ RPNil) = do
-  actor <- requireActor
-  (org, _access) <- fetchOrganization actor ident
+  org <- fetchMemberOrganization ident
   return $ respondPage200 (newItemPage org emptyCreateItemForm mempty)
 
 createItemAction ::
@@ -67,8 +66,7 @@ createItemAction ::
   RouteParams '[OrganizationIdent] ->
   Eff es (PageResponse Page)
 createItemAction (ident :-$ RPNil) = do
-  actor <- requireActor
-  (org, _access) <- fetchOrganization actor ident
+  org <- fetchMemberOrganization ident
 
   body <- hkdFormBody
   result <- runTransactionEither $ do

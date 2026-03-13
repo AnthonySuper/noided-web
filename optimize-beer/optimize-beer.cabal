@@ -272,7 +272,6 @@ test-suite optimize-beer-test
             OptBeer.Action.UserSpec
             OptBeer.Action.SessionSpec
             OptBeer.Action.OrganizationSpec
-            OptBeer.Action.Organization.Common
             OptBeer.Action.ItemSpec
             OptBeer.Action.HomeSpec
 

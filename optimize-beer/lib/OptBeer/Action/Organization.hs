@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.Action.Organization where
@@ -8,10 +9,10 @@ import Lucid hiding (select_)
 import Noided.Translate (MessageKey)
 import Noided.Web.Html (renderTranslated)
 import OptBeer.Action.Base
-import OptBeer.Action.Organization.Common (fetchOrganization)
+import OptBeer.Action.Organization.Common (fetchMemberOrganization)
 import OptBeer.DB.Ids.ActorId (ActorId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
-import OptBeer.DB.Table.Actor
+import OptBeer.DB.Table.Actor (Actor, ActorF (..))
 import OptBeer.DB.Table.Organization
 import OptBeer.DB.Table.OrganizationUserAccess
 import OptBeer.DB.Table.UserDefaultOrganization
@@ -131,6 +132,5 @@ showOrganizationAction ::
   RouteParams '[OrganizationIdent] ->
   Eff es (PageResponse Page)
 showOrganizationAction (ident :-$ RPNil) = do
-  actor <- requireActor
-  (org, _access) <- fetchOrganization actor ident
+  org <- fetchMemberOrganization ident
   return $ respondPage200 (showOrganizationPage org)
