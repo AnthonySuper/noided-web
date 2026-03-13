@@ -93,6 +93,12 @@ pageActionToEndpoint (PageAct act) =
           pageResp <- act req.urlParams
           let resp = runIdentity $ pageResponseToResponse Fragment pageResp
           pure (Right resp)
+      ),
+      ( "application/vnd.noided-fragment.form",
+        \req -> do
+          pageResp <- act req.urlParams
+          let resp = runIdentity $ pageResponseToResponse Fragment pageResp
+          pure (Right resp)
       )
     ]
 
