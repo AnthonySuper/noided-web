@@ -56,6 +56,7 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
 -   **Ambiguous Field Names**: Many tables and forms share common field names (e.g., `id`, `name`, `email`).
     -   **Always** use `{-# LANGUAGE NoFieldSelectors #-}` and `{-# LANGUAGE OverloadedRecordDot #-}` in modules that work with multiple HKD types.
     -   Use `DuplicateRecordFields` to allow multiple types to define the same field names.
+    -   **Crucial**: `OverloadedRecordDot` requires the **data constructor** of the form or record to be in scope for dot-notation access to work. If you get cryptic errors about `HasField` not being deduced, ensure you've imported the constructor (e.g., `import OptBeer.Form.Type.CreateItem (CreateItemF(..))`).
 
 ## Localization (i18n)
 

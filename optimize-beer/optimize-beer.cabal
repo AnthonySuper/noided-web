@@ -180,6 +180,8 @@ library
         OptBeer.Action.User
         OptBeer.Action.Session
         OptBeer.Action.Organization
+        OptBeer.Action.Organization.Common
+        OptBeer.Action.Item
 
 
 
@@ -269,6 +271,7 @@ test-suite optimize-beer-test
             OptBeer.Action.UserSpec
             OptBeer.Action.SessionSpec
             OptBeer.Action.OrganizationSpec
+            OptBeer.Action.ItemSpec
             OptBeer.Action.HomeSpec
 
 
