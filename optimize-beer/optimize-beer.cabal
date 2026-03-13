@@ -144,6 +144,7 @@ library
         OptBeer.Page.Error
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
+        OptBeer.Page.Item.New
         OptBeer.Action
         OptBeer.Action.Base
 
@@ -271,6 +272,7 @@ test-suite optimize-beer-test
             OptBeer.Action.UserSpec
             OptBeer.Action.SessionSpec
             OptBeer.Action.OrganizationSpec
+            OptBeer.Action.Organization.Common
             OptBeer.Action.ItemSpec
             OptBeer.Action.HomeSpec
 

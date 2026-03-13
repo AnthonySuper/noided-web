@@ -1,6 +1,6 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.Action.Item where
@@ -12,15 +12,15 @@ import Noided.Form.HKD
 import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchOrganization)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
-import OptBeer.DB.Table.Actor (Actor)
 import OptBeer.DB.Table.Item (itemsTable)
 import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Type.Unit (Unit)
 import OptBeer.Form.Render.CreateItem (createItemRenderer)
-import OptBeer.Form.Type.CreateItem
+import OptBeer.Form.Type.CreateItem (CreateItemF (..), emptyCreateItemForm)
 import OptBeer.Form.Validate.CreateItem (createItemValidator)
+import OptBeer.Page.Item.New (newItemPage)
 import OptBeer.Page.Type (Page)
-import OptBeer.Routes (createItemPath, showOrganizationPath)
+import OptBeer.Routes (createItemPath, newItemPath, showOrganizationPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 import Optics.Core (view)
 
@@ -36,7 +36,23 @@ itemActions ::
   ) =>
   PageRoutes Page (Eff es)
 itemActions =
-  actPost createItemPath createItemAction
+  actGet newItemPath newItemAction
+    <> actPost createItemPath createItemAction
+
+newItemAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[OrganizationIdent] ->
+  Eff es (PageResponse Page)
+newItemAction (ident :-$ RPNil) = do
+  actor <- requireActor
+  (org, _access) <- fetchOrganization actor ident
+  return $ respondPage200 (newItemPage org emptyCreateItemForm mempty)
 
 createItemAction ::
   ( Error Unauthorized :> es,
@@ -62,14 +78,10 @@ createItemAction (ident :-$ RPNil) = do
     -- 2. Create item
     let itemVals =
           singleValue_
-            ( #organizationId
-                :==> mutateVal_ (bindParam (org.id :: OrganizationId))
-                :::%? #name
-                :==> mutateVal_ (bindParam validated.name.val)
-                :::%? #description
-                :==> mutateVal_ (bindParam validated.description.val)
-                :::%? #defaultUnit
-                :==> mutateVal_ (bindParam validated.defaultUnit.val)
+            ( #organizationId :==> mutateVal_ (bindParam (org.id :: OrganizationId))
+                :::%? #name :==> mutateVal_ (bindParam (view _InputResult validated.name :: Text))
+                :::%? #description :==> mutateVal_ (bindParam (view _InputResult validated.description :: Text))
+                :::%? #defaultUnit :==> mutateVal_ (bindParam (view _InputResult validated.defaultUnit :: Unit))
                 :::%? EmptyWrappedRow
             )
     _ <- querySingleRow $ insertReturningAll itemsTable itemVals
