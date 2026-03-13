@@ -127,9 +127,7 @@ pageResponseToResponse type_ = \case
     body <- renderBST html
     pure
       Response
-        { status = case type_ of
-            FullPage -> badRequest400
-            Fragment -> ok200,
+        { status = badRequest400,
           headers = [("Content-Type", contentType)],
           body = LazyByteStringBody body
         }
