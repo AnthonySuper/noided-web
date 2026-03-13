@@ -6,5 +6,6 @@ en:
       create:
         title: "Add New Item"
         button: "Create Item"
+        link: "Add New Item"
     create:
       button: "Create Organization"
