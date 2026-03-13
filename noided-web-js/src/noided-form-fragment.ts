@@ -1,4 +1,4 @@
-import { Idiomorph } from "idiomorph";
+import { Idiomorph } from "idiomorph/dist/idiomorph.esm.js";
 import { parentElements } from "./util";
 
 export default class NoidedFormFragmentElement extends HTMLElement {

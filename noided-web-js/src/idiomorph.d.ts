@@ -1,4 +1,4 @@
-declare module "idiomorph" {
+declare module "idiomorph/dist/idiomorph.esm.js" {
   export interface Callbacks {
     beforeNodeAdded?: (element: Node) => boolean;
     beforeNodeMorphed?: (oldNode: Node, newNode: Node) => boolean;

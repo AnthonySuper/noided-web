@@ -89,6 +89,6 @@ createItemAction (ident :-$ RPNil) = do
     Left err ->
       return $
         RespondFormErrors
-          (form_ [method_ "post", action_ (usePathTemplate createItemPath ident), class_ "form"])
+          (form_ [method_ "post", action_ (usePathTemplate createItemPath ident), class_ "form", data_ "framelike" "true"])
           (renderFormT createItemRenderer body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)

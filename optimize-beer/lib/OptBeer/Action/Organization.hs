@@ -42,7 +42,7 @@ organizationActions =
     <> actGet showOrganizationPath showOrganizationAction
 
 wrapForm :: (FetchMessages m, FetchHtmlFormatters m) => HtmlT m a -> HtmlT m a
-wrapForm act = form_ [method_ "post", action_ "/organizations", class_ "form"] $ do
+wrapForm act = form_ [method_ "post", action_ "/organizations", class_ "form", data_ "framelike" "true"] $ do
   res <- act
   _ <- div_ [class_ "form-buttons"] $
     button_
