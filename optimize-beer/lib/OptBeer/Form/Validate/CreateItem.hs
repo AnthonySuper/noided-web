@@ -28,17 +28,18 @@ createItemValidator orgId = validateSubform $
 
 validateItemName :: OrganizationId -> FormValidator (TransactM e) (InputField Text)
 validateItemName orgId = validateInput $ \nameText -> do
-  when (T.null (T.strip nameText)) $
+  let stripped = T.strip nameText
+  when (T.null stripped) $
     failNonfatal Blank
 
   exists <- lift $ queryMaybe $ do
     row <- addFrom_ (fromBase_ itemsTable)
     addWhere_ (row.organizationId ==. bindParam orgId)
-    addWhere_ (row.name ==. bindParam nameText)
+    addWhere_ (row.name ==. bindParam stripped)
     select_ $ Element row.name
   
   case exists of
     Just _ -> failNonfatal ValueTaken
     Nothing -> return ()
   
-  return nameText
+  return stripped
