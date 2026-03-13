@@ -37,7 +37,6 @@ export async function interceptSubmit(event: SubmitEvent) {
 
     const bodyParser = new DOMParser();
     const respText = await result.text();
-    console.log(respText);
     const doc = bodyParser.parseFromString(respText, "text/html");
     ["noided-form-fragment" as const, "noided-fragment-redirect" as const]
       .flatMap((e) => Array.from(doc.getElementsByTagName(e)))
