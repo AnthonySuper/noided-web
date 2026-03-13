@@ -7,7 +7,7 @@ function hasTriggerDialog(elem: Element) {
   );
 }
 
-function insideBox(event: PointerEvent, target: Element) {
+function insideBox(event: MouseEvent, target: Element) {
   const { clientY, clientX } = event;
   const rect = target.getBoundingClientRect();
   return (
@@ -29,7 +29,7 @@ export default class NoidedDialogForm extends HTMLElement {
     this.addEventListener("click", this.listenClick);
   }
 
-  listenClick = (event: PointerEvent) => {
+  listenClick = (event: MouseEvent) => {
     if (this.isOpen) {
       this.clickWhenOpen(event);
     } else {
@@ -37,7 +37,7 @@ export default class NoidedDialogForm extends HTMLElement {
     }
   };
 
-  clickWhenClosed(event: PointerEvent) {
+  clickWhenClosed(event: MouseEvent) {
     const { target } = event;
 
     if (!(target instanceof HTMLElement)) {
@@ -53,7 +53,7 @@ export default class NoidedDialogForm extends HTMLElement {
     this.triggerDialog();
   }
 
-  clickWhenOpen(event: PointerEvent) {
+  clickWhenOpen(event: MouseEvent) {
     const dialog = this.dialogElement;
 
     if (dialog === null) {
