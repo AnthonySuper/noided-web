@@ -311,8 +311,8 @@ foldrRouterOfMatches buildRouteParams pathPieces fold initial router =
     [x]
       | Text.null x -> baseCase
     (x : xs) ->
-      let staticBase = foldrStaticMap buildRouteParams x xs fold initial router.statics
-       in foldrCaptureMap buildRouteParams x xs fold staticBase router.captures
+      let captureBase = foldrCaptureMap buildRouteParams x xs fold initial router.captures
+       in foldrStaticMap buildRouteParams x xs fold captureBase router.statics
   where
     baseCase =
       case router.leaf of
