@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build"
   },
+  "dependencies": {
+    "noided-web-js": "file:../noided-web-js"
+  },
   "devDependencies": {
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
