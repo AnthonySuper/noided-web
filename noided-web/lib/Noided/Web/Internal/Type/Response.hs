@@ -27,6 +27,22 @@ data RedirectType
   | RedirectPermanent
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
 
+-- | A custom element for noided form fragments.
+noidedFormFragment_ :: (Monad m) => [Attributes] -> HtmlT m () -> HtmlT m ()
+noidedFormFragment_ = term "noided-form-fragment"
+
+-- | A custom element for noided fragment redirects.
+noidedFragmentRedirect_ :: (Monad m) => [Attributes] -> HtmlT m () -> HtmlT m ()
+noidedFragmentRedirect_ = term "noided-fragment-redirect"
+
+-- | A template element.
+template_ :: (Monad m) => [Attributes] -> HtmlT m () -> HtmlT m ()
+template_ = term "template"
+
+-- | An href attribute.
+href_ :: Text -> Attributes
+href_ = makeAttributes "href"
+
 data PageResponse renderM where
   -- | Respond with some kind of typical page.
   RespondPage :: Status -> HtmlT renderM () -> PageResponse renderM
@@ -91,7 +107,6 @@ data PageResponseType
     FullPage
   | -- | Render a *fragment*.
     -- This happens if the web request has an `Accept` header compatible with noided-fragments @ application/vnd.noided-fragment @
-    -- When rendering form errors, only the inner errors portion will be rendered.
     Fragment
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
 
@@ -108,26 +123,38 @@ pageResponseToResponse type_ = \case
   RespondFormErrors layout inner -> do
     let html = case type_ of
           FullPage -> layout inner
-          Fragment -> inner
+          Fragment -> noidedFormFragment_ [] (template_ [] inner)
     body <- renderBST html
     pure
       Response
-        { status = badRequest400,
+        { status = case type_ of
+            FullPage -> badRequest400
+            Fragment -> ok200,
           headers = [("Content-Type", contentType)],
           body = LazyByteStringBody body
         }
   RespondRedirect redirType loc ->
-    let s = case redirType of
-          RedirectMovedPermanently -> movedPermanently301
-          RedirectFound -> found302
-          RedirectSeeOther -> seeOther303
-          RedirectTemporary -> temporaryRedirect307
-          RedirectPermanent -> permanentRedirect308
-     in pure
+    case type_ of
+      FullPage ->
+        let s = case redirType of
+              RedirectMovedPermanently -> movedPermanently301
+              RedirectFound -> found302
+              RedirectSeeOther -> seeOther303
+              RedirectTemporary -> temporaryRedirect307
+              RedirectPermanent -> permanentRedirect308
+         in pure
+              Response
+                { status = s,
+                  headers = [("Location", encodeUtf8 loc)],
+                  body = ByteStringBody ""
+                }
+      Fragment -> do
+        body <- renderBST $ noidedFragmentRedirect_ [href_ loc] (pure ())
+        pure
           Response
-            { status = s,
-              headers = [("Location", encodeUtf8 loc)],
-              body = ByteStringBody ""
+            { status = ok200,
+              headers = [("Content-Type", contentType)],
+              body = LazyByteStringBody body
             }
   where
     contentType = case type_ of
