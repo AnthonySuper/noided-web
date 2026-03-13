@@ -1,4 +1,4 @@
 import "./app.css";
-import { initialize } from "noided-web-js"; "noided-web-js";
+import { initialize } from "noided-web-js";
 
 initialize();
