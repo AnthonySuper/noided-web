@@ -25,22 +25,44 @@ export default class NoidedFragmentRedirectElement extends HTMLElement {
   async render() {
     const { href, disableMorph } = this;
     if (href === null) return;
-    if (disableMorph || !this.morphToSame()) {
+
+    if (disableMorph) {
       window.location.href = href;
       return;
+    }
+
+    if (!this.morphToSame()) {
+      window.history.pushState({}, "", href);
+      return this.swapPage(href);
     }
 
     return this.morphPage(href);
   }
 
-  async morphPage(href: string) {
+  async fetchPage(href: string) {
     const page = await fetch(href, {
       headers: {
         Accept: "text/html",
       },
     });
 
-    const text = await page.text();
+    return await page.text();
+  }
+
+  async swapPage(href: string) {
+    const text = await this.fetchPage(href);
+    const documentParser = new DOMParser();
+    const parsed = documentParser.parseFromString(text, "text/html");
+
+    document.body.replaceWith(parsed.body);
+    
+    // We should also update the head if needed, but for now let's focus on body
+    // Idiomorph could also be used here to morph the body instead of a hard swap
+    // Idiomorph.morph(document.body, parsed.body);
+  }
+
+  async morphPage(href: string) {
+    const text = await this.fetchPage(href);
     const documentParser = new DOMParser();
     const parsed = documentParser.parseFromString(text, "text/html");
 
