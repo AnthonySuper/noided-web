@@ -22,7 +22,7 @@ export default class NoidedFormFragmentElement extends HTMLElement {
 
     const form = this.parentForm();
     if (form === null) {
-      throw new Error("no parent form element!");
+      throw new Error("No parent form element!");
     }
 
     Idiomorph.morph(form, formBody.innerHTML, {
