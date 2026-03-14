@@ -93,6 +93,7 @@ library
         Noided.Form.HKD.Internal.Parse
         Noided.Form.HKD.Internal.Validate
         Noided.Form.HKD.Internal.Class
+        Noided.Form.HKD.Internal.GEmptyForm
         Noided.Form.HKD.Internal.Render
 
         Noided.Form.HKD.Type

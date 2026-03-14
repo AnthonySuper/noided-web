@@ -42,13 +42,3 @@ deriving via (Generically (CreateUserF FormErrors)) instance Monoid (CreateUserF
 instance HKDForm CreateUserF
 
 deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField OpaquePassword))) => Show (CreateUserF wrapper)
-
-emptyCreateUserForm :: CreateUserF FormInput
-emptyCreateUserForm =
-  CreateUser
-    { name = InputInput NotPresent,
-      email = InputInput NotPresent,
-      confirmEmail = InputInput NotPresent,
-      password = InputInput NotPresent,
-      confirmPassword = InputInput NotPresent
-    }

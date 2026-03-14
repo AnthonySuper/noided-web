@@ -61,7 +61,7 @@ newOrganizationAction (RPNil :: RouteParams '[]) = do
   return $
     respondPage200 $
       wrapForm $
-        renderFormT createOrganizationRenderer emptyCreateOrganizationForm mempty
+        renderFormT createOrganizationRenderer hkdFormEmpty mempty
 
 createOrganizationAction ::
   ( Error Unauthorized :> es,

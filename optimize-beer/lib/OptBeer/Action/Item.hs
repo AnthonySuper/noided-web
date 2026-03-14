@@ -16,7 +16,7 @@ import OptBeer.DB.Table.Item (itemsTable)
 import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Type.Unit (Unit)
 import OptBeer.Form.Render.CreateItem (createItemRenderer)
-import OptBeer.Form.Type.CreateItem (CreateItemF (..), emptyCreateItemForm)
+import OptBeer.Form.Type.CreateItem (CreateItemF (..))
 import OptBeer.Form.Validate.CreateItem (createItemValidator)
 import OptBeer.Page.Item.New (newItemPage)
 import OptBeer.Page.Type (Page)
@@ -51,7 +51,7 @@ newItemAction ::
   Eff es (PageResponse Page)
 newItemAction (ident :-$ RPNil) = do
   org <- fetchMemberOrganization ident
-  return $ respondPage200 (newItemPage org emptyCreateItemForm mempty)
+  return $ respondPage200 (newItemPage org hkdFormEmpty mempty)
 
 createItemAction ::
   ( Error Unauthorized :> es,

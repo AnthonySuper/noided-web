@@ -45,6 +45,9 @@ data Address f = Address
 deriving instance
   (Show (f (InputField Text))) => Show (Address f)
 
+deriving instance
+  (Eq (f (InputField Text))) => Eq (Address f)
+
 instance FFunctor Address where
   ffmap = ffmapDefault
 
@@ -81,6 +84,14 @@ deriving instance
     Show (f (ListField (InputField Text)))
   ) =>
   Show (User f)
+
+deriving instance
+  ( Eq (f (InputField Text)),
+    Eq (f (InputField Int)),
+    Eq (f (SubformField Address)),
+    Eq (f (ListField (InputField Text)))
+  ) =>
+  Eq (User f)
 
 instance FFunctor User where
   ffmap = ffmapDefault
@@ -269,6 +280,21 @@ spec = describe "HKD Form Integration" $ do
       Left err -> do
         err.baseErrors `shouldHaveError` PasswordsDoNotMatch
       Right _ -> expectationFailure "Expected mismatch error"
+
+  describe "gemptyForm" $ do
+    it "produces NotPresent for InputField fields" $ do
+      let empty = gemptyForm :: Address FormInput
+      empty.street `shouldBe` InputInput NotPresent
+      empty.city `shouldBe` InputInput NotPresent
+
+    it "produces a fully empty form for forms with SubformField" $ do
+      let empty = gemptyForm :: User FormInput
+      empty.name `shouldBe` InputInput NotPresent
+      empty.age `shouldBe` InputInput NotPresent
+      empty.address `shouldBe` SubformInput (gemptyForm :: Address FormInput)
+
+    it "agrees with hkdFormEmpty" $ do
+      (hkdFormEmpty :: User FormInput) `shouldBe` gemptyForm
 
 unwrap :: FormResult (InputField a) -> a
 unwrap (InputResult a) = a

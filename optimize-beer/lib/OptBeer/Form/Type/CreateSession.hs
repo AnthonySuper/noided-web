@@ -39,10 +39,3 @@ deriving via (Generically (CreateSessionF FormErrors)) instance Monoid (CreateSe
 instance HKDForm CreateSessionF
 
 deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField OpaquePassword))) => Show (CreateSessionF wrapper)
-
-emptyCreateSessionForm :: CreateSessionF FormInput
-emptyCreateSessionForm =
-  CreateSession
-    { email = InputInput NotPresent,
-      password = InputInput NotPresent
-    }

@@ -37,9 +37,3 @@ deriving via (Generically (CreateOrganizationF FormErrors)) instance Monoid (Cre
 instance HKDForm CreateOrganizationF
 
 deriving instance (Show (wrapper (InputField Text))) => Show (CreateOrganizationF wrapper)
-
-emptyCreateOrganizationForm :: CreateOrganizationF FormInput
-emptyCreateOrganizationForm =
-  CreateOrganization
-    { name = InputInput NotPresent
-    }

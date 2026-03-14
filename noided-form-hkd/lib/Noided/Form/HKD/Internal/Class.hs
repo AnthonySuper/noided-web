@@ -13,6 +13,7 @@ import Data.Proxy
 import Data.Text (pack)
 import GHC.Generics
 import GHC.TypeLits (KnownSymbol, symbolVal)
+import Noided.Form.HKD.Internal.GEmptyForm
 import Noided.Form.HKD.Internal.Type.FormErrors
 import Noided.Form.HKD.Internal.Type.FormInput
 import Noided.Form.HKD.Internal.Type.FormLabel
@@ -59,7 +60,7 @@ class
       GHKDFormEmpty (Rep (form FormInput))
     ) =>
     form FormInput
-  hkdFormEmpty = ghkdFormEmpty
+  hkdFormEmpty = gemptyForm
 
 class GHKDFormLenses form rep where
   genericHKDFormLenses :: proxy form -> rep ()
@@ -207,35 +208,3 @@ ghkdFormHasErrors ::
   (Generic (form HasErrors), GHKDFormHasErrors (Rep (form HasErrors))) =>
   form HasErrors
 ghkdFormHasErrors = to genericHKDFormHasErrors
-
-class GHKDFormEmpty rep where
-  genericHKDFormEmpty :: rep ()
-
-instance (GHKDFormEmpty l, GHKDFormEmpty r) => GHKDFormEmpty (l :*: r) where
-  genericHKDFormEmpty = genericHKDFormEmpty :*: genericHKDFormEmpty
-
-instance (GHKDFormEmpty i) => GHKDFormEmpty (M1 tag md i) where
-  genericHKDFormEmpty = M1 genericHKDFormEmpty
-
-instance
-  (EmptyInput field) =>
-  GHKDFormEmpty (Rec0 (FormInput field))
-  where
-  genericHKDFormEmpty = K1 emptyInput
-
-class EmptyInput field where
-  emptyInput :: FormInput field
-
-instance EmptyInput (InputField f) where
-  emptyInput = InputInput NotPresent
-
-instance EmptyInput (ListField f) where
-  emptyInput = ListInput mempty
-
-instance (HKDForm form) => EmptyInput (SubformField form) where
-  emptyInput = SubformInput hkdFormEmpty
-
-ghkdFormEmpty ::
-  (Generic (form FormInput), GHKDFormEmpty (Rep (form FormInput))) =>
-  form FormInput
-ghkdFormEmpty = to genericHKDFormEmpty
