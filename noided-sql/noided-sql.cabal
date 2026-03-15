@@ -142,6 +142,7 @@ library
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
+      Noided.Sql.Internal.SqlExpr.DateTime
       Noided.Sql.Internal.SqlExpr.Inet
       Noided.Sql.Internal.SqlExpr.Numeric
       Noided.Sql.Internal.SqlExpr.Range
@@ -188,6 +189,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Select.SelectMSpec
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
+      Noided.Sql.Internal.SqlExpr.DateTimeSpec
       Noided.Sql.Internal.SqlExpr.InetSpec
       Noided.Sql.Internal.SqlExpr.NumericSpec
       Noided.Sql.Internal.SqlExpr.TextSpec
