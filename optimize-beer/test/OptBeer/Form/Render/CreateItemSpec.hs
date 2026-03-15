@@ -10,19 +10,13 @@ import Noided.Web.Html.FormRender
 import Noided.Web.Html (TranslationT)
 import OptBeer.Form.Render.CreateItem
 import OptBeer.Form.Render.SpecHelper
-import OptBeer.Form.Type.CreateItem
 import Test.Hspec
 
 spec :: SpecWith Translations
 spec = describe "createItemRenderer" $ do
   withTranslationsInLocale "en" $ do
     it "renders without bad translations" $ \runner -> do
-      let input =
-            CreateItem
-              { name = InputInput NotPresent,
-                description = InputInput NotPresent,
-                defaultUnit = InputInput NotPresent
-              }
+      let input = hkdFormEmpty
           errs = mempty
           renderAct :: HtmlT (TranslationT Identity) ()
           renderAct = renderFormT createItemRenderer input errs

@@ -20,8 +20,3 @@ $(defineHKDForm ''CreateOrganizationF)
 
 deriving instance (Show (wrapper (InputField Text))) => Show (CreateOrganizationF wrapper)
 
-emptyCreateOrganizationForm :: CreateOrganizationF FormInput
-emptyCreateOrganizationForm =
-  CreateOrganization
-    { name = InputInput NotPresent
-    }

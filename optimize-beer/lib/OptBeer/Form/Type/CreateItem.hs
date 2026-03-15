@@ -23,10 +23,3 @@ $(defineHKDForm ''CreateItemF)
 
 deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField Unit))) => Show (CreateItemF wrapper)
 
-emptyCreateItemForm :: CreateItemF FormInput
-emptyCreateItemForm =
-  CreateItem
-    { name = InputInput NotPresent,
-      description = InputInput NotPresent,
-      defaultUnit = InputInput NotPresent
-    }
