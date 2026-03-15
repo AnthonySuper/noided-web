@@ -67,6 +67,7 @@ common exts
        TypeApplications
        OverloadedRecordDot
        AllowAmbiguousTypes
+       ScopedTypeVariables
 
 common deps
     build-depends:
@@ -174,6 +175,8 @@ library
         OptBeer.Form.Render.CreateOrganization
         OptBeer.Form.Render.Item
         OptBeer.Form.Render.PasswordPolicy
+
+        OptBeer.Render.Heading
 
         OptBeer.Routes
 

@@ -13,19 +13,22 @@ import Noided.Pathname (usePathTemplate)
 import Noided.Web.Html (FetchHtmlFormatters, FetchMessages, renderTranslated)
 import OptBeer.DB.Table.Item (Item, ItemF (..))
 import OptBeer.DB.Table.Organization (Organization, OrganizationF (..))
-import OptBeer.Page.Type
+import OptBeer.Render.Heading
 import OptBeer.Routes (editItemPath, itemsPath, newItemPath, showItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 
-itemsIndexPage :: (FetchMessages m, FetchHtmlFormatters m, Monad m, Foldable t) => Organization -> t Item -> HtmlT m ()
+itemsIndexPage :: forall m t. (FetchMessages m, FetchHtmlFormatters m, Monad m, Foldable t) => Organization -> t Item -> HtmlT m ()
 itemsIndexPage org items =
   div_ [class_ "items-index-container"] $ do
-    div_ [class_ "header-with-actions"] $ do
-      h1_ $ renderTranslated ["organization.items.index.title"] mempty
-      a_ [href_ (usePathTemplate newItemPath (OrganizationById org.id)), class_ "button"] $
-        renderTranslated ["organization.items.index.new_button"] mempty
+    renderHeadingOrganization org $
+      (emptyHeadingCfg @m)
+        { title = renderTranslated ["organization.items.index.title"] mempty,
+          actions =
+            a_ [href_ (usePathTemplate newItemPath (OrganizationById org.id)), class_ "button"] $
+              renderTranslated ["organization.items.index.new_button"] mempty
+        }
     
-    table_ [class_ "table items-table"] $ do
+    table_ [class_ "pretty-table"] $ do
       thead_ $ tr_ $ do
         th_ $ renderTranslated ["form.attributes.name.name"] mempty
         th_ $ renderTranslated ["form.Item.attributes.description.name"] mempty
@@ -38,21 +41,22 @@ itemsIndexPage org items =
         td_ $ a_ [href_ (usePathTemplate showItemPath item.id)] $
           renderTranslated ["organization.items.index.view_link"] mempty
 
-showItemPage :: (FetchMessages m, FetchHtmlFormatters m, Monad m) => Organization -> Item -> HtmlT m ()
+showItemPage :: forall m. (FetchMessages m, FetchHtmlFormatters m, Monad m) => Organization -> Item -> HtmlT m ()
 showItemPage org item =
   div_ [class_ "item-show-container"] $ do
-    nav_ [class_ "breadcrumb"] $ do
-      a_ [href_ (usePathTemplate itemsPath (OrganizationById org.id))] $
-        renderTranslated ["organization.items.index.title"] mempty
-      span_ " / "
-      span_ (toHtml item.name)
-
-    div_ [class_ "header-with-actions"] $ do
-      h1_ (toHtml item.name)
-      a_ [href_ (usePathTemplate editItemPath item.id), class_ "button"] $
-        renderTranslated ["organization.items.edit.link"] mempty
+    renderHeadingOrganization org $
+      (emptyHeadingCfg @m)
+        { breadcrumbs =
+            [ a_ [href_ (usePathTemplate itemsPath (OrganizationById org.id))] $
+                renderTranslated ["organization.items.index.title"] mempty
+            ],
+          title = toHtml item.name,
+          actions =
+            a_ [href_ (usePathTemplate editItemPath item.id), class_ "button"] $
+              renderTranslated ["organization.items.edit.link"] mempty
+        }
     
-    div_ [class_ "item-details"] $ do
+    div_ [class_ "details-card"] $ do
       div_ [class_ "detail-group"] $ do
         span_ [class_ "detail-label"] $ renderTranslated ["form.Item.attributes.description.name"] mempty
         div_ [class_ "detail-value"] (toHtml item.description)

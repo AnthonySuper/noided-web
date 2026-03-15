@@ -21,3 +21,33 @@
 #header-login, #header-actor {
   grid-area: user-name;
 }
+
+.details-card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--large-space);
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-space);
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tiny-space);
+}
+
+.detail-label {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-value {
+  font-size: var(--font-size-large);
+  color: var(--color-text);
+}

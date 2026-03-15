@@ -16,7 +16,7 @@ itemFormPage :: [MessageKey] -> [MessageKey] -> Text -> ItemFormF FormInput -> F
 itemFormPage titleKeys buttonKeys formAction input errs =
   div_ [class_ "item-form-container"] $ do
     h1_ $ renderTranslated titleKeys mempty
-    
+
     form_ [method_ "post", action_ formAction, class_ "form", data_ "framelike" "true"] $ do
       renderFormT itemRenderer input errs
       div_ [class_ "form-buttons"] $

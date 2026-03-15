@@ -1,0 +1,57 @@
+.pretty-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--base-space);
+  margin-bottom: var(--base-space);
+  font-size: var(--font-size-base);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.pretty-table thead {
+  background-color: rgb(from var(--color-border) r g b / 0.3);
+}
+
+.pretty-table th {
+  padding: var(--base-space);
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.pretty-table td {
+  padding: var(--base-space);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.pretty-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.pretty-table tbody tr {
+  transition: background-color var(--transition-fast) ease;
+}
+
+.pretty-table tbody tr:hover {
+  background-color: rgb(from var(--color-primary) r g b / 0.05);
+}
+
+.pretty-table td a {
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.pretty-table td a:hover {
+  text-decoration: underline;
+}
+
+.pretty-table .muted {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
