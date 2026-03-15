@@ -95,14 +95,10 @@ createItemAction (ident :-$ RPNil) = do
     -- 2. Create item
     let itemVals =
           singleValue_
-            ( #organizationId
-                :==> mutateVal_ (bindParam (org.id :: OrganizationId))
-                :::%? #name
-                :==> mutateVal_ (bindParam (view _InputResult validated.name :: Text))
-                :::%? #description
-                :==> mutateVal_ (bindParam (view _InputResult validated.description :: Text))
-                :::%? #defaultUnit
-                :==> mutateVal_ (bindParam (view _InputResult validated.defaultUnit :: Unit))
+            ( #organizationId :==> mutateVal_ (bindParam (org.id :: OrganizationId))
+                :::%? #name :==> mutateVal_ (bindParam (view _InputResult validated.name :: Text))
+                :::%? #description :==> mutateVal_ (bindParam (view _InputResult validated.description :: Text))
+                :::%? #defaultUnit :==> mutateVal_ (bindParam (view _InputResult validated.defaultUnit :: Unit))
                 :::%? EmptyWrappedRow
             )
     _ <- querySingleRow $ insertReturningAll itemsTable itemVals
@@ -127,7 +123,7 @@ editItemAction ::
   RouteParams '[ItemId] ->
   Eff es (PageResponse Page)
 editItemAction (itemId :-$ RPNil) = do
-  (org, item) <- fetchMemberItem itemId
+  (_, item) <- fetchMemberItem itemId
   let input =
         ItemForm
           { name = fieldInputFromTyped item.name,
