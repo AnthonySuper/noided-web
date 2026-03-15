@@ -100,6 +100,60 @@ module Noided.Sql.SqlExpr
     contains_,
     isContainedBy_,
 
+    -- * Date / time functions
+
+    -- ** Current date and time
+    now_,
+    currentDate_,
+    currentTimestamp_,
+    localTimestamp_,
+    clockTimestamp_,
+    statementTimestamp_,
+    transactionTimestamp_,
+
+    -- ** Date arithmetic
+    dateAddDays_,
+    dateSubDays_,
+    dateDiffDays_,
+    dateAddInterval_,
+
+    -- ** Interval arithmetic
+    intervalAdd_,
+    intervalSub_,
+    intervalNegate_,
+
+    -- ** Timestamp arithmetic
+    timestampAddInterval_,
+    timestampSubInterval_,
+    timestampDiff_,
+    timestamptzAddInterval_,
+    timestamptzSubInterval_,
+    timestamptzDiff_,
+
+    -- ** Extraction and truncation
+    datePart_,
+    dateTrunc_,
+    dateTruncTz_,
+    dateTruncInterval_,
+
+    -- ** Age
+    age_,
+    ageTz_,
+
+    -- ** Interval adjustment
+    justifyDays_,
+    justifyHours_,
+    justifyInterval_,
+
+    -- ** Conversion
+    toTimestamp_,
+
+    -- ** Finiteness checks
+    isFiniteDate_,
+    isFiniteTimestamp_,
+    isFiniteTimestamptz_,
+    isFiniteInterval_,
+
     -- * Aggregate functions
     AggregateExpr,
     agg,
@@ -125,6 +179,7 @@ import Noided.Sql.Internal.Class.AsBindParam
 import Noided.Sql.Internal.Class.SqlNumeric
 import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.SqlExpr.Bool
+import Noided.Sql.Internal.SqlExpr.DateTime
 import Noided.Sql.Internal.SqlExpr.Inet
 import Noided.Sql.Internal.SqlExpr.Numeric
 import Noided.Sql.Internal.SqlExpr.Range
