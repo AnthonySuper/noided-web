@@ -67,7 +67,16 @@ data LockWait usage where
 
 type LockingClause :: Maybe SkipLockedUsage -> Type
 data LockingClause skipLockUsage where
+  -- | Do not use locks with this query.
   NoLockingClause :: LockingClause Nothing
+  -- | Acquire a lock with this query.
+  -- Note that if the query contains a FROM item that is a subquery which
+  -- performs an aggregate function, this can result in /runtime errors/.
+  -- The type machinery required to prevent this at the compiler level would have made the ergonomics
+  -- of this library absolutely unbearable, so we decided to not implement them.
+  --
+  --  Generally you really should use a higher isolation level (like @SERIALIZABLE@) for anything remotely
+  --  complex. Use a locking clause only when absolutely required.
   LockingClause ::
     { lockKind :: LockKind,
       lockWait :: LockWait usage
@@ -83,6 +92,8 @@ data OrderLimitOffsetLockCfg scope tieInclusion orderByUsage skipLockedUsage
   }
   deriving (Generic)
 
+-- | Type family that ensures the components of the
+-- @OFFSET@, @FETCH FIRST@, @ORDER BY@, and @FOR UPDATE@ components do not conflict.
 type ValidOrderLimitOffsetLock ::
   Maybe TieInclusion ->
   OrderByUsage ->
@@ -95,6 +106,8 @@ type family ValidOrderLimitOffsetLock ti obu slu where
     TypeError (Text "Cannot use WITH TIES with SKIP LOCKED")
   ValidOrderLimitOffsetLock _ _ _ = ()
 
+-- | Queries that have a @OFFSET@, @FETCH FIRST@, @ORDER BY@,
+-- or @FOR UPDATE@ clause applied to them.
 data OrderLimitOffsetLock expectedScope result where
   OrderLimitOffsetLockSelect ::
     (ValidOrderLimitOffsetLock ti obu slu) =>
@@ -184,6 +197,8 @@ offsetLock_ ::
   OrderLimitOffsetLock NormalQuery t
 offsetLock_ = offsetLimitLock_ Nothing
 
+-- | Class for queries that can have @OFFSET@, @FETCH FIRST@, and
+-- @ORDER BY@ applied to them.
 class OrderOffsetLimitQuery query where
   type OrderOffsetLimitScope query :: SqlScope
   offsetOrderLimit_ ::
@@ -238,6 +253,16 @@ limit_ ::
   query t ->
   OrderLimitOffsetLock (OrderOffsetLimitScope query) t
 limit_ = orderLimit_ (const NoOrder)
+
+offsetLimit_ ::
+  ( ValidOrderLimitOffsetLock ff NoOrderBy Nothing,
+    OrderOffsetLimitQuery query
+  ) =>
+  Maybe Int64 ->
+  FetchFirstClause ff ->
+  query t ->
+  OrderLimitOffsetLock (OrderOffsetLimitScope query) t
+offsetLimit_ offset = offsetOrderLimit_ offset (const NoOrder)
 
 renderOrderLimitOffsetLock ::
   (SelectList result) =>
