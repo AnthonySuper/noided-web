@@ -115,6 +115,7 @@ library
       Noided.Sql.Internal.Select.SelectM
       Noided.Sql.Internal.Select.Combine
       Noided.Sql.Internal.Select.AggregateQuery
+      Noided.Sql.Internal.Select.OrderLimitOffsetLock
 
       Noided.Sql.Internal.Insert.Insert
       Noided.Sql.Internal.Insert.InsertValues
