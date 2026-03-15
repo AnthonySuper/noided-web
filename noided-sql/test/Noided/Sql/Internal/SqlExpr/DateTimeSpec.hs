@@ -55,11 +55,11 @@ spec = do
       it "renders timestamptzDiff_" $ renderExpr (timestamptzDiff_ tstz tstz) `shouldBe` "(tstz) - (tstz)"
 
     describe "extraction and truncation" $ do
-      it "renders datePart_ for timestamp" $ renderExpr (datePart_ "year" ts) `shouldBe` "DATE_PART('year', ts)"
-      it "renders datePart_ for timestamptz" $ renderExpr (datePart_ "epoch" tstz) `shouldBe` "DATE_PART('epoch', tstz)"
-      it "renders dateTrunc_" $ renderExpr (dateTrunc_ "month" ts) `shouldBe` "DATE_TRUNC('month', ts)"
-      it "renders dateTruncTz_" $ renderExpr (dateTruncTz_ "day" tstz) `shouldBe` "DATE_TRUNC('day', tstz)"
-      it "renders dateTruncInterval_" $ renderExpr (dateTruncInterval_ "hour" iv) `shouldBe` "DATE_TRUNC('hour', iv)"
+      it "renders datePart_ for timestamp" $ renderExpr (datePart_ DPYear ts) `shouldBe` "DATE_PART('year', ts)"
+      it "renders datePart_ for timestamptz" $ renderExpr (datePart_ DPEpoch tstz) `shouldBe` "DATE_PART('epoch', tstz)"
+      it "renders dateTrunc_" $ renderExpr (dateTrunc_ DTMonth ts) `shouldBe` "DATE_TRUNC('month', ts)"
+      it "renders dateTruncTz_" $ renderExpr (dateTruncTz_ DTDay tstz) `shouldBe` "DATE_TRUNC('day', tstz)"
+      it "renders dateTruncInterval_" $ renderExpr (dateTruncInterval_ DTHour iv) `shouldBe` "DATE_TRUNC('hour', iv)"
 
     describe "age functions" $ do
       it "renders age_" $ renderExpr (age_ ts ts) `shouldBe` "AGE(ts, ts)"

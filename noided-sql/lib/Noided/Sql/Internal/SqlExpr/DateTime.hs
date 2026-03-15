@@ -3,12 +3,97 @@
 module Noided.Sql.Internal.SqlExpr.DateTime where
 
 import Data.Int (Int32)
-import Data.Text (Text)
 import Data.Time (Day, DiffTime, LocalTime, UTCTime)
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
-import Noided.Sql.Internal.Type.Syntax (syntaxFromText)
+import Noided.Sql.Internal.Type.Syntax (Syntax, syntaxFromText)
+
+-- * Field enums
+
+-- | Fields that can be extracted by @DATE_PART@.
+data DatePartField
+  = DPCentury
+  | DPDay
+  | DPDecade
+  | DPDow
+  | DPDoy
+  | DPEpoch
+  | DPHour
+  | DPIsoDow
+  | DPIsoYear
+  | DPJulian
+  | DPMicroseconds
+  | DPMillennium
+  | DPMilliseconds
+  | DPMinute
+  | DPMonth
+  | DPQuarter
+  | DPSecond
+  | DPTimezone
+  | DPTimezoneHour
+  | DPTimezoneMinute
+  | DPWeek
+  | DPYear
+  deriving (Show, Read, Eq, Ord, Bounded, Enum)
+
+-- | Fields that can be used with @DATE_TRUNC@.
+data DateTruncField
+  = DTMicroseconds
+  | DTMilliseconds
+  | DTSecond
+  | DTMinute
+  | DTHour
+  | DTDay
+  | DTWeek
+  | DTMonth
+  | DTQuarter
+  | DTYear
+  | DTDecade
+  | DTCentury
+  | DTMillennium
+  deriving (Show, Read, Eq, Ord, Bounded, Enum)
+
+datePartFieldSyntax :: DatePartField -> Syntax
+datePartFieldSyntax f = syntaxFromText $ case f of
+  DPCentury -> "century"
+  DPDay -> "day"
+  DPDecade -> "decade"
+  DPDow -> "dow"
+  DPDoy -> "doy"
+  DPEpoch -> "epoch"
+  DPHour -> "hour"
+  DPIsoDow -> "isodow"
+  DPIsoYear -> "isoyear"
+  DPJulian -> "julian"
+  DPMicroseconds -> "microseconds"
+  DPMillennium -> "millennium"
+  DPMilliseconds -> "milliseconds"
+  DPMinute -> "minute"
+  DPMonth -> "month"
+  DPQuarter -> "quarter"
+  DPSecond -> "second"
+  DPTimezone -> "timezone"
+  DPTimezoneHour -> "timezone_hour"
+  DPTimezoneMinute -> "timezone_minute"
+  DPWeek -> "week"
+  DPYear -> "year"
+
+dateTruncFieldSyntax :: DateTruncField -> Syntax
+dateTruncFieldSyntax f = syntaxFromText $ case f of
+  DTMicroseconds -> "microseconds"
+  DTMilliseconds -> "milliseconds"
+  DTSecond -> "second"
+  DTMinute -> "minute"
+  DTHour -> "hour"
+  DTDay -> "day"
+  DTWeek -> "week"
+  DTMonth -> "month"
+  DTQuarter -> "quarter"
+  DTYear -> "year"
+  DTDecade -> "decade"
+  DTCentury -> "century"
+  DTMillennium -> "millennium"
 
 -- * Current date / time functions (no arguments)
 
@@ -139,52 +224,36 @@ timestamptzDiff_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> 
 -- * Extraction and truncation functions
 
 -- | SQL @DATE_PART(field, source)@: extract a date/time field as a floating-point number.
---
--- The @field@ argument is a SQL string literal such as @\"year\"@, @\"month\"@, @\"day\"@,
--- @\"hour\"@, @\"minute\"@, @\"second\"@, @\"epoch\"@, etc.
--- This value is embedded directly into the SQL query and should be a compile-time constant.
 datePart_ ::
-  Text ->
+  DatePartField ->
   SqlExpr scope (SqlT n a) ->
   SqlExpr scope (SqlT n Double)
 datePart_ field ts =
-  UnsafeMkSqlExpr ("DATE_PART('" <> syntaxFromText field <> "', " <> unsafeGetSqlExpr ts <> ")")
+  UnsafeMkSqlExpr ("DATE_PART('" <> datePartFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
 
 -- | SQL @DATE_TRUNC(field, source)@: truncate a timestamp to the given precision.
---
--- The @field@ argument is a SQL string literal such as @\"year\"@, @\"month\"@, @\"day\"@,
--- @\"hour\"@, @\"minute\"@, @\"second\"@, etc.
--- This value is embedded directly into the SQL query and should be a compile-time constant.
 dateTrunc_ ::
-  Text ->
+  DateTruncField ->
   SqlExpr scope (SqlT n LocalTime) ->
   SqlExpr scope (SqlT n LocalTime)
 dateTrunc_ field ts =
-  UnsafeMkSqlExpr ("DATE_TRUNC('" <> syntaxFromText field <> "', " <> unsafeGetSqlExpr ts <> ")")
+  UnsafeMkSqlExpr ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
 
 -- | SQL @DATE_TRUNC(field, source)@: truncate a timestamptz to the given precision.
---
--- The @field@ argument is a SQL string literal such as @\"year\"@, @\"month\"@, @\"day\"@,
--- @\"hour\"@, @\"minute\"@, @\"second\"@, etc.
--- This value is embedded directly into the SQL query and should be a compile-time constant.
 dateTruncTz_ ::
-  Text ->
+  DateTruncField ->
   SqlExpr scope (SqlT n UTCTime) ->
   SqlExpr scope (SqlT n UTCTime)
 dateTruncTz_ field ts =
-  UnsafeMkSqlExpr ("DATE_TRUNC('" <> syntaxFromText field <> "', " <> unsafeGetSqlExpr ts <> ")")
+  UnsafeMkSqlExpr ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
 
 -- | SQL @DATE_TRUNC(field, source)@: truncate an interval to the given precision.
---
--- The @field@ argument is a SQL string literal such as @\"year\"@, @\"month\"@, @\"day\"@,
--- @\"hour\"@, @\"minute\"@, @\"second\"@, etc.
--- This value is embedded directly into the SQL query and should be a compile-time constant.
 dateTruncInterval_ ::
-  Text ->
+  DateTruncField ->
   SqlExpr scope (SqlT n DiffTime) ->
   SqlExpr scope (SqlT n DiffTime)
 dateTruncInterval_ field iv =
-  UnsafeMkSqlExpr ("DATE_TRUNC('" <> syntaxFromText field <> "', " <> unsafeGetSqlExpr iv <> ")")
+  UnsafeMkSqlExpr ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr iv <> ")")
 
 -- * Age functions
 

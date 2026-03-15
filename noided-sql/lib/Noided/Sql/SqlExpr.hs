@@ -102,6 +102,10 @@ module Noided.Sql.SqlExpr
 
     -- * Date / time functions
 
+    -- ** Field enumerations
+    DatePartField (..),
+    DateTruncField (..),
+
     -- ** Current date and time
     now_,
     currentDate_,
