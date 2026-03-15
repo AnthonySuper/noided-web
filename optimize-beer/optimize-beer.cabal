@@ -145,7 +145,6 @@ library
         OptBeer.Page.Error
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
-        OptBeer.Page.Item.Form
         OptBeer.Page.Item
         OptBeer.Action
         OptBeer.Action.Base

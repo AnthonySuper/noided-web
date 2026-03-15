@@ -7,7 +7,6 @@ module OptBeer.Action.Item where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
-import Lucid
 import Noided.Form.HKD
 import Noided.Sql
 import OptBeer.Action.Base
@@ -21,11 +20,9 @@ import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Table.OrganizationUserAccess (OrganizationUserAccessF (..), organizationUserAccessesTable)
 import OptBeer.DB.Type.OrganizationAccessLevel (OrganizationAccessLevel (..))
 import OptBeer.DB.Type.Unit (Unit)
-import OptBeer.Form.Render.Item (itemRenderer)
 import OptBeer.Form.Type.Item (ItemFormF (..))
 import OptBeer.Form.Validate.Item (itemValidator)
-import OptBeer.Page.Item (itemsIndexPage, showItemPage)
-import OptBeer.Page.Item.Form (itemFormPage)
+import OptBeer.Page.Item (itemFormInternals, itemFormPage, itemFormWrapper, itemsIndexPage, showItemPage)
 import OptBeer.Page.Type (Page)
 import OptBeer.Routes (createItemPath, editItemPath, itemsPath, newItemPath, showItemPath, showOrganizationPath, updateItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
@@ -80,10 +77,11 @@ newItemAction ::
   RouteParams '[OrganizationIdent] ->
   Eff es (PageResponse Page)
 newItemAction (ident :-$ RPNil) = do
-  _org <- fetchMemberOrganization ident
+  org <- fetchMemberOrganization ident
   return $
     respondPage200
       ( itemFormPage
+          org
           ["organization.items.create.title"]
           ["organization.items.create.button"]
           (usePathTemplate createItemPath ident)
@@ -127,8 +125,8 @@ createItemAction (ident :-$ RPNil) = do
     Left err ->
       return $
         RespondFormErrors
-          (form_ [method_ "post", action_ (usePathTemplate createItemPath ident), class_ "form", data_ "framelike" "true"])
-          (renderFormT itemRenderer body err)
+          (itemFormWrapper org ["organization.items.create.title"])
+          (itemFormInternals ["organization.items.create.button"] (usePathTemplate createItemPath ident) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
 
 showItemAction ::
@@ -156,7 +154,7 @@ editItemAction ::
   RouteParams '[ItemId] ->
   Eff es (PageResponse Page)
 editItemAction (itemId :-$ RPNil) = do
-  (_, item) <- fetchMemberItem itemId
+  (org, item) <- fetchMemberItem itemId
   let input =
         ItemForm
           { name = fieldInputFromTyped item.name,
@@ -166,6 +164,7 @@ editItemAction (itemId :-$ RPNil) = do
   return $
     respondPage200
       ( itemFormPage
+          org
           ["organization.items.edit.title"]
           ["organization.items.edit.button"]
           (usePathTemplate updateItemPath itemId)
@@ -203,8 +202,8 @@ updateItemAction (itemId :-$ RPNil) = do
     Left err ->
       return $
         RespondFormErrors
-          (form_ [method_ "post", action_ (usePathTemplate updateItemPath itemId), class_ "form", data_ "framelike" "true"])
-          (renderFormT itemRenderer body err)
+          (itemFormWrapper org ["organization.items.edit.title"])
+          (itemFormInternals ["organization.items.edit.button"] (usePathTemplate updateItemPath itemId) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById org.id))
 
 -- | Helper to fetch an item and ensure the current user has access to it.

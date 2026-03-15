@@ -4,15 +4,24 @@
 module OptBeer.Page.Item
   ( itemsIndexPage,
     showItemPage,
+    itemFormPage,
+    itemFormWrapper,
+    itemFormInternals,
   )
 where
 
 import Data.Foldable (forM_)
+import Data.Text (Text)
 import Lucid
+import Noided.Form.HKD
 import Noided.Pathname (usePathTemplate)
+import Noided.Translate (MessageKey)
 import Noided.Web.Html (FetchHtmlFormatters, FetchMessages, renderTranslated)
+import Noided.Web.Html.FormRender (renderFormT)
 import OptBeer.DB.Table.Item (Item, ItemF (..))
 import OptBeer.DB.Table.Organization (Organization, OrganizationF (..))
+import OptBeer.Form.Render.Item (itemRenderer)
+import OptBeer.Form.Type.Item (ItemFormF)
 import OptBeer.Render.Heading
 import OptBeer.Routes (editItemPath, itemsPath, newItemPath, showItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
@@ -64,3 +73,29 @@ showItemPage org item =
       div_ [class_ "detail-group"] $ do
         span_ [class_ "detail-label"] $ renderTranslated ["form.Item.attributes.defaultUnit.name"] mempty
         div_ [class_ "detail-value"] (toHtml (show item.defaultUnit))
+
+itemFormPage :: forall m. (FetchMessages m, FetchHtmlFormatters m, Monad m) => Organization -> [MessageKey] -> [MessageKey] -> Text -> ItemFormF FormInput -> FormErrors (SubformField ItemFormF) -> HtmlT m ()
+itemFormPage org titleKeys buttonKeys formAction input errs =
+  itemFormWrapper org titleKeys $
+    itemFormInternals buttonKeys formAction input errs
+
+itemFormWrapper :: forall m. (FetchMessages m, FetchHtmlFormatters m, Monad m) => Organization -> [MessageKey] -> HtmlT m () -> HtmlT m ()
+itemFormWrapper org titleKeys inner =
+  div_ [class_ "item-form-container"] $ do
+    renderHeadingOrganization org $
+      (emptyHeadingCfg @m)
+        { breadcrumbs =
+            [ a_ [href_ (usePathTemplate itemsPath (OrganizationById org.id))] $
+                renderTranslated ["organization.items.index.title"] mempty
+            ],
+          title = renderTranslated titleKeys mempty
+        }
+    inner
+
+itemFormInternals :: forall m. (FetchMessages m, FetchHtmlFormatters m, Monad m) => [MessageKey] -> Text -> ItemFormF FormInput -> FormErrors (SubformField ItemFormF) -> HtmlT m ()
+itemFormInternals buttonKeys formAction input errs =
+  form_ [method_ "post", action_ formAction, class_ "form", data_ "framelike" "true"] $ do
+    renderFormT itemRenderer input errs
+    div_ [class_ "form-buttons"] $
+      button_ [class_ "button", type_ "submit"] $
+        renderTranslated buttonKeys mempty
