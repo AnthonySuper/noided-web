@@ -123,7 +123,7 @@ module Noided.Sql.SqlExpr
     OrderClause,
     asc_,
     desc_,
-    ascNullFirst_,
+    ascNullsFirst_,
     descNullsFirst_,
     ascNullsLast_,
     descNullsLast_,

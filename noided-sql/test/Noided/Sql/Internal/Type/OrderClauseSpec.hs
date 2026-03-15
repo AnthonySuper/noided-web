@@ -26,7 +26,7 @@ spec = do
       checkSyntax (desc_ col1) "col1 DESC NULLS FIRST"
 
     it "renders ASC NULLS FIRST" $ do
-      checkSyntax (ascNullFirst_ col1) "col1 ASC NULLS FIRST"
+      checkSyntax (ascNullsFirst_ col1) "col1 ASC NULLS FIRST"
 
     it "renders ASC NULLS LAST" $ do
       checkSyntax (ascNullsLast_ col1) "col1 ASC NULLS LAST"
@@ -41,4 +41,4 @@ spec = do
       checkSyntax (asc_ col1 <> desc_ col2) "col1 ASC NULLS LAST, col2 DESC NULLS FIRST"
 
     it "renders multiple columns with specific nulls" $ do
-      checkSyntax (ascNullFirst_ col1 <> descNullsLast_ col2) "col1 ASC NULLS FIRST, col2 DESC NULLS LAST"
+      checkSyntax (ascNullsFirst_ col1 <> descNullsLast_ col2) "col1 ASC NULLS FIRST, col2 DESC NULLS LAST"

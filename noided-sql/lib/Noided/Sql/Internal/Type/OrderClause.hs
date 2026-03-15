@@ -79,8 +79,8 @@ asc_ = useOrdering_ orderAsc
 desc_ :: SqlExpr scope dt -> OrderClause scope
 desc_ = useOrdering_ orderDesc
 
-ascNullFirst_ :: SqlExpr scope dt -> OrderClause scope
-ascNullFirst_ = useOrdering_ orderAscNullsFirst
+ascNullsFirst_ :: SqlExpr scope dt -> OrderClause scope
+ascNullsFirst_ = useOrdering_ orderAscNullsFirst
 
 ascNullsLast_ :: SqlExpr scope dt -> OrderClause scope
 ascNullsLast_ = useOrdering_ orderAscNullsLast
