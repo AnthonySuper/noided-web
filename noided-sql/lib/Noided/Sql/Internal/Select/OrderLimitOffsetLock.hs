@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Select.OrderLimitOffsetLock where
 
@@ -136,6 +137,107 @@ instance
     DecodeSelectList sl
   ) =>
   ExecutableQuery (OrderLimitOffsetLock expectedScope (sl wrapper))
+
+offsetOrderLimitLock_ ::
+  (ValidOrderLimitOffsetLock ti obu slu) =>
+  Maybe Int64 ->
+  (t -> OrderByClause NormalQuery obu) ->
+  FetchFirstClause ti ->
+  LockingClause slu ->
+  SelectM t ->
+  OrderLimitOffsetLock NormalQuery t
+offsetOrderLimitLock_ offset buildOrder limit lock query =
+  OrderLimitOffsetLockSelect query $ \r ->
+    (r, MkOrderLimitOffsetLockCfg {offsetClause = offset, fetchFirstClause = limit, orderByClause = buildOrder r, lockingClause = lock})
+
+orderLimitLock_ ::
+  (ValidOrderLimitOffsetLock ti obu slu) =>
+  (t -> OrderByClause NormalQuery obu) ->
+  FetchFirstClause ti ->
+  LockingClause slu ->
+  SelectM t ->
+  OrderLimitOffsetLock NormalQuery t
+orderLimitLock_ = offsetOrderLimitLock_ Nothing
+
+limitLock_ ::
+  (ValidOrderLimitOffsetLock ti NoOrderBy slu) =>
+  FetchFirstClause ti ->
+  LockingClause slu ->
+  SelectM t ->
+  OrderLimitOffsetLock NormalQuery t
+limitLock_ = orderLimitLock_ (const NoOrder)
+
+offsetLimitLock_ ::
+  (ValidOrderLimitOffsetLock ti NoOrderBy slu) =>
+  Maybe Int64 ->
+  FetchFirstClause ti ->
+  LockingClause slu ->
+  SelectM t ->
+  OrderLimitOffsetLock NormalQuery t
+offsetLimitLock_ os = offsetOrderLimitLock_ os (const NoOrder)
+
+offsetLock_ ::
+  (ValidOrderLimitOffsetLock ti NoOrderBy slu) =>
+  FetchFirstClause ti ->
+  LockingClause slu ->
+  SelectM t ->
+  OrderLimitOffsetLock NormalQuery t
+offsetLock_ = offsetLimitLock_ Nothing
+
+class OrderOffsetLimitQuery query where
+  type OrderOffsetLimitScope query :: SqlScope
+  offsetOrderLimit_ ::
+    (ValidOrderLimitOffsetLock ff obu Nothing) =>
+    Maybe Int64 ->
+    (t -> OrderByClause (OrderOffsetLimitScope query) obu) ->
+    FetchFirstClause ff ->
+    query t ->
+    OrderLimitOffsetLock (OrderOffsetLimitScope query) t
+
+instance OrderOffsetLimitQuery SelectM where
+  type OrderOffsetLimitScope SelectM = NormalQuery
+  offsetOrderLimit_ off bo ff q =
+    OrderLimitOffsetLockSelect q $ \r ->
+      ( r,
+        MkOrderLimitOffsetLockCfg
+          { offsetClause = off,
+            fetchFirstClause = ff,
+            orderByClause = bo r,
+            lockingClause = NoLockingClause
+          }
+      )
+
+instance OrderOffsetLimitQuery AggregateQuery where
+  type OrderOffsetLimitScope AggregateQuery = Aggregated
+  offsetOrderLimit_ off bo ff q =
+    OrderLimitOffsetLockAggregated q $ \r ->
+      ( r,
+        MkOrderLimitOffsetLockCfg
+          { offsetClause = off,
+            fetchFirstClause = ff,
+            orderByClause = bo r,
+            lockingClause = NoLockingClause
+          }
+      )
+
+orderLimit_ ::
+  ( ValidOrderLimitOffsetLock ff obu Nothing,
+    OrderOffsetLimitQuery query
+  ) =>
+  (t -> OrderByClause (OrderOffsetLimitScope query) obu) ->
+  FetchFirstClause ff ->
+  query t ->
+  OrderLimitOffsetLock (OrderOffsetLimitScope query) t
+orderLimit_ = offsetOrderLimit_ Nothing
+
+limit_ ::
+  ( ValidOrderLimitOffsetLock ff NoOrderBy Nothing,
+    OrderOffsetLimitQuery query
+  ) =>
+  FetchFirstClause ff ->
+  query t ->
+  OrderLimitOffsetLock (OrderOffsetLimitScope query) t
+limit_ = orderLimit_ (const NoOrder)
 
 renderOrderLimitOffsetLock ::
   (SelectList result) =>
