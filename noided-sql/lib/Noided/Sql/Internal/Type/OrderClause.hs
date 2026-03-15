@@ -67,26 +67,26 @@ unsafeOrderClauseToSyntax ::
 unsafeOrderClauseToSyntax (MkOrderClause items) =
   fromCommaSepSyntax $ foldMap (Written . unsafeOrderItemToSyntax) items
 
-orderingBy_ :: SqlOrder -> SqlExpr scope dt -> OrderClause scope
-orderingBy_ oc syn = MkOrderClause $ pure $ SomeOrderItem syn oc
+useOrdering_ :: SqlOrder -> SqlExpr scope dt -> OrderClause scope
+useOrdering_ oc syn = MkOrderClause $ pure $ SomeOrderItem syn oc
 
-orderBy_ :: SqlExpr scope dt -> SqlOrder -> OrderClause scope
-orderBy_ = flip orderingBy_
+withOrdering_ :: SqlExpr scope dt -> SqlOrder -> OrderClause scope
+withOrdering_ = flip useOrdering_
 
 asc_ :: SqlExpr scope dt -> OrderClause scope
-asc_ = orderingBy_ orderAsc
+asc_ = useOrdering_ orderAsc
 
 desc_ :: SqlExpr scope dt -> OrderClause scope
-desc_ = orderingBy_ orderDesc
+desc_ = useOrdering_ orderDesc
 
 ascNullFirst_ :: SqlExpr scope dt -> OrderClause scope
-ascNullFirst_ = orderingBy_ orderAscNullsFirst
+ascNullFirst_ = useOrdering_ orderAscNullsFirst
 
 ascNullsLast_ :: SqlExpr scope dt -> OrderClause scope
-ascNullsLast_ = orderingBy_ orderAscNullsLast
+ascNullsLast_ = useOrdering_ orderAscNullsLast
 
 descNullsFirst_ :: SqlExpr scope dt -> OrderClause scope
-descNullsFirst_ = orderingBy_ orderDescNullsFirst
+descNullsFirst_ = useOrdering_ orderDescNullsFirst
 
 descNullsLast_ :: SqlExpr scope dt -> OrderClause scope
-descNullsLast_ = orderingBy_ orderDescNullsLast
+descNullsLast_ = useOrdering_ orderDescNullsLast

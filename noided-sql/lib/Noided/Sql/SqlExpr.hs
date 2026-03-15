@@ -118,6 +118,22 @@ module Noided.Sql.SqlExpr
     stddev_,
     variance_,
     arrayAgg_,
+
+    -- * Order clauses
+    OrderClause,
+    asc_,
+    desc_,
+    ascNullFirst_,
+    descNullsFirst_,
+    ascNullsLast_,
+    descNullsLast_,
+
+    -- ** Building clauses
+    NullsOrdering (..),
+    SqlOrderDirection (..),
+    SqlOrder (..),
+    useOrdering_,
+    withOrdering_,
   )
 where
 
@@ -133,5 +149,6 @@ import Noided.Sql.Internal.Type.AggregateExpr
 import Noided.Sql.Internal.Type.MutationExpr
 import Noided.Sql.Internal.Type.MutationType
 import Noided.Sql.Internal.Type.Nullability
+import Noided.Sql.Internal.Type.OrderClause
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
