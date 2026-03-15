@@ -33,6 +33,7 @@ pageLayout inner = doctypehtml_ $ do
   let AssetLinks jsFiles cssFiles = env.assets
   head_ $ do
     meta_ [charset_ "utf-8"]
+    meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
     forM_ jsFiles $ \src ->
       script_ [type_ "module", src_ src] ("" :: Text)
     forM_ cssFiles $ \href ->
