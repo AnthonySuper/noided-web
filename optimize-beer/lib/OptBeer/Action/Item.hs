@@ -9,12 +9,9 @@ import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
 import Lucid
 import Noided.Form.HKD
-import Noided.Pathname (usePathTemplate)
-import Noided.Row (WrappedRow (..))
 import Noided.Sql
 import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchMemberOrganization, requireAccess)
-import OptBeer.DB.Ids.ActorId (ActorId)
 import OptBeer.DB.Ids.ItemId (ItemId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
 import OptBeer.DB.Table.Actor (ActorF (id))
@@ -27,9 +24,10 @@ import OptBeer.DB.Type.Unit (Unit)
 import OptBeer.Form.Render.Item (itemRenderer)
 import OptBeer.Form.Type.Item (ItemFormF (..))
 import OptBeer.Form.Validate.Item (itemValidator)
+import OptBeer.Page.Item (itemsIndexPage, showItemPage)
 import OptBeer.Page.Item.Form (itemFormPage)
 import OptBeer.Page.Type (Page)
-import OptBeer.Routes (createItemPath, editItemPath, newItemPath, showOrganizationPath, updateItemPath)
+import OptBeer.Routes (createItemPath, editItemPath, itemsPath, newItemPath, showItemPath, showOrganizationPath, updateItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 import Optics.Core (view)
 
@@ -45,10 +43,31 @@ itemActions ::
   ) =>
   PageRoutes Page (Eff es)
 itemActions =
-  actGet newItemPath newItemAction
+  actGet itemsPath itemsIndexAction
+    <> actGet newItemPath newItemAction
     <> actPost createItemPath createItemAction
+    <> actGet showItemPath showItemAction
     <> actGet editItemPath editItemAction
     <> actPost updateItemPath updateItemAction
+
+itemsIndexAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[OrganizationIdent] ->
+  Eff es (PageResponse Page)
+itemsIndexAction (ident :-$ RPNil) = do
+  org <- fetchMemberOrganization ident
+  items <- runInfallibleTransaction $ do
+    queryVector $ do
+      row <- addFrom_ (fromBase_ itemsTable)
+      addWhere_ $ row.organizationId ==. bindParam org.id
+      return row
+  return $ respondPage200 (itemsIndexPage org items)
 
 newItemAction ::
   ( Error Unauthorized :> es,
@@ -61,7 +80,7 @@ newItemAction ::
   RouteParams '[OrganizationIdent] ->
   Eff es (PageResponse Page)
 newItemAction (ident :-$ RPNil) = do
-  org <- fetchMemberOrganization ident
+  _org <- fetchMemberOrganization ident
   return $
     respondPage200
       ( itemFormPage
@@ -112,6 +131,20 @@ createItemAction (ident :-$ RPNil) = do
           (renderFormT itemRenderer body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
 
+showItemAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[ItemId] ->
+  Eff es (PageResponse Page)
+showItemAction (itemId :-$ RPNil) = do
+  (org, item) <- fetchMemberItem itemId
+  return $ respondPage200 (showItemPage org item)
+
 editItemAction ::
   ( Error Unauthorized :> es,
     Error Forbidden :> es,
@@ -153,7 +186,7 @@ updateItemAction ::
   RouteParams '[ItemId] ->
   Eff es (PageResponse Page)
 updateItemAction (itemId :-$ RPNil) = do
-  (org, item) <- fetchMemberItem itemId
+  (org, _item) <- fetchMemberItem itemId
 
   body <- hkdFormBody
   result <- runTransactionEither $ do

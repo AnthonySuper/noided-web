@@ -31,14 +31,20 @@ newOrganizationPath = "organizations" :/ "new" :/ PathEnd
 showOrganizationPath :: PathTemplate '[OrganizationIdent]
 showOrganizationPath = "organizations" :/ capPiece :/ PathEnd
 
+itemsPath :: PathTemplate '[OrganizationIdent]
+itemsPath = "organizations" :/ capPiece :/ "items" :/ PathEnd
+
 createItemPath :: PathTemplate '[OrganizationIdent]
-createItemPath = "organizations" :/ capPiece :/ "items" :/ PathEnd
+createItemPath = itemsPath
 
 newItemPath :: PathTemplate '[OrganizationIdent]
 newItemPath = "organizations" :/ capPiece :/ "items" :/ "new" :/ PathEnd
+
+showItemPath :: PathTemplate '[ItemId]
+showItemPath = "items" :/ capPiece :/ PathEnd
 
 editItemPath :: PathTemplate '[ItemId]
 editItemPath = "items" :/ capPiece :/ "edit" :/ PathEnd
 
 updateItemPath :: PathTemplate '[ItemId]
-updateItemPath = "items" :/ capPiece :/ PathEnd
+updateItemPath = showItemPath

@@ -20,9 +20,7 @@ import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
 import OptBeer.DB.Table.Actor qualified as Actor
 import OptBeer.DB.Table.Item qualified as Item
 import OptBeer.DB.Table.Organization qualified as Org
-import OptBeer.DB.Table.OrganizationUserAccess qualified as OUA
 import OptBeer.DB.Table.User qualified as User
-import OptBeer.DB.Type.OrganizationAccessLevel
 import OptBeer.DB.Type.Unit
 import OptBeer.Routes (showOrganizationPath)
 import OptBeer.Type.OrganizationIdent
@@ -30,6 +28,45 @@ import Test.Hspec
 
 spec :: TransactingSpec
 spec = do
+  describe "itemsIndexAction" $ do
+    it "successfully renders the items index for a user with access" $ \runner -> do
+      (actor, org) <- runDBSetup runner $ createOrgWithMemberActor "IndexUser" "index@example.com" "Index Org"
+      _ <- runDBSetup runner $ querySingleRow $ insertReturningAll Item.itemsTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Item 1") :::%? #defaultUnit :==> mutateVal_ (bindParam Gram) :::%? EmptyWrappedRow))
+      _ <- runDBSetup runner $ querySingleRow $ insertReturningAll Item.itemsTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Item 2") :::%? #defaultUnit :==> mutateVal_ (bindParam Liter) :::%? EmptyWrappedRow))
+
+      resp <- runEff
+        . runFailingError @SessionError
+        . runFailingError @NotFound
+        . runFailingError @Forbidden
+        . runFailingError @Unauthorized
+        . runWithCurrentActor (Just actor)
+        . runWithRunner runner
+        $ do
+          itemsIndexAction (OrganizationById org.id :-$ RPNil)
+
+      case resp of
+        RespondPage status _ -> status `shouldBe` ok200
+        _ -> fail "Expected 200 OK"
+
+  describe "showItemAction" $ do
+    it "successfully renders an item for a user with access" $ \runner -> do
+      (actor, org) <- runDBSetup runner $ createOrgWithMemberActor "ShowUser" "show@example.com" "Show Org"
+      item <- runDBSetup runner $ querySingleRow $ insertReturningAll Item.itemsTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Show Item") :::%? #defaultUnit :==> mutateVal_ (bindParam Gram) :::%? EmptyWrappedRow))
+
+      resp <- runEff
+        . runFailingError @SessionError
+        . runFailingError @NotFound
+        . runFailingError @Forbidden
+        . runFailingError @Unauthorized
+        . runWithCurrentActor (Just actor)
+        . runWithRunner runner
+        $ do
+          showItemAction (item.id :-$ RPNil)
+
+      case resp of
+        RespondPage status _ -> status `shouldBe` ok200
+        _ -> fail "Expected 200 OK"
+
   describe "createItemAction" $ do
     it "successfully creates an item for a user with access" $ \runner -> do
       -- 1. Setup: Create actor, user, organization, and access

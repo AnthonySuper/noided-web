@@ -145,6 +145,7 @@ library
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
         OptBeer.Page.Item.Form
+        OptBeer.Page.Item
         OptBeer.Action
         OptBeer.Action.Base
 
@@ -266,6 +267,9 @@ test-suite optimize-beer-test
 
             OptBeer.Form.Validate.CreateUserSpec
             OptBeer.Form.Validate.ItemSpec
+
+            OptBeer.Page.SpecHook
+            OptBeer.Page.ItemSpec
 
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper
