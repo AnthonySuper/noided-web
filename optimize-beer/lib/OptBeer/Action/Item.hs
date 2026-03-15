@@ -7,14 +7,10 @@ module OptBeer.Action.Item where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
-import Lucid
 import Noided.Form.HKD
-import Noided.Pathname (usePathTemplate)
-import Noided.Row (WrappedRow (..))
 import Noided.Sql
 import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchMemberOrganization, requireAccess)
-import OptBeer.DB.Ids.ActorId (ActorId)
 import OptBeer.DB.Ids.ItemId (ItemId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
 import OptBeer.DB.Table.Actor (ActorF (id))
@@ -24,12 +20,11 @@ import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Table.OrganizationUserAccess (OrganizationUserAccessF (..), organizationUserAccessesTable)
 import OptBeer.DB.Type.OrganizationAccessLevel (OrganizationAccessLevel (..))
 import OptBeer.DB.Type.Unit (Unit)
-import OptBeer.Form.Render.Item (itemRenderer)
 import OptBeer.Form.Type.Item (ItemFormF (..))
 import OptBeer.Form.Validate.Item (itemValidator)
-import OptBeer.Page.Item.Form (itemFormPage)
+import OptBeer.Page.Item (itemFormInternals, itemFormPage, itemFormWrapper, itemsIndexPage, showItemPage)
 import OptBeer.Page.Type (Page)
-import OptBeer.Routes (createItemPath, editItemPath, newItemPath, showOrganizationPath, updateItemPath)
+import OptBeer.Routes (createItemPath, editItemPath, itemsPath, newItemPath, showItemPath, showOrganizationPath, updateItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 import Optics.Core (view)
 
@@ -45,10 +40,31 @@ itemActions ::
   ) =>
   PageRoutes Page (Eff es)
 itemActions =
-  actGet newItemPath newItemAction
+  actGet itemsPath itemsIndexAction
+    <> actGet newItemPath newItemAction
     <> actPost createItemPath createItemAction
+    <> actGet showItemPath showItemAction
     <> actGet editItemPath editItemAction
     <> actPost updateItemPath updateItemAction
+
+itemsIndexAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[OrganizationIdent] ->
+  Eff es (PageResponse Page)
+itemsIndexAction (ident :-$ RPNil) = do
+  org <- fetchMemberOrganization ident
+  items <- runInfallibleTransaction $ do
+    queryVector $ do
+      row <- addFrom_ (fromBase_ itemsTable)
+      addWhere_ $ row.organizationId ==. bindParam org.id
+      return row
+  return $ respondPage200 (itemsIndexPage org items)
 
 newItemAction ::
   ( Error Unauthorized :> es,
@@ -65,6 +81,7 @@ newItemAction (ident :-$ RPNil) = do
   return $
     respondPage200
       ( itemFormPage
+          org
           ["organization.items.create.title"]
           ["organization.items.create.button"]
           (usePathTemplate createItemPath ident)
@@ -108,9 +125,23 @@ createItemAction (ident :-$ RPNil) = do
     Left err ->
       return $
         RespondFormErrors
-          (form_ [method_ "post", action_ (usePathTemplate createItemPath ident), class_ "form", data_ "framelike" "true"])
-          (renderFormT itemRenderer body err)
+          (itemFormWrapper org ["organization.items.create.title"])
+          (itemFormInternals ["organization.items.create.button"] (usePathTemplate createItemPath ident) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
+
+showItemAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[ItemId] ->
+  Eff es (PageResponse Page)
+showItemAction (itemId :-$ RPNil) = do
+  (org, item) <- fetchMemberItem itemId
+  return $ respondPage200 (showItemPage org item)
 
 editItemAction ::
   ( Error Unauthorized :> es,
@@ -123,7 +154,7 @@ editItemAction ::
   RouteParams '[ItemId] ->
   Eff es (PageResponse Page)
 editItemAction (itemId :-$ RPNil) = do
-  (_, item) <- fetchMemberItem itemId
+  (org, item) <- fetchMemberItem itemId
   let input =
         ItemForm
           { name = fieldInputFromTyped item.name,
@@ -133,6 +164,7 @@ editItemAction (itemId :-$ RPNil) = do
   return $
     respondPage200
       ( itemFormPage
+          org
           ["organization.items.edit.title"]
           ["organization.items.edit.button"]
           (usePathTemplate updateItemPath itemId)
@@ -153,7 +185,7 @@ updateItemAction ::
   RouteParams '[ItemId] ->
   Eff es (PageResponse Page)
 updateItemAction (itemId :-$ RPNil) = do
-  (org, item) <- fetchMemberItem itemId
+  (org, _item) <- fetchMemberItem itemId
 
   body <- hkdFormBody
   result <- runTransactionEither $ do
@@ -170,8 +202,8 @@ updateItemAction (itemId :-$ RPNil) = do
     Left err ->
       return $
         RespondFormErrors
-          (form_ [method_ "post", action_ (usePathTemplate updateItemPath itemId), class_ "form", data_ "framelike" "true"])
-          (renderFormT itemRenderer body err)
+          (itemFormWrapper org ["organization.items.edit.title"])
+          (itemFormInternals ["organization.items.edit.button"] (usePathTemplate updateItemPath itemId) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById org.id))
 
 -- | Helper to fetch an item and ensure the current user has access to it.

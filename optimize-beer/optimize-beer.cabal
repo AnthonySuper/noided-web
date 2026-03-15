@@ -67,6 +67,7 @@ common exts
        TypeApplications
        OverloadedRecordDot
        AllowAmbiguousTypes
+       ScopedTypeVariables
 
 common deps
     build-depends:
@@ -144,7 +145,7 @@ library
         OptBeer.Page.Error
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
-        OptBeer.Page.Item.Form
+        OptBeer.Page.Item
         OptBeer.Action
         OptBeer.Action.Base
 
@@ -173,6 +174,8 @@ library
         OptBeer.Form.Render.CreateOrganization
         OptBeer.Form.Render.Item
         OptBeer.Form.Render.PasswordPolicy
+
+        OptBeer.Render.Heading
 
         OptBeer.Routes
 
@@ -266,6 +269,9 @@ test-suite optimize-beer-test
 
             OptBeer.Form.Validate.CreateUserSpec
             OptBeer.Form.Validate.ItemSpec
+
+            OptBeer.Page.SpecHook
+            OptBeer.Page.ItemSpec
 
             OptBeer.Action.SpecHook
             OptBeer.Action.SpecHelper

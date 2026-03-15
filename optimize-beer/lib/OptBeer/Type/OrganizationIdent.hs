@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module OptBeer.Type.OrganizationIdent where
 
 import Data.Char (isDigit)

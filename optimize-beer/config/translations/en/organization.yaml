@@ -3,6 +3,10 @@ en:
     idLabel: "Organization ID:"
     items:
       title: "Inventory Items"
+      index:
+        title: "Inventory Items"
+        new_button: "Add New Item"
+        view_link: "View"
       create:
         title: "Add New Item"
         button: "Create Item"
@@ -10,5 +14,6 @@ en:
       edit:
         title: "Edit Item"
         button: "Update Item"
+        link: "Edit Item"
     create:
       button: "Create Organization"
