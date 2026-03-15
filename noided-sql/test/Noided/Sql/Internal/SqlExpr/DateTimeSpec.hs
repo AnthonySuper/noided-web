@@ -10,13 +10,9 @@ import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.Syntax
 import Test.Hspec
-import Test.Hspec.Golden
 
-renderGolden :: String -> SqlExpr NormalQuery (SqlT n r) -> Spec
-renderGolden description expr =
-  golden description (return syntaxString)
-  where
-    syntaxString = unpack (renderSyntaxToTextNumberedBinds (unsafeGetSqlExpr expr))
+renderExpr :: SqlExpr scope t -> String
+renderExpr = unpack . renderSyntaxToTextNumberedBinds . unsafeGetSqlExpr
 
 spec :: Spec
 spec = do
@@ -29,56 +25,56 @@ spec = do
         ep = UnsafeMkSqlExpr "ep" :: SqlExpr NormalQuery (NonNullT Double)
 
     describe "current date and time" $ do
-      renderGolden "now" now_
-      renderGolden "current-date" currentDate_
-      renderGolden "current-timestamp" currentTimestamp_
-      renderGolden "local-timestamp" localTimestamp_
-      renderGolden "clock-timestamp" clockTimestamp_
-      renderGolden "statement-timestamp" statementTimestamp_
-      renderGolden "transaction-timestamp" transactionTimestamp_
+      it "renders now_" $ renderExpr now_ `shouldBe` "NOW()"
+      it "renders currentDate_" $ renderExpr currentDate_ `shouldBe` "CURRENT_DATE"
+      it "renders currentTimestamp_" $ renderExpr currentTimestamp_ `shouldBe` "CURRENT_TIMESTAMP"
+      it "renders localTimestamp_" $ renderExpr localTimestamp_ `shouldBe` "LOCALTIMESTAMP"
+      it "renders clockTimestamp_" $ renderExpr clockTimestamp_ `shouldBe` "CLOCK_TIMESTAMP()"
+      it "renders statementTimestamp_" $ renderExpr statementTimestamp_ `shouldBe` "STATEMENT_TIMESTAMP()"
+      it "renders transactionTimestamp_" $ renderExpr transactionTimestamp_ `shouldBe` "TRANSACTION_TIMESTAMP()"
 
     describe "date arithmetic" $ do
-      renderGolden "date-add-days" (dateAddDays_ d ndays)
-      renderGolden "date-sub-days" (dateSubDays_ d ndays)
-      renderGolden "date-diff-days" (dateDiffDays_ d d)
-      renderGolden "date-add-interval" (dateAddInterval_ d iv)
+      it "renders dateAddDays_" $ renderExpr (dateAddDays_ d ndays) `shouldBe` "(d) + (n)"
+      it "renders dateSubDays_" $ renderExpr (dateSubDays_ d ndays) `shouldBe` "(d) - (n)"
+      it "renders dateDiffDays_" $ renderExpr (dateDiffDays_ d d) `shouldBe` "(d) - (d)"
+      it "renders dateAddInterval_" $ renderExpr (dateAddInterval_ d iv) `shouldBe` "(d) + (iv)"
 
     describe "interval arithmetic" $ do
-      renderGolden "interval-add" (intervalAdd_ iv iv)
-      renderGolden "interval-sub" (intervalSub_ iv iv)
-      renderGolden "interval-negate" (intervalNegate_ iv)
+      it "renders intervalAdd_" $ renderExpr (intervalAdd_ iv iv) `shouldBe` "(iv) + (iv)"
+      it "renders intervalSub_" $ renderExpr (intervalSub_ iv iv) `shouldBe` "(iv) - (iv)"
+      it "renders intervalNegate_" $ renderExpr (intervalNegate_ iv) `shouldBe` "-(iv)"
 
     describe "timestamp arithmetic" $ do
-      renderGolden "timestamp-add-interval" (timestampAddInterval_ ts iv)
-      renderGolden "timestamp-sub-interval" (timestampSubInterval_ ts iv)
-      renderGolden "timestamp-diff" (timestampDiff_ ts ts)
+      it "renders timestampAddInterval_" $ renderExpr (timestampAddInterval_ ts iv) `shouldBe` "(ts) + (iv)"
+      it "renders timestampSubInterval_" $ renderExpr (timestampSubInterval_ ts iv) `shouldBe` "(ts) - (iv)"
+      it "renders timestampDiff_" $ renderExpr (timestampDiff_ ts ts) `shouldBe` "(ts) - (ts)"
 
     describe "timestamptz arithmetic" $ do
-      renderGolden "timestamptz-add-interval" (timestamptzAddInterval_ tstz iv)
-      renderGolden "timestamptz-sub-interval" (timestamptzSubInterval_ tstz iv)
-      renderGolden "timestamptz-diff" (timestamptzDiff_ tstz tstz)
+      it "renders timestamptzAddInterval_" $ renderExpr (timestamptzAddInterval_ tstz iv) `shouldBe` "(tstz) + (iv)"
+      it "renders timestamptzSubInterval_" $ renderExpr (timestamptzSubInterval_ tstz iv) `shouldBe` "(tstz) - (iv)"
+      it "renders timestamptzDiff_" $ renderExpr (timestamptzDiff_ tstz tstz) `shouldBe` "(tstz) - (tstz)"
 
     describe "extraction and truncation" $ do
-      renderGolden "date-part-year-timestamp" (datePart_ "year" ts)
-      renderGolden "date-part-epoch-timestamptz" (datePart_ "epoch" tstz)
-      renderGolden "date-trunc-month" (dateTrunc_ "month" ts)
-      renderGolden "date-trunc-tz-day" (dateTruncTz_ "day" tstz)
-      renderGolden "date-trunc-interval-hour" (dateTruncInterval_ "hour" iv)
+      it "renders datePart_ for timestamp" $ renderExpr (datePart_ "year" ts) `shouldBe` "DATE_PART('year', ts)"
+      it "renders datePart_ for timestamptz" $ renderExpr (datePart_ "epoch" tstz) `shouldBe` "DATE_PART('epoch', tstz)"
+      it "renders dateTrunc_" $ renderExpr (dateTrunc_ "month" ts) `shouldBe` "DATE_TRUNC('month', ts)"
+      it "renders dateTruncTz_" $ renderExpr (dateTruncTz_ "day" tstz) `shouldBe` "DATE_TRUNC('day', tstz)"
+      it "renders dateTruncInterval_" $ renderExpr (dateTruncInterval_ "hour" iv) `shouldBe` "DATE_TRUNC('hour', iv)"
 
     describe "age functions" $ do
-      renderGolden "age-timestamp" (age_ ts ts)
-      renderGolden "age-timestamptz" (ageTz_ tstz tstz)
+      it "renders age_" $ renderExpr (age_ ts ts) `shouldBe` "AGE(ts, ts)"
+      it "renders ageTz_" $ renderExpr (ageTz_ tstz tstz) `shouldBe` "AGE(tstz, tstz)"
 
     describe "interval adjustment" $ do
-      renderGolden "justify-days" (justifyDays_ iv)
-      renderGolden "justify-hours" (justifyHours_ iv)
-      renderGolden "justify-interval" (justifyInterval_ iv)
+      it "renders justifyDays_" $ renderExpr (justifyDays_ iv) `shouldBe` "JUSTIFY_DAYS(iv)"
+      it "renders justifyHours_" $ renderExpr (justifyHours_ iv) `shouldBe` "JUSTIFY_HOURS(iv)"
+      it "renders justifyInterval_" $ renderExpr (justifyInterval_ iv) `shouldBe` "JUSTIFY_INTERVAL(iv)"
 
     describe "conversion" $ do
-      renderGolden "to-timestamp" (toTimestamp_ ep)
+      it "renders toTimestamp_" $ renderExpr (toTimestamp_ ep) `shouldBe` "TO_TIMESTAMP(ep)"
 
     describe "finiteness checks" $ do
-      renderGolden "isfinite-date" (isFiniteDate_ d)
-      renderGolden "isfinite-timestamp" (isFiniteTimestamp_ ts)
-      renderGolden "isfinite-timestamptz" (isFiniteTimestamptz_ tstz)
-      renderGolden "isfinite-interval" (isFiniteInterval_ iv)
+      it "renders isFiniteDate_" $ renderExpr (isFiniteDate_ d) `shouldBe` "ISFINITE(d)"
+      it "renders isFiniteTimestamp_" $ renderExpr (isFiniteTimestamp_ ts) `shouldBe` "ISFINITE(ts)"
+      it "renders isFiniteTimestamptz_" $ renderExpr (isFiniteTimestamptz_ tstz) `shouldBe` "ISFINITE(tstz)"
+      it "renders isFiniteInterval_" $ renderExpr (isFiniteInterval_ iv) `shouldBe` "ISFINITE(iv)"
