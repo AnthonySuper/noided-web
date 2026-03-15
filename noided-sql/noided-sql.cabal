@@ -189,6 +189,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Type.PGSeriesSpec
       Noided.Sql.Internal.Type.OrderClauseSpec
       Noided.Sql.Internal.Select.SelectMSpec
+      Noided.Sql.Internal.Select.OrderLimitOffsetLockSpec
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
       Noided.Sql.Internal.SqlExpr.InetSpec

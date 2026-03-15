@@ -1,14 +1,21 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Noided.Sql.Internal.Select.OrderLimitOffsetLock where
 
+import Control.Monad.Trans.State.Strict (runStateT)
 import Data.Bifunctor
+import Data.Coerce (coerce)
+import Data.Foldable (for_)
 import Data.HKD
 import Data.Int (Int64)
 import Data.Kind
+import Data.String (IsString (..))
 import GHC.Generics
 import GHC.TypeLits
 import Noided.Sql.Internal.Class.DecodeSelectList
+import Noided.Sql.Internal.Class.NamedColumns (aliasedColumnList)
 import Noided.Sql.Internal.Class.Query
 import Noided.Sql.Internal.Class.SelectList
 import Noided.Sql.Internal.Class.UnwrapSelectList
@@ -17,6 +24,8 @@ import Noided.Sql.Internal.Select.SelectM
 import Noided.Sql.Internal.Type.OrderClause
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
+import Noided.Sql.Internal.Type.Syntax (CommaSepSyntax (..), Syntax (..), fromCommaSepWritten)
+import Noided.Sql.Internal.Type.Tie ((:--:) (..))
 
 data TieInclusion
   = TiesIncluded
@@ -28,7 +37,7 @@ data TieInclusion
 -- that will determine what locking behavior should be.
 type FetchFirstClause :: Maybe TieInclusion -> Type
 data FetchFirstClause ti where
-  NoFetchFirstClauset :: FetchFirstClause Nothing
+  NoFetchFirstClause :: FetchFirstClause Nothing
   FetchFirstClauseOnly :: Int64 -> FetchFirstClause (Just TiesExcluded)
   FetchFirstClauseWithTies :: Int64 -> FetchFirstClause (Just TiesIncluded)
 
@@ -132,4 +141,113 @@ renderOrderLimitOffsetLock ::
   (SelectList result) =>
   OrderLimitOffsetLock expectedScope (result (SqlExpr expectedScope)) ->
   QueryWriter ()
-renderOrderLimitOffsetLock ol = error "TODO: implement me"
+renderOrderLimitOffsetLock = \case
+  OrderLimitOffsetLockSelect sl buildRes -> do
+    (selectRes, finalState) <- runStateT (unsafeGetSelectM sl) mempty
+    let (res, cfg) = buildRes selectRes
+    renderSelectClause res
+    renderFromWhere finalState
+    renderCfg cfg
+  OrderLimitOffsetLockAggregated aq buildRes ->
+    case aq of
+      AggregateGroupBy q gb h p -> do
+        (rawResult, finalState) <- runStateT (unsafeGetSelectM q) mempty
+        let groupedHKD = gb rawResult
+            aggregatedGroupedHKD = ffmap coerce groupedHKD
+            aggregateSetRow = ffmap coerce rawResult
+            combined = aggregatedGroupedHKD :--: aggregateSetRow
+            aggRes = p combined
+            (res, cfg) = buildRes aggRes
+
+        renderSelectClause res
+        renderFromWhere finalState
+
+        " GROUP BY "
+        let gbSyns = ffoldMap (Written . unsafeGetSqlExpr) groupedHKD
+        for_ (fromCommaSepWritten gbSyns) writeSyntax
+
+        for_ h $ \havingF -> do
+          " HAVING "
+          writeSyntax (unsafeGetSqlExpr $ havingF combined)
+
+        renderCfg cfg
+      AggregateEntireQuery q p -> do
+        (rawResult, finalState) <- runStateT (unsafeGetSelectM q) mempty
+        let aggregateSetRow = ffmap coerce rawResult
+            aggRes = p aggregateSetRow
+            (res, cfg) = buildRes aggRes
+
+        renderSelectClause res
+        renderFromWhere finalState
+        renderCfg cfg
+
+renderSelectClause :: (SelectList sl) => sl (SqlExpr scope) -> QueryWriter ()
+renderSelectClause res = do
+  "SELECT"
+  for_ (aliasedColumnList res) $ \syn -> do
+    " "
+    writeSyntax syn
+
+renderFromWhere :: SelectMState -> QueryWriter ()
+renderFromWhere finalState = do
+  for_ (fromCommaSepWritten $ foldMap Written finalState.fromSyntaxes) $ \syns -> do
+    " FROM "
+    writeSyntax syns
+  for_ (writeAnds finalState.whereSyntaxes) $ \act -> do
+    " WHERE "
+    act
+
+renderCfg :: OrderLimitOffsetLockCfg scope ti obu slu -> QueryWriter ()
+renderCfg cfg = do
+  renderOrderBy cfg.orderByClause
+  renderOffset cfg.offsetClause
+  renderFetch cfg.fetchFirstClause
+  renderLocking cfg.lockingClause
+
+renderOrderBy :: OrderByClause scope obu -> QueryWriter ()
+renderOrderBy = \case
+  NoOrder -> return ()
+  OrderQueryBy oc -> do
+    " ORDER BY "
+    writeSyntax $ unsafeOrderClauseToSyntax oc
+
+renderOffset :: Maybe Int64 -> QueryWriter ()
+renderOffset = \case
+  Nothing -> return ()
+  Just i -> do
+    " OFFSET "
+    writeSyntax $ fromString (show i)
+    " ROWS"
+
+renderFetch :: FetchFirstClause ti -> QueryWriter ()
+renderFetch = \case
+  NoFetchFirstClause -> return ()
+  FetchFirstClauseOnly i -> do
+    " FETCH FIRST "
+    writeSyntax $ fromString (show i)
+    " ROWS ONLY"
+  FetchFirstClauseWithTies i -> do
+    " FETCH FIRST "
+    writeSyntax $ fromString (show i)
+    " ROWS WITH TIES"
+
+renderLocking :: LockingClause slu -> QueryWriter ()
+renderLocking = \case
+  NoLockingClause -> return ()
+  LockingClause kind wait -> do
+    " "
+    writeSyntax $ lockKindToSyntax kind
+    writeSyntax $ lockWaitToSyntax wait
+
+lockKindToSyntax :: LockKind -> Syntax
+lockKindToSyntax = \case
+  ForUpdate -> "FOR UPDATE"
+  ForNoKeyUpdate -> "FOR NO KEY UPDATE"
+  ForShare -> "FOR SHARE"
+  ForKeyShare -> "FOR KEY SHARE"
+
+lockWaitToSyntax :: LockWait usage -> Syntax
+lockWaitToSyntax = \case
+  Wait -> ""
+  NoWait -> " NOWAIT"
+  SkipLocked -> " SKIP LOCKED"
