@@ -100,6 +100,9 @@ _ListInput :: Prism' (FormInput (ListField input)) (Seq (FormInput input))
 _ListInput = prism' ListInput $ \case
   ListInput a -> Just a
 
+fieldInputFromTyped :: a -> FormInput (InputField a)
+fieldInputFromTyped = InputInput . FromTyped
+
 instance (k ~ An_Iso, a ~ FieldInput x, b ~ FieldInput x) => LabelOptic "val" k (FormInput (InputField x)) (FormInput (InputField x)) a b where
   labelOptic = iso (\(InputInput x) -> x) InputInput
 

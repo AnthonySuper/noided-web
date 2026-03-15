@@ -3,7 +3,7 @@
 {-# LANGUAGE NoFieldSelectors #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module OptBeer.Form.Type.CreateItem where
+module OptBeer.Form.Type.Item where
 
 import Data.Text (Text)
 import GHC.Generics
@@ -11,15 +11,14 @@ import Noided.Form.HKD
 import Noided.Form.HKD.TH (defineHKDForm)
 import OptBeer.DB.Type.Unit
 
-data CreateItemF wrapper
-  = CreateItem
+data ItemFormF wrapper
+  = ItemForm
   { name :: wrapper (InputField Text),
     description :: wrapper (InputField Text),
     defaultUnit :: wrapper (InputField Unit)
   }
   deriving (Generic)
 
-$(defineHKDForm ''CreateItemF)
+$(defineHKDForm ''ItemFormF)
 
-deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField Unit))) => Show (CreateItemF wrapper)
-
+deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField Unit))) => Show (ItemFormF wrapper)

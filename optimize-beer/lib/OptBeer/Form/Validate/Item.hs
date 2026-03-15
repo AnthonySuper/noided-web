@@ -3,7 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
-module OptBeer.Form.Validate.CreateItem where
+module OptBeer.Form.Validate.Item where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
@@ -12,22 +12,23 @@ import Data.Text qualified as T
 import Noided.Form.HKD
 import Noided.Sql
 import Noided.Validation
+import OptBeer.DB.Ids.ItemId
 import OptBeer.DB.Ids.OrganizationId
 import OptBeer.DB.Table.Item
-import OptBeer.Form.Type.CreateItem
+import OptBeer.Form.Type.Item
 import OptBeer.ValidationError.ValueTaken
 
--- | Validates that an item can be created.
-createItemValidator :: OrganizationId -> FormValidator (TransactM e) (SubformField CreateItemF)
-createItemValidator orgId = validateSubform $
-  CreateItem
-    { name = validateItemName orgId,
+-- | Validates an item form.
+itemValidator :: OrganizationId -> Maybe ItemId -> FormValidator (TransactM e) (SubformField ItemFormF)
+itemValidator orgId mItemId = validateSubform $
+  ItemForm
+    { name = validateItemName orgId mItemId,
       description = validateInput return,
       defaultUnit = validateInput return
     }
 
-validateItemName :: OrganizationId -> FormValidator (TransactM e) (InputField Text)
-validateItemName orgId = validateInput $ \nameText -> do
+validateItemName :: OrganizationId -> Maybe ItemId -> FormValidator (TransactM e) (InputField Text)
+validateItemName orgId mItemId = validateInput $ \nameText -> do
   let stripped = T.strip nameText
   when (T.null stripped) $
     failNonfatal Blank
@@ -36,6 +37,9 @@ validateItemName orgId = validateInput $ \nameText -> do
     row <- addFrom_ (fromBase_ itemsTable)
     addWhere_ (row.organizationId ==. bindParam orgId)
     addWhere_ (row.name ==. bindParam stripped)
+    case mItemId of
+      Just itemId -> addWhere_ (row.id /=. bindParam itemId)
+      Nothing -> return ()
     select_ $ Element row.name
   
   case exists of

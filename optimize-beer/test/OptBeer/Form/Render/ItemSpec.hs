@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module OptBeer.Form.Render.CreateItemSpec (spec) where
+module OptBeer.Form.Render.ItemSpec (spec) where
 
 import Data.Functor.Identity (Identity)
 import Lucid.Base (HtmlT)
@@ -8,17 +8,17 @@ import Noided.Form.HKD
 import Noided.Translate
 import Noided.Web.Html.FormRender
 import Noided.Web.Html (TranslationT)
-import OptBeer.Form.Render.CreateItem
+import OptBeer.Form.Render.Item
 import OptBeer.Form.Render.SpecHelper
 import Test.Hspec
 
 spec :: SpecWith Translations
-spec = describe "createItemRenderer" $ do
+spec = describe "itemRenderer" $ do
   withTranslationsInLocale "en" $ do
     it "renders without bad translations" $ \runner -> do
       let input = hkdFormEmpty
           errs = mempty
           renderAct :: HtmlT (TranslationT Identity) ()
-          renderAct = renderFormT createItemRenderer input errs
+          renderAct = renderFormT itemRenderer input errs
           soup = runTranslationToSoup runner renderAct
       assertHasNoBadTranslations soup

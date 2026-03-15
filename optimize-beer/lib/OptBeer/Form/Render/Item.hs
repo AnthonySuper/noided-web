@@ -2,34 +2,34 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-module OptBeer.Form.Render.CreateItem where
+module OptBeer.Form.Render.Item where
 
 import Control.Monad (when)
 import Lucid
 import Noided.Form.HKD
 import Noided.Web.Html.FormRender
-import OptBeer.Form.Type.CreateItem
+import OptBeer.Form.Type.Item
 
--- | A renderer for the item creation form.
-createItemRenderer ::
+-- | A renderer for the item form.
+itemRenderer ::
   ( FetchMessages m,
     FetchHtmlFormatters m
   ) =>
-  HtmlFormRendererT m (SubformField CreateItemF)
-createItemRenderer =
-  fieldWrapModelName "CreateItem" $
-    wrapField baseErrorWrapper (subformField createItemRendererT)
+  HtmlFormRendererT m (SubformField ItemFormF)
+itemRenderer =
+  fieldWrapModelName "Item" $
+    wrapField baseErrorWrapper (subformField itemRendererT)
   where
     baseErrorWrapper inner = do
       _ <- ul_ [class_ "form-base-errors"] $
         renderBaseErrors (li_ [class_ "form-base-error"])
       inner
 
-createItemRendererT ::
+itemRendererT ::
   (FetchMessages m, FetchHtmlFormatters m) =>
-  CreateItemF (FormRenderer (HtmlFormT m))
-createItemRendererT =
-  CreateItem
+  ItemFormF (FormRenderer (HtmlFormT m))
+itemRendererT =
+  ItemForm
     { name = textField,
       description = textField,
       defaultUnit = unitSelectField
