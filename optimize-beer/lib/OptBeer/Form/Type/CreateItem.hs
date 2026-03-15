@@ -1,13 +1,14 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module OptBeer.Form.Type.CreateItem where
 
-import Data.HKD
 import Data.Text (Text)
 import GHC.Generics
 import Noided.Form.HKD
+import Noided.Form.HKD.TH (defineHKDForm)
 import OptBeer.DB.Type.Unit
 
 data CreateItemF wrapper
@@ -18,26 +19,7 @@ data CreateItemF wrapper
   }
   deriving (Generic)
 
-instance FFunctor CreateItemF where
-  ffmap = ffmapDefault
-
-instance FFoldable CreateItemF where
-  ffoldMap = ffoldMapDefault
-
-instance FTraversable CreateItemF where
-  ftraverse = gftraverse
-
-instance FRepeat CreateItemF where
-  frepeat = gfrepeat
-
-instance FZip CreateItemF where
-  fzipWith = gfzipWith
-
-deriving via (Generically (CreateItemF FormErrors)) instance Semigroup (CreateItemF FormErrors)
-
-deriving via (Generically (CreateItemF FormErrors)) instance Monoid (CreateItemF FormErrors)
-
-instance HKDForm CreateItemF
+$(defineHKDForm ''CreateItemF)
 
 deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField Unit))) => Show (CreateItemF wrapper)
 

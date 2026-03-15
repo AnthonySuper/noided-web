@@ -1,13 +1,14 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module OptBeer.Form.Type.CreateUser where
 
-import Data.HKD
 import Data.Text (Text)
 import GHC.Generics
 import Noided.Form.HKD
+import Noided.Form.HKD.TH (defineHKDForm)
 import OptBeer.Type.Hashword
 
 data CreateUserF wrapper
@@ -20,26 +21,7 @@ data CreateUserF wrapper
   }
   deriving (Generic)
 
-instance FFunctor CreateUserF where
-  ffmap = ffmapDefault
-
-instance FFoldable CreateUserF where
-  ffoldMap = ffoldMapDefault
-
-instance FTraversable CreateUserF where
-  ftraverse = gftraverse
-
-instance FRepeat CreateUserF where
-  frepeat = gfrepeat
-
-instance FZip CreateUserF where
-  fzipWith = gfzipWith
-
-deriving via (Generically (CreateUserF FormErrors)) instance Semigroup (CreateUserF FormErrors)
-
-deriving via (Generically (CreateUserF FormErrors)) instance Monoid (CreateUserF FormErrors)
-
-instance HKDForm CreateUserF
+$(defineHKDForm ''CreateUserF)
 
 deriving instance (Show (wrapper (InputField Text)), Show (wrapper (InputField OpaquePassword))) => Show (CreateUserF wrapper)
 
