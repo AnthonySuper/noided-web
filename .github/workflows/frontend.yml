@@ -1,0 +1,41 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build-and-test:
+    permissions:
+      contents: read
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: noided-web-js
+
+    strategy:
+      matrix:
+        node: ["22"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: "npm"
+          cache-dependency-path: noided-web-js/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm test

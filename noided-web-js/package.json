@@ -10,12 +10,16 @@
   ],
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "idiomorph": "^0.3.0"
   },
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "happy-dom": "^20.8.4",
+    "typescript": "^5.2.2",
+    "vitest": "^4.1.0"
   }
 }
