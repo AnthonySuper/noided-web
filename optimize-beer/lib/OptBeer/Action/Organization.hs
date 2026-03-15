@@ -12,7 +12,7 @@ import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchMemberOrganization)
 import OptBeer.DB.Ids.ActorId (ActorId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
-import OptBeer.DB.Table.Actor (Actor, ActorF (..))
+import OptBeer.DB.Table.Actor (ActorF (..))
 import OptBeer.DB.Table.Organization
 import OptBeer.DB.Table.OrganizationUserAccess
 import OptBeer.DB.Table.UserDefaultOrganization
@@ -61,7 +61,7 @@ newOrganizationAction (RPNil :: RouteParams '[]) = do
   return $
     respondPage200 $
       wrapForm $
-        renderFormT createOrganizationRenderer emptyCreateOrganizationForm mempty
+        renderFormT createOrganizationRenderer hkdFormEmpty mempty
 
 createOrganizationAction ::
   ( Error Unauthorized :> es,

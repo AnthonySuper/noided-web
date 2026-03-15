@@ -76,7 +76,7 @@ newSessionAction (RPNil :: RouteParams '[]) =
   return $
     respondPage200 $
       wrapForm $
-        renderFormT createSessionRenderer emptyCreateSessionForm mempty
+        renderFormT createSessionRenderer hkdFormEmpty mempty
 
 invalidCredentialsErrors :: FormErrors (SubformField CreateSessionF)
 invalidCredentialsErrors =

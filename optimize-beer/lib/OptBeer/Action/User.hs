@@ -43,7 +43,7 @@ wrapForm act = form_ [method_ "post", action_ "/users", class_ "form"] $ do
 blankFormPage :: (FetchMessages m, FetchHtmlFormatters m) => HtmlT m ()
 blankFormPage =
   wrapForm $
-    renderFormT createUserRenderer emptyCreateUserForm mempty
+    renderFormT createUserRenderer hkdFormEmpty mempty
 
 newUserAction :: (FetchMessages renderM, FetchHtmlFormatters renderM, Monad m) => RouteParams '[] -> m (PageResponse renderM)
 newUserAction (RPNil :: RouteParams '[]) =
