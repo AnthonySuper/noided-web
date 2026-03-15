@@ -39,13 +39,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install PostgreSQL client
+    - name: Install pg_dump 18
       run: |
-         - name: Install pg_dump 18
-    run: |
         # Add PostgreSQL apt repository key and repository
-        curl -fsSL https://www.postgresql.org | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
-        echo "deb http://apt.postgresql.org $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/postgresql.list
+        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+        echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/postgresql.list
         # Update apt lists and install the specific version 18 client
         sudo apt-get update
         sudo apt-get install -y postgresql-client-18
@@ -112,13 +110,6 @@ jobs:
 
     - name: Build all packages
       run: cabal build --enable-tests --enable-benchmarks all
-
-    - name: Apply migrations
-      run: |
-        export DATABASE_URL=postgresql://postgres:password@localhost:5432/optimize_beer_development
-        cabal run noided-migrate -- migrate --dir optimize-beer/db/migrations
-        export DATABASE_URL=postgresql://postgres:password@localhost:5432/optimize_beer_test
-        cabal run noided-migrate -- migrate --dir optimize-beer/db/migrations
 
     - name: Save ofiles cache
       uses: actions/cache/save@v4
