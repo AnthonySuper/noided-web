@@ -189,7 +189,12 @@ offsetLimitLock_ ::
   OrderLimitOffsetLock NormalQuery t
 offsetLimitLock_ os = offsetOrderLimitLock_ os (const NoOrder)
 
-offsetLock_ :: Maybe Int64 -> LockingClause slu -> SelectM t -> OrderLimitOffsetLock NormalQuery t
+offsetLock_ ::
+  (ValidOrderLimitOffsetLock Nothing NoOrderBy slu) =>
+  Maybe Int64 ->
+  LockingClause slu ->
+  SelectM t ->
+  OrderLimitOffsetLock NormalQuery t
 offsetLock_ os = offsetLimitLock_ os NoFetchFirstClause
 
 -- | Class for queries that can have @OFFSET@, @FETCH FIRST@, and
