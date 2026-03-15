@@ -1,6 +1,6 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module OptBeer.Action.Item where
@@ -9,18 +9,27 @@ import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
 import Lucid
 import Noided.Form.HKD
+import Noided.Pathname (usePathTemplate)
+import Noided.Row (WrappedRow (..))
+import Noided.Sql
 import OptBeer.Action.Base
-import OptBeer.Action.Organization.Common (fetchMemberOrganization)
+import OptBeer.Action.Organization.Common (fetchMemberOrganization, requireAccess)
+import OptBeer.DB.Ids.ActorId (ActorId)
+import OptBeer.DB.Ids.ItemId (ItemId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
-import OptBeer.DB.Table.Item (itemsTable)
+import OptBeer.DB.Table.Actor (ActorF (id))
+import OptBeer.DB.Table.Item (Item, ItemF (..), itemsTable)
+import OptBeer.DB.Table.Organization (Organization, OrganizationF (..))
 import OptBeer.DB.Table.Organization qualified as Org
+import OptBeer.DB.Table.OrganizationUserAccess (OrganizationUserAccessF (..), organizationUserAccessesTable)
+import OptBeer.DB.Type.OrganizationAccessLevel (OrganizationAccessLevel (..))
 import OptBeer.DB.Type.Unit (Unit)
-import OptBeer.Form.Render.CreateItem (createItemRenderer)
-import OptBeer.Form.Type.CreateItem (CreateItemF (..))
-import OptBeer.Form.Validate.CreateItem (createItemValidator)
-import OptBeer.Page.Item.New (newItemPage)
+import OptBeer.Form.Render.Item (itemRenderer)
+import OptBeer.Form.Type.Item (ItemFormF (..))
+import OptBeer.Form.Validate.Item (itemValidator)
+import OptBeer.Page.Item.Form (itemFormPage)
 import OptBeer.Page.Type (Page)
-import OptBeer.Routes (createItemPath, newItemPath, showOrganizationPath)
+import OptBeer.Routes (createItemPath, editItemPath, newItemPath, showOrganizationPath, updateItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 import Optics.Core (view)
 
@@ -38,6 +47,8 @@ itemActions ::
 itemActions =
   actGet newItemPath newItemAction
     <> actPost createItemPath createItemAction
+    <> actGet editItemPath editItemAction
+    <> actPost updateItemPath updateItemAction
 
 newItemAction ::
   ( Error Unauthorized :> es,
@@ -51,7 +62,15 @@ newItemAction ::
   Eff es (PageResponse Page)
 newItemAction (ident :-$ RPNil) = do
   org <- fetchMemberOrganization ident
-  return $ respondPage200 (newItemPage org hkdFormEmpty mempty)
+  return $
+    respondPage200
+      ( itemFormPage
+          ["organization.items.create.title"]
+          ["organization.items.create.button"]
+          (usePathTemplate createItemPath ident)
+          hkdFormEmpty
+          mempty
+      )
 
 createItemAction ::
   ( Error Unauthorized :> es,
@@ -71,7 +90,7 @@ createItemAction (ident :-$ RPNil) = do
   body <- hkdFormBody
   result <- runTransactionEither $ do
     -- 1. Validate form
-    validated <- validateForm (createItemValidator org.id) body >>= either MonadError.throwError pure
+    validated <- validateForm (itemValidator org.id Nothing) body >>= either MonadError.throwError pure
 
     -- 2. Create item
     let itemVals =
@@ -90,5 +109,98 @@ createItemAction (ident :-$ RPNil) = do
       return $
         RespondFormErrors
           (form_ [method_ "post", action_ (usePathTemplate createItemPath ident), class_ "form", data_ "framelike" "true"])
-          (renderFormT createItemRenderer body err)
+          (renderFormT itemRenderer body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
+
+editItemAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[ItemId] ->
+  Eff es (PageResponse Page)
+editItemAction (itemId :-$ RPNil) = do
+  (_, item) <- fetchMemberItem itemId
+  let input =
+        ItemForm
+          { name = fieldInputFromTyped item.name,
+            description = fieldInputFromTyped item.description,
+            defaultUnit = fieldInputFromTyped item.defaultUnit
+          }
+  return $
+    respondPage200
+      ( itemFormPage
+          ["organization.items.edit.title"]
+          ["organization.items.edit.button"]
+          (usePathTemplate updateItemPath itemId)
+          input
+          mempty
+      )
+
+updateItemAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error BadRequest :> es,
+    Error SessionError :> es,
+    GetRequestBody :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[ItemId] ->
+  Eff es (PageResponse Page)
+updateItemAction (itemId :-$ RPNil) = do
+  (org, item) <- fetchMemberItem itemId
+
+  body <- hkdFormBody
+  result <- runTransactionEither $ do
+    validated <- validateForm (itemValidator org.id (Just itemId)) body >>= either MonadError.throwError pure
+    _ <- querySingleRow $ updateReturningAll itemsTable $ \r -> do
+      addWhere_ $ r.id ==. bindParam itemId
+      return $
+        #name |= mutateVal_ (bindParam validated.name.val)
+          <> #description |= mutateVal_ (bindParam validated.description.val)
+          <> #defaultUnit |= mutateVal_ (bindParam validated.defaultUnit.val)
+    return ()
+
+  case result of
+    Left err ->
+      return $
+        RespondFormErrors
+          (form_ [method_ "post", action_ (usePathTemplate updateItemPath itemId), class_ "form", data_ "framelike" "true"])
+          (renderFormT itemRenderer body err)
+    Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById org.id))
+
+-- | Helper to fetch an item and ensure the current user has access to it.
+fetchMemberItem ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    CurrentActor :> es
+  ) =>
+  ItemId ->
+  Eff es (Organization, Item)
+fetchMemberItem itemId = do
+  actor <- requireActor
+  mOrgAndItem <- runInfallibleTransaction $ do
+    queryMaybe $ do
+      res@(item :-: _ :-: access) <-
+        addFrom_ $
+          fromBase_ itemsTable
+            & innerJoin_ Org.organizationsTable
+            `on_` (\item org -> item.organizationId ==. org.id)
+            & innerJoin_ organizationUserAccessesTable
+            `on_` (\(_ :-: org) access -> access.organizationId ==. org.id)
+      addWhere_ $ item.id ==. bindParam itemId
+      addWhere_ $ access.userId ==. bindParam actor.id
+      return res
+  case mOrgAndItem of
+    Just (item :--: org :--: access) -> do
+      requireAccess Member access
+      return (org, item)
+    Nothing -> throwError $ NotFound "Item not found."

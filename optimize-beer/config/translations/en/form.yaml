@@ -13,7 +13,7 @@ en:
           name: "Confirm Email"
         confirmPassword:
           name: "Confirm Password"
-    CreateItem:
+    Item:
       attributes:
         description:
           name: "Description"

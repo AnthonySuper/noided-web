@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Update.Update where
 
@@ -30,7 +30,7 @@ data UpdateQuery returning where
     UpdateQuery returning
 
 instance Functor UpdateQuery where
-  fmap f (Update td q) = Update td (\r -> fmap f <$> q r)
+  fmap f (Update td q) = Update td (fmap (fmap f) . q)
 
 -- | Construct an UPDATE query returning results.
 updateReturning ::
@@ -46,7 +46,17 @@ update ::
   TableDefinition tableCols tableSelectList ->
   (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols)) ->
   UpdateQuery ()
-update td q = Update td (\r -> (,()) <$> q r)
+update td q = Update td (fmap (,()) . q)
+
+updateReturningAll ::
+  (SelectList tableSelectList) =>
+  TableDefinition tableCols tableSelectList ->
+  ( QueriedRow tableSelectList ->
+    SelectM (ColumnUpdates tableCols)
+  ) ->
+  UpdateQuery (QueriedRow tableSelectList)
+updateReturningAll td buildUpdates =
+  updateReturning td $ \res -> (,res) <$> buildUpdates res
 
 writeUpdateQuery ::
   (SelectList returningList) =>
@@ -59,7 +69,7 @@ writeUpdateQuery (Update td q) = do
   ln <- toUniqueAlias "to_update"
   writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
-  
+
   -- Run the SelectM action to get updates, returning, and state (FROM/WHERE)
   ((updates, returningList), finalState) <- runStateT (unsafeGetSelectM (q targetRow)) mempty
 

@@ -15,6 +15,7 @@ import Noided.Web
 import OptBeer.Action.Base
 import OptBeer.Action.Organization
 import OptBeer.Action.SpecHelper
+import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
 import OptBeer.DB.Table.Actor qualified as Actor
 import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Table.OrganizationUserAccess qualified as OUA
@@ -112,21 +113,7 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
   it "does not change default organization if one already exists" $ \runner -> do
     -- 1. Setup: Create actor, user, an existing org, and set it as default
     (actor, existingOrg) <- runDBSetup runner $ do
-        actor <-
-          querySingleRow $
-            insertReturningAll
-              Actor.actorsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("multi-org-user" :: Text)) :::%? EmptyWrappedRow))
-        _ <-
-          querySingleRow $
-            insertReturningAll
-              User.usersTable
-              (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("multi@example.com" :: Text)) :::%? EmptyWrappedRow))
-        existingOrg <-
-          querySingleRow $
-            insertReturningAll
-              Org.organizationsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("Existing Org" :: Text)) :::%? EmptyWrappedRow))
+        (actor, existingOrg) <- createOrgWithMemberActor "multi-org-user" "multi@example.com" "Existing Org"
         _ <-
           querySingleRow $
             insertReturningAll

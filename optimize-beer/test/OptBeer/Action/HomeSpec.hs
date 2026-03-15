@@ -12,6 +12,7 @@ import Noided.Web
 import OptBeer.Action.Base
 import OptBeer.Action.Home
 import OptBeer.Action.SpecHelper
+import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
 import OptBeer.DB.Table.Actor qualified as Actor
 import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Table.Organization qualified as Org
@@ -52,19 +53,8 @@ homeActionSpec = describe "homeAction" $ do
       _ -> fail "Expected RespondPage"
 
   it "successfully renders for a logged-in user WITH a default org" $ \runner -> do
-    (actor, _) <- runDBSetup runner $ do
-        actor <- querySingleRow $
-          insertReturningAll
-            Actor.actorsTable
-            (singleValue_ (#name :==> mutateVal_ (bindParam ("homeuser2" :: Text)) :::%? EmptyWrappedRow))
-        _ <- querySingleRow $
-          insertReturningAll
-            User.usersTable
-            (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("homeuser2@example.com" :: Text)) :::%? EmptyWrappedRow))
-        org <- querySingleRow $
-          insertReturningAll
-            Org.organizationsTable
-            (singleValue_ (#name :==> mutateVal_ (bindParam ("Home Org" :: Text)) :::%? EmptyWrappedRow))
+    (actor, org) <- runDBSetup runner $ do
+        (actor, org) <- createOrgWithMemberActor "homeuser2" "homeuser2@example.com" "Home Org"
         _ <- querySingleRow $
           insertReturningAll
             UDO.userDefaultOrganizationsTable

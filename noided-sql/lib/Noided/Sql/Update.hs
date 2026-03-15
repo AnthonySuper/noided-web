@@ -2,6 +2,7 @@ module Noided.Sql.Update
   ( UpdateQuery,
     updateReturning,
     update,
+    updateReturningAll,
 
     -- * Column updates
     ColumnUpdates,
