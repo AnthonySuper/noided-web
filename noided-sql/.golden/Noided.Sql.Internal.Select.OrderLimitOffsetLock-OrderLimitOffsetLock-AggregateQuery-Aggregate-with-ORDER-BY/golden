@@ -1,0 +1,1 @@
+SELECT COUNT(col1) AS "id", SUM(col1) AS "val" ORDER BY SUM(col1) DESC NULLS FIRST

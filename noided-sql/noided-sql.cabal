@@ -109,11 +109,13 @@ library
       Noided.Sql.Internal.Type.WindowFrame
       Noided.Sql.Internal.Type.PGArray
       Noided.Sql.Internal.Type.PGSeries
+      Noided.Sql.Internal.Type.OrderClause
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
       Noided.Sql.Internal.Select.Combine
       Noided.Sql.Internal.Select.AggregateQuery
+      Noided.Sql.Internal.Select.OrderLimitOffsetLock
 
       Noided.Sql.Internal.Insert.Insert
       Noided.Sql.Internal.Insert.InsertValues
@@ -186,7 +188,9 @@ test-suite noided-sql-test
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Type.PGSeriesSpec
+      Noided.Sql.Internal.Type.OrderClauseSpec
       Noided.Sql.Internal.Select.SelectMSpec
+      Noided.Sql.Internal.Select.OrderLimitOffsetLockSpec
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
       Noided.Sql.Internal.SqlExpr.DateTimeSpec
