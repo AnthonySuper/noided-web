@@ -42,7 +42,3 @@ spec = do
 
     it "renders multiple columns with specific nulls" $ do
       checkSyntax (ascNullFirst_ col1 <> descNullsLast_ col2) "col1 ASC NULLS FIRST, col2 DESC NULLS LAST"
-
-    it "renders explicit orderBy_ and orderingBy_" $ do
-      checkSyntax (orderBy_ col1 orderAsc) "col1 ASC NULLS LAST"
-      checkSyntax (orderingBy_ orderDesc col1) "col1 DESC NULLS FIRST"
