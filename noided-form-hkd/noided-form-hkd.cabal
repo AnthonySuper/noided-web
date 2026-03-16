@@ -67,7 +67,9 @@ common deps
       some,
       text,
       these,
-      template-haskell
+      template-haskell,
+      transformers,
+      http-api-data
 
 common exts
     default-extensions:
@@ -90,10 +92,12 @@ library
         Noided.Form.HKD.Internal.Type.FormLabel
         Noided.Form.HKD.Internal.Type.FormLens
         Noided.Form.HKD.Internal.Type.FormRenderer
+        Noided.Form.HKD.Internal.Type.WriteUrlEncoded
 
         Noided.Form.HKD.Internal.Parse
         Noided.Form.HKD.Internal.Validate
         Noided.Form.HKD.Internal.Class
+        Noided.Form.HKD.Internal.UrlForm
         Noided.Form.HKD.Internal.Render
 
         Noided.Form.HKD.Type

@@ -28,7 +28,7 @@ canonicalKeyToFieldName =
 canonicalKeyToFieldNameBuilder :: FormCanonicalKey -> LB.Builder
 canonicalKeyToFieldNameBuilder (MkFormCanonicalKey br) = fst $ foldl' f (mempty, False) br
   where
-    f !(buff, written) (CanonicalObjectPiece o)
+    f (!buff, !written) (CanonicalObjectPiece o)
       | written = (buff <> LB.fromString "[" <> LB.fromText o <> LB.fromString "]", written)
       | otherwise = (buff <> LB.fromText o, True)
-    f !(buff, _) (CanonicalArrayPiece _) = (buff <> LB.fromString "[]", True)
+    f (!buff, _) (CanonicalArrayPiece _) = (buff <> LB.fromString "[]", True)
