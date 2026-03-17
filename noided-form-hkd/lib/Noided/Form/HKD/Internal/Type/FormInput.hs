@@ -13,6 +13,7 @@ import GHC.Records
 import Noided.Form.HKD.Internal.Type.HKDFieldType
 import Noided.Form.Types
 import Optics.Core
+import Web.HttpApiData
 
 -- | The input given to a particular form field.
 -- In order to support both actual HTTP forms and JSON with the same types,
@@ -61,6 +62,17 @@ data FormInput fieldType where
   ListInput ::
     Seq (FormInput input) ->
     FormInput (ListField input)
+
+fieldInputTyped :: (FromHttpApiData a) => Fold (FormInput (InputField a)) a
+fieldInputTyped = foldVL $ \toAp (InputInput a) ->
+  case a of
+    NotPresent -> pure ()
+    FromTyped v -> toAp v
+    FromForm (TextValue t) ->
+      case parseQueryParam t of
+        Left _ -> pure ()
+        Right v -> toAp v
+    FromForm _ -> pure ()
 
 deriving instance (Show a) => Show (FormInput (InputField a))
 

@@ -16,6 +16,7 @@ module Noided.Form.HKD.Type
     _InputInput,
     _SubformInput,
     _ListInput,
+    fieldInputTyped,
     fieldInputFromTyped,
 
     -- * Form Validators
