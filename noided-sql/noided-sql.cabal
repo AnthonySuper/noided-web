@@ -109,6 +109,10 @@ library
       Noided.Sql.Internal.Type.WindowFrame
       Noided.Sql.Internal.Type.PGArray
       Noided.Sql.Internal.Type.PGSeries
+      Noided.Sql.Internal.Type.PGTSVector
+      Noided.Sql.Internal.Type.PGTSQuery
+      Noided.Sql.Internal.Type.PGRegConfig
+      Noided.Sql.Internal.Type.PGFullTextSearchWeight
       Noided.Sql.Internal.Type.OrderClause
 
       Noided.Sql.Internal.Select.FromClause
@@ -149,6 +153,7 @@ library
       Noided.Sql.Internal.SqlExpr.Numeric
       Noided.Sql.Internal.SqlExpr.Range
       Noided.Sql.Internal.SqlExpr.Text
+      Noided.Sql.Internal.SqlExpr.FullText
 
       Noided.Sql.Internal.HKDTableDef
       Noided.Sql.Internal.HKDViewDef
@@ -197,6 +202,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.SqlExpr.InetSpec
       Noided.Sql.Internal.SqlExpr.NumericSpec
       Noided.Sql.Internal.SqlExpr.TextSpec
+      Noided.Sql.Internal.SqlExpr.FullTextSpec
       Noided.Sql.Internal.Insert.InsertSpec
       Noided.Sql.Internal.Update.SetsSpec
       Noided.Sql.Internal.Update.UpdateSpec

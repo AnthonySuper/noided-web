@@ -74,6 +74,30 @@ module Noided.Sql.SqlExpr
     substr_,
     replace_,
 
+    -- * Full-text search functions
+    PGTSVector,
+    PGTSQuery,
+    PGRegConfig,
+    PGFullTextSearchWeight (..),
+    (@@.),
+    concatTSVector_,
+    tsAnd_,
+    tsOr_,
+    tsNot_,
+    toTSVector_,
+    toTSVectorWithConfig_,
+    toTSQuery_,
+    toTSQueryWithConfig_,
+    plainToTSQuery_,
+    plainToTSQueryWithConfig_,
+    phraseToTSQuery_,
+    phraseToTSQueryWithConfig_,
+    websearchToTSQuery_,
+    websearchToTSQueryWithConfig_,
+    setWeight_,
+    tsRank_,
+    tsRankCd_,
+
     -- * Inet functions
     (<<.),
     (<<=.),
@@ -200,6 +224,7 @@ import Noided.Sql.Internal.Class.SqlNumeric
 import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.SqlExpr.Bool
 import Noided.Sql.Internal.SqlExpr.DateTime
+import Noided.Sql.Internal.SqlExpr.FullText
 import Noided.Sql.Internal.SqlExpr.Inet
 import Noided.Sql.Internal.SqlExpr.Numeric
 import Noided.Sql.Internal.SqlExpr.Range
@@ -209,5 +234,9 @@ import Noided.Sql.Internal.Type.MutationExpr
 import Noided.Sql.Internal.Type.MutationType
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.OrderClause
+import Noided.Sql.Internal.Type.PGFullTextSearchWeight
+import Noided.Sql.Internal.Type.PGRegConfig
+import Noided.Sql.Internal.Type.PGTSQuery
+import Noided.Sql.Internal.Type.PGTSVector
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType

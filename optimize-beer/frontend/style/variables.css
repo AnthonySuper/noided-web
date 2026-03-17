@@ -33,13 +33,13 @@
 @property --color-primary {
   syntax: "<color>";
   inherits: true;
-  initial-value: #d4a017; /* Beer Amber/Gold */
+  initial-value: #916a00; /* Darker Amber for contrast */
 }
 
 @property --color-primary-dark {
   syntax: "<color>";
   inherits: true;
-  initial-value: #a67c00;
+  initial-value: #6a4d00;
 }
 
 @property --color-bg {

@@ -21,13 +21,21 @@ import Noided.Web.Html.FormRender (renderFormT)
 import OptBeer.DB.Table.Item (Item, ItemF (..))
 import OptBeer.DB.Table.Organization (Organization, OrganizationF (..))
 import OptBeer.Form.Render.Item (itemRenderer)
+import OptBeer.Form.Render.Search (searchRenderer)
 import OptBeer.Form.Type.Item (ItemFormF)
+import OptBeer.Form.Type.Search (SearchFormF)
 import OptBeer.Render.Heading
 import OptBeer.Routes (editItemPath, itemsPath, newItemPath, showItemPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 
-itemsIndexPage :: forall m t. (FetchMessages m, FetchHtmlFormatters m, Monad m, Foldable t) => Organization -> t Item -> HtmlT m ()
-itemsIndexPage org items =
+itemsIndexPage ::
+  forall m t.
+  (FetchMessages m, FetchHtmlFormatters m, Monad m, Foldable t) =>
+  Organization ->
+  SearchFormF FormInput ->
+  t Item ->
+  HtmlT m ()
+itemsIndexPage org searchInput items =
   div_ [class_ "items-index-container"] $ do
     renderHeadingOrganization org $
       (emptyHeadingCfg @m)
@@ -36,13 +44,16 @@ itemsIndexPage org items =
             a_ [href_ (usePathTemplate newItemPath (OrganizationById org.id)), class_ "button"] $
               renderTranslated ["organization.items.index.new_button"] mempty
         }
-    
+
+    form_ [method_ "get", action_ (usePathTemplate itemsPath (OrganizationById org.id))] $
+      renderFormT searchRenderer searchInput mempty
+
     table_ [class_ "pretty-table"] $ do
       thead_ $ tr_ $ do
         th_ $ renderTranslated ["form.attributes.name.name"] mempty
         th_ $ renderTranslated ["form.Item.attributes.description.name"] mempty
         th_ $ renderTranslated ["form.Item.attributes.defaultUnit.name"] mempty
-        th_ "" -- Actions
+        th_ $ renderTranslated ["organization.items.index.actions_header"] mempty -- Actions
       tbody_ $ forM_ items $ \item -> tr_ $ do
         td_ $ a_ [href_ (usePathTemplate showItemPath item.id)] (toHtml item.name)
         td_ $ toHtml item.description
