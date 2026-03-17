@@ -41,9 +41,9 @@ tsOr_ ::
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
 tsOr_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") | (" <> unsafeGetSqlExpr b <> ")")
 
--- | tsquery NOT operator @!!@.
+-- | tsquery NOT operator @!@.
 tsNot_ :: SqlExpr scope (SqlT n PGTSQuery) -> SqlExpr scope (SqlT n PGTSQuery)
-tsNot_ a = UnsafeMkSqlExpr ("!! (" <> unsafeGetSqlExpr a <> ")")
+tsNot_ a = UnsafeMkSqlExpr ("! (" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @to_tsvector@ function.
 toTSVector_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n PGTSVector)
