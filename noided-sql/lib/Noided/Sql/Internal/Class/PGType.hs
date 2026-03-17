@@ -11,11 +11,23 @@ import Data.Time
 import Data.UUID (UUID)
 import PostgreSQL.Binary.Range (Range)
 import Noided.Sql.Internal.Type.PGArray
+import Noided.Sql.Internal.Type.PGTSVector
+import Noided.Sql.Internal.Type.PGTSQuery
+import Noided.Sql.Internal.Type.PGRegConfig
 import Noided.Sql.Internal.Type.SqlType
 
 -- | Types that map to a particular Postgres type.
 class PGType t where
   pgTypeName :: Proxy t -> Text
+
+instance PGType PGTSVector where
+  pgTypeName _ = "tsvector"
+
+instance PGType PGTSQuery where
+  pgTypeName _ = "tsquery"
+
+instance PGType PGRegConfig where
+  pgTypeName _ = "regconfig"
 
 -- | Helper: provides the name for an array element.
 class PGArrayElement (t :: SqlType) where
