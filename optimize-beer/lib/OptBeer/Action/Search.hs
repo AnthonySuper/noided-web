@@ -4,6 +4,7 @@
 module OptBeer.Action.Search where
 
 import Data.Maybe (fromMaybe)
+import Data.Ord
 import Data.Text (Text)
 import Data.Text qualified as T
 import Noided.Form.HKD
@@ -23,8 +24,8 @@ useSearch toVector query form =
       mPage = preview (fieldInputTyped @Int) form.pagination.val.page
       mPerPage = preview (fieldInputTyped @Int) form.pagination.val.perPage
 
-      page = min 1 $ fromMaybe 1 mPage
-      perPage = min 1 $ max 100 $ fromMaybe 20 mPerPage
+      page = max 1 $ fromMaybe 1 mPage
+      perPage = clamp (1, 100) $ fromMaybe 20 mPerPage
       offset = fromIntegral $ max 0 (page - 1) * perPage
 
       filteredQuery =
