@@ -165,6 +165,9 @@ library
         OptBeer.Form.Type.CreateSession
         OptBeer.Form.Type.CreateOrganization
         OptBeer.Form.Type.Item
+        OptBeer.Form.Type.Pagination
+        OptBeer.Form.Type.Search
+
         OptBeer.Form.Validate.CreateUser
         OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Validate.CreateOrganization
@@ -173,6 +176,7 @@ library
         OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.CreateOrganization
         OptBeer.Form.Render.Item
+        OptBeer.Form.Render.Search
         OptBeer.Form.Render.PasswordPolicy
 
         OptBeer.Render.Heading
@@ -186,6 +190,7 @@ library
         OptBeer.Action.Organization
         OptBeer.Action.Organization.Common
         OptBeer.Action.Item
+        OptBeer.Action.Search
 
 
 

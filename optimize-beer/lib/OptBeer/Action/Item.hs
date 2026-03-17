@@ -8,9 +8,11 @@ module OptBeer.Action.Item where
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
 import Noided.Form.HKD
+import Noided.Form.Types
 import Noided.Sql
 import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchMemberOrganization, requireAccess)
+import OptBeer.Action.Search (useSearch)
 import OptBeer.DB.Ids.ItemId (ItemId)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
 import OptBeer.DB.Table.Actor (ActorF (id))
@@ -21,6 +23,7 @@ import OptBeer.DB.Table.OrganizationUserAccess (OrganizationUserAccessF (..), or
 import OptBeer.DB.Type.OrganizationAccessLevel (OrganizationAccessLevel (..))
 import OptBeer.DB.Type.Unit (Unit)
 import OptBeer.Form.Type.Item (ItemFormF (..))
+import OptBeer.Form.Type.Search (SearchFormF)
 import OptBeer.Form.Validate.Item (itemValidator)
 import OptBeer.Page.Item (itemFormInternals, itemFormPage, itemFormWrapper, itemsIndexPage, showItemPage)
 import OptBeer.Page.Type (Page)
@@ -36,7 +39,8 @@ itemActions ::
     Error SessionError :> es,
     GetRequestBody :> es,
     RunTransaction :> es,
-    CurrentActor :> es
+    CurrentActor :> es,
+    GetQueryParams :> es
   ) =>
   PageRoutes Page (Eff es)
 itemActions =
@@ -53,18 +57,25 @@ itemsIndexAction ::
     Error NotFound :> es,
     Error SessionError :> es,
     RunTransaction :> es,
+    GetQueryParams :> es,
     CurrentActor :> es
   ) =>
   RouteParams '[OrganizationIdent] ->
   Eff es (PageResponse Page)
 itemsIndexAction (ident :-$ RPNil) = do
   org <- fetchMemberOrganization ident
+  searchForm <- parseForm . urlSubmissionToMultipartSubmission <$> getQueryParams
   items <- runInfallibleTransaction $ do
-    queryVector $ do
-      row <- addFrom_ (fromBase_ itemsTable)
-      addWhere_ $ row.organizationId ==. bindParam org.id
-      return row
-  return $ respondPage200 (itemsIndexPage org items)
+    queryVector $
+      useSearch
+        (\row -> toTSVector_ row.name `concatTSVector_` toTSVector_ row.description)
+        ( do
+            row <- addFrom_ (fromBase_ itemsTable)
+            addWhere_ $ row.organizationId ==. bindParam org.id
+            return row
+        )
+        searchForm
+  return $ respondPage200 (itemsIndexPage org (usePathTemplate itemsPath ident) searchForm items)
 
 newItemAction ::
   ( Error Unauthorized :> es,

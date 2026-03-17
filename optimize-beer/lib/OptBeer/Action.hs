@@ -8,6 +8,7 @@ import Data.Text
 import Effectful
 import Noided.Sql (SessionError)
 import Noided.Web.Effect
+import Noided.Web.Error
 import Noided.Web.PageAction
 import OptBeer.Action.Home (homeActions)
 import OptBeer.Action.Item (itemActions)
@@ -16,7 +17,6 @@ import OptBeer.Action.Session (sessionActions)
 import OptBeer.Action.User (userActions)
 import OptBeer.Effect.CurrentActor
 import OptBeer.Effect.HashPassword
-import Noided.Web.Error
 import OptBeer.Page.Error
 import OptBeer.Page.Layout (pageLayout)
 import OptBeer.Page.Type
@@ -33,6 +33,7 @@ optBeerActions ::
     CurrentTime :> es,
     Signing :> es,
     WriteHeader :> es,
+    GetQueryParams :> es,
     IOE :> es
   ) =>
   PageRoutes Identity (Eff es)
@@ -49,7 +50,6 @@ optBeerActions =
     & pagesHandleError handleUnavailableForLegalReasons
     & pagesAroundAction runSettingCookies
     & pagesHandleError handleSessionError
-
     & mapResponsesToPage
     & pagesAroundAction runWithCurrentActorFromSession
     & pagesAroundAction runFrontendAssets

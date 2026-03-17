@@ -63,16 +63,16 @@ data FormInput fieldType where
     Seq (FormInput input) ->
     FormInput (ListField input)
 
-fieldInputTyped :: (FromHttpApiData a) => Fold (FormInput (InputField a)) a
-fieldInputTyped = foldVL $ \toAp (InputInput a) ->
+fieldInputTyped :: (FromHttpApiData a) => AffineFold (FormInput (InputField a)) a
+fieldInputTyped = afolding $ \(InputInput a) ->
   case a of
-    NotPresent -> pure ()
-    FromTyped v -> toAp v
+    NotPresent -> Nothing
+    FromTyped v -> Just v
     FromForm (TextValue t) ->
       case parseQueryParam t of
-        Left _ -> pure ()
-        Right v -> toAp v
-    FromForm _ -> pure ()
+        Left _ -> Nothing
+        Right v -> Just v
+    FromForm _ -> Nothing
 
 deriving instance (Show a) => Show (FormInput (InputField a))
 

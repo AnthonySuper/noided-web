@@ -3,6 +3,8 @@ en:
     attributes:
       name:
         name: "Name"
+      search:
+        name: "Search"
       email:
         name: "Email"
       password:
@@ -19,6 +21,10 @@ en:
           name: "Description"
         defaultUnit:
           name: "Default Unit"
+    Search:
+      attributes:
+        search:
+          name: "Search"
   enum:
     Unit:
       Gram:
