@@ -39,6 +39,7 @@ spec = do
         . runFailingError @NotFound
         . runFailingError @Forbidden
         . runFailingError @Unauthorized
+        . runWithQueryParams SubmissionEmpty
         . runWithCurrentActor (Just actor)
         . runWithRunner runner
         $ do

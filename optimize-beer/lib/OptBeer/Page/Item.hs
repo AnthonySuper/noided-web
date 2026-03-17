@@ -32,11 +32,10 @@ itemsIndexPage ::
   forall m t.
   (FetchMessages m, FetchHtmlFormatters m, Monad m, Foldable t) =>
   Organization ->
-  Text ->
   SearchFormF FormInput ->
   t Item ->
   HtmlT m ()
-itemsIndexPage org searchAction searchInput items =
+itemsIndexPage org searchInput items =
   div_ [class_ "items-index-container"] $ do
     renderHeadingOrganization org $
       (emptyHeadingCfg @m)
@@ -46,7 +45,7 @@ itemsIndexPage org searchAction searchInput items =
               renderTranslated ["organization.items.index.new_button"] mempty
         }
 
-    form_ [method_ "get", action_ searchAction] $
+    form_ [method_ "get", action_ (usePathTemplate itemsPath (OrganizationById org.id))] $
       renderFormT searchRenderer searchInput mempty
 
     table_ [class_ "pretty-table"] $ do

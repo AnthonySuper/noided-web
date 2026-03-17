@@ -23,7 +23,6 @@ import OptBeer.DB.Table.OrganizationUserAccess (OrganizationUserAccessF (..), or
 import OptBeer.DB.Type.OrganizationAccessLevel (OrganizationAccessLevel (..))
 import OptBeer.DB.Type.Unit (Unit)
 import OptBeer.Form.Type.Item (ItemFormF (..))
-import OptBeer.Form.Type.Search (SearchFormF)
 import OptBeer.Form.Validate.Item (itemValidator)
 import OptBeer.Page.Item (itemFormInternals, itemFormPage, itemFormWrapper, itemsIndexPage, showItemPage)
 import OptBeer.Page.Type (Page)
@@ -75,7 +74,7 @@ itemsIndexAction (ident :-$ RPNil) = do
             return row
         )
         searchForm
-  return $ respondPage200 (itemsIndexPage org (usePathTemplate itemsPath ident) searchForm items)
+  return $ respondPage200 (itemsIndexPage org searchForm items)
 
 newItemAction ::
   ( Error Unauthorized :> es,

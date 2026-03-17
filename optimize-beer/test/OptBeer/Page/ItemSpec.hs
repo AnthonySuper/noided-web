@@ -8,18 +8,18 @@ module OptBeer.Page.ItemSpec (spec) where
 import Data.Functor.Identity (Identity)
 import Data.Time (UTCTime (..), fromGregorian)
 import Lucid.Base (HtmlT)
+import Noided.Form.HKD (hkdFormEmpty)
 import Noided.Translate
 import Noided.Web.Html (TranslationT)
 import OptBeer.DB.Ids.ItemId (ItemId (..))
 import OptBeer.DB.Ids.OrganizationId (OrganizationId (..))
-import OptBeer.DB.Table.Item (Item, ItemF (..))
-import OptBeer.DB.Table.Organization (Organization, OrganizationF (..))
+import OptBeer.DB.Table.Item (ItemF (..))
+import OptBeer.DB.Table.Organization (OrganizationF (..))
 import OptBeer.DB.Table.Timestamps (TimestampsF (..))
 import OptBeer.DB.Type.Unit (Unit (..))
 import OptBeer.DB.Type.UnitCategory (UnitCategory (..))
 import OptBeer.Form.Render.SpecHelper
 import OptBeer.Page.Item (itemsIndexPage, showItemPage)
-import OptBeer.Page.Type
 import Test.Hspec
 
 spec :: SpecWith Translations
@@ -49,7 +49,7 @@ spec = describe "Item Page Rendering" $ do
   withTranslationsInLocale "en" $ do
     it "renders items index page without bad translations" $ \runner -> do
       let renderAct :: HtmlT (TranslationT Identity) ()
-          renderAct = itemsIndexPage org [item]
+          renderAct = itemsIndexPage org hkdFormEmpty [item]
           soup = runTranslationToSoup runner renderAct
       assertHasNoBadTranslations soup
 
