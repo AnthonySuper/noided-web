@@ -39,7 +39,7 @@ spec = do
       renderTS (tsOr_ q q2) `shouldBe` "(q) | (q2)"
 
     it "renders tsquery NOT" $ do
-      renderTS (tsNot_ q) `shouldBe` "!! (q)"
+      renderTS (tsNot_ q) `shouldBe` "! (q)"
 
     it "renders to_tsvector" $ do
       renderTS (toTSVector_ txt) `shouldBe` "to_tsvector(txt)"
