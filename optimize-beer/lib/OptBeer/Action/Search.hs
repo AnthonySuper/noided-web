@@ -23,8 +23,8 @@ useSearch toVector query form =
       mPage = preview (fieldInputTyped @Int) form.pagination.val.page
       mPerPage = preview (fieldInputTyped @Int) form.pagination.val.perPage
 
-      page = fromMaybe 1 mPage
-      perPage = fromMaybe 20 mPerPage
+      page = min 1 $ fromMaybe 1 mPage
+      perPage = min 1 $ max 100 $ fromMaybe 20 mPerPage
       offset = fromIntegral $ max 0 (page - 1) * perPage
 
       filteredQuery =
