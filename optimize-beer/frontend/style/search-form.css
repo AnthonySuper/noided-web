@@ -1,6 +1,6 @@
 .search-form-wrapper {
   width: 100%;
-  margin-bottom: var(--large-space);
+  margin-bottom: var(--base-space);
 }
 
 .search-form-group {
@@ -22,9 +22,9 @@
 .search-form-input {
   flex: 1;
   border: none;
-  padding: var(--base-space);
+  padding: var(--small-space) var(--base-space);
   font-family: inherit;
-  font-size: var(--font-size-large);
+  font-size: var(--font-size-base);
   color: var(--color-text);
   background: transparent;
 }
@@ -36,7 +36,7 @@
 .search-form-button {
   background: var(--color-primary);
   border: none;
-  padding: 0 var(--large-space);
+  padding: 0 var(--base-space);
   cursor: pointer;
   display: flex;
   align-items: center;

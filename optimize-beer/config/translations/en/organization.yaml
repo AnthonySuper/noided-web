@@ -7,6 +7,7 @@ en:
         title: "Inventory Items"
         new_button: "Add New Item"
         view_link: "View"
+        actions_header: "Actions"
       create:
         title: "Add New Item"
         button: "Create Item"

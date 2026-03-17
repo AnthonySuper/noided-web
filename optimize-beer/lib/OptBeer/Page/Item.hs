@@ -53,7 +53,7 @@ itemsIndexPage org searchInput items =
         th_ $ renderTranslated ["form.attributes.name.name"] mempty
         th_ $ renderTranslated ["form.Item.attributes.description.name"] mempty
         th_ $ renderTranslated ["form.Item.attributes.defaultUnit.name"] mempty
-        th_ "" -- Actions
+        th_ $ renderTranslated ["organization.items.index.actions_header"] mempty -- Actions
       tbody_ $ forM_ items $ \item -> tr_ $ do
         td_ $ a_ [href_ (usePathTemplate showItemPath item.id)] (toHtml item.name)
         td_ $ toHtml item.description

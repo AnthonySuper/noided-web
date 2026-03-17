@@ -55,5 +55,5 @@ renderHeading cfg =
       nav_ [class_ "breadcrumbs"] $ do
         ol_ [class_ "breadcrumb-list"] $ do
           traverse_ (li_ [class_ "breadcrumb-list-item"]) cfg.breadcrumbs
-    span_ [class_ "page-heading-title"] cfg.title
+    h1_ [class_ "page-heading-title"] cfg.title
     span_ [class_ "page-heading-actions"] cfg.actions
