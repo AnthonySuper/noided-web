@@ -15,7 +15,7 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
     ```bash
     cabal run noided-migrate -- new <migration_name>
     ```
-    This creates a new timestamped `.sql` file in `optimize-beer/db/migrations/`.
+    This creates new timestamped `.up.sql` and `.down.sql` files in `optimize-beer/db/migrations/`. (Older `.sql` files are also supported for backward compatibility).
 
 2.  **Apply migrations**: Use `cabal run noided-migrate -- migrate`.
     ```bash
@@ -33,6 +33,18 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
 -   **Collations**: Use `identifier` collation for names/identifiers where case-insensitive (but case-preserving) behavior is desired.
 -   **Enums**: Use PostgreSQL enums (`CREATE TYPE ... AS ENUM (...)`) where appropriate.
 
+
+### Database Type Mapping
+
+-   **ID Newtypes**: Every table with a **single-column identity primary key** should have a corresponding `newtype` for that key in `OptBeer.DB.Ids`.
+    -   Derive `PGType`, `FromHttpApiData`, `ToHttpApiData`, `FromFormSubmission`, `ToJSON`, and `FromJSON` via `Int64`.
+    -   Implement `AsBindParam` using `bindParamEncoderNewtype @Int64`.
+    -   Implement `AsHaskellValue` using `decodeNewtypeWrapper @Int64`.
+    -   For tables with **composite primary keys** (e.g., join tables like `organization_user_accesses`, `recipe_ingredients`), either:
+        -   introduce a dedicated Haskell type (e.g., a record or `newtype` wrapping the composite key fields) and use that consistently in queries, or
+        -   document explicitly that the table has no single primary-key `newtype` and use the individual foreign-key ID newtypes instead.
+-   **Enums**: Map PostgreSQL enums to Haskell sum types in `OptBeer.DB.Type`.
+    -   Use `Hasql.Encoders.enum` and `Hasql.Decoders.enum` with the explicit schema (e.g., `Just "public"`).
 
 ### Common Pitfalls
 
@@ -112,6 +124,12 @@ When implementing a new form, you must complete the following steps to ensure te
 6.  **Write an Action Test**: Create a functional test in `test/OptBeer/Action/` to verify the form submission logic, database side-effects, and redirects.
 
 ## Testing Best Practices
+
+### Schema and Type Testing
+-   **Mandatory Specs**: Every new table **must** have a corresponding spec in `test/OptBeer/DB/Table/` to verify its HKD definition (`assertValidTableDef`).
+-   **Enum Round-tripping**: Every custom enum type **must** have a spec in `test/OptBeer/DB/Type/` that verifies it round-trips correctly using `assertEnumRoundtrips`.
+-   **Generated Columns**: Verify that `GENERATED ALWAYS AS` columns (like normalized units) are correctly calculated in the table spec.
+-   **Testing Constraints**: Testing simple database `CHECK` constraints is generally considered overkill. Focus tests on complex logic, generated columns, and round-tripping.
 
 ### Database Isolation
 To prevent test data from polluting the database, all tests should run inside a transaction that automatically rolls back.

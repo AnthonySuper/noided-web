@@ -97,6 +97,9 @@ instance AsBindParam Float where
 instance AsBindParam Double where
   bindParamEncoder = EncodeNonNull Enc.float8
 
+instance AsBindParam Scientific where
+  bindParamEncoder = EncodeNonNull Enc.numeric
+
 instance AsBindParam UUID where
   bindParamEncoder = EncodeNonNull Enc.uuid
 

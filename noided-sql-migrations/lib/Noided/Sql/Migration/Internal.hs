@@ -13,7 +13,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import System.Directory (listDirectory)
-import System.FilePath (takeBaseName, takeExtension, (</>))
+import System.FilePath (takeBaseName, takeExtension, takeFileName, (</>))
 
 -- | The direction of a migration.
 data MigrationDirection = Up | Down
@@ -59,7 +59,7 @@ defaultMigrationConfig dir =
 discoverMigrations :: FilePath -> IO [Migration]
 discoverMigrations dir = do
   files <- listDirectory dir
-  let sqlFiles = filter (\f -> takeExtension f == ".sql") files
+  let sqlFiles = filter (\f -> ".sql" `T.isSuffixOf` T.pack f) files
   let rawFiles = mapMaybe (parseRawMigrationFile . (dir </>)) sqlFiles
   let pairs = map (\r -> ((rVersion r, rName r), parseRawToFiles r)) rawFiles
 
@@ -102,13 +102,14 @@ data RawMigrationFile = RawMigrationFile
 -- | Parse a file path into a 'RawMigrationFile'.
 parseRawMigrationFile :: FilePath -> Maybe RawMigrationFile
 parseRawMigrationFile path =
-  let fullBaseName = T.pack $ takeBaseName path
+  let filename = T.pack $ takeFileName path
+      baseWithDir = T.dropEnd 4 filename -- Drop ".sql"
       (baseName, direction) = 
-        if ".up" `T.isSuffixOf` fullBaseName
-          then (T.dropEnd 3 fullBaseName, Up)
-          else if ".down" `T.isSuffixOf` fullBaseName
-                 then (T.dropEnd 5 fullBaseName, Down)
-                 else (fullBaseName, Up)
+        if ".up" `T.isSuffixOf` baseWithDir
+          then (T.dropEnd 3 baseWithDir, Up)
+          else if ".down" `T.isSuffixOf` baseWithDir
+                 then (T.dropEnd 5 baseWithDir, Down)
+                 else (baseWithDir, Up)
       (versionPart, namePart) = T.breakOn "_" baseName
    in if T.null namePart
         then Nothing

@@ -100,6 +100,7 @@ common deps
       iproute,
       network,
       cookie,
+      scientific,
 
       noided-form-hkd,
       noided-pathname,
@@ -124,10 +125,13 @@ library
         OptBeer.DB.Ids.LoginAttemptId
         OptBeer.DB.Ids.OrganizationId
         OptBeer.DB.Ids.ItemId
+        OptBeer.DB.Ids.RecipeId
+        OptBeer.DB.Ids.RecipeStepId
         OptBeer.DB.Type.PasswordDigest
         OptBeer.DB.Type.OrganizationAccessLevel
         OptBeer.DB.Type.Unit
         OptBeer.DB.Type.UnitCategory
+        OptBeer.DB.Type.RecipeStage
 
         OptBeer.DB.Table.Actor
         OptBeer.DB.Table.User
@@ -138,6 +142,9 @@ library
         OptBeer.DB.Table.OrganizationUserAccess
         OptBeer.DB.Table.UserDefaultOrganization
         OptBeer.DB.Table.Item
+        OptBeer.DB.Table.Recipe
+        OptBeer.DB.Table.RecipeIngredient
+        OptBeer.DB.Table.RecipeStep
         OptBeer.DB.Table.Timestamps
 
         OptBeer.Page.Type
@@ -260,9 +267,13 @@ test-suite optimize-beer-test
             OptBeer.DB.Table.OrganizationUserAccessSpec
             OptBeer.DB.Table.UserDefaultOrganizationSpec
             OptBeer.DB.Table.ItemSpec
+            OptBeer.DB.Table.RecipeSpec
+            OptBeer.DB.Table.RecipeIngredientSpec
+            OptBeer.DB.Table.RecipeStepSpec
             OptBeer.DB.Type.OrganizationAccessLevelSpec
             OptBeer.DB.Type.UnitSpec
             OptBeer.DB.Type.UnitCategorySpec
+            OptBeer.DB.Type.RecipeStageSpec
             OptBeer.DB.Table.SpecHelper
 
             OptBeer.Form.Render.SpecHook
