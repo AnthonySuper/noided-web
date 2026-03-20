@@ -15,7 +15,7 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
     ```bash
     cabal run noided-migrate -- new <migration_name>
     ```
-    This creates a new timestamped `.sql` file in `optimize-beer/db/migrations/`.
+    This creates new timestamped `.up.sql` and `.down.sql` files in `optimize-beer/db/migrations/`. (Older `.sql` files are also supported for backward compatibility).
 
 2.  **Apply migrations**: Use `cabal run noided-migrate -- migrate`.
     ```bash
