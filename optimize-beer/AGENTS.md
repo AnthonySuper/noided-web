@@ -36,10 +36,13 @@ The `optimize-beer` sub-project uses the `noided-migrate` Haskell-native migrati
 
 ### Database Type Mapping
 
--   **ID Newtypes**: Every table should have a corresponding `newtype` for its primary key in `OptBeer.DB.Ids`.
+-   **ID Newtypes**: Every table with a **single-column identity primary key** should have a corresponding `newtype` for that key in `OptBeer.DB.Ids`.
     -   Derive `PGType`, `FromHttpApiData`, `ToHttpApiData`, `FromFormSubmission`, `ToJSON`, and `FromJSON` via `Int64`.
     -   Implement `AsBindParam` using `bindParamEncoderNewtype @Int64`.
     -   Implement `AsHaskellValue` using `decodeNewtypeWrapper @Int64`.
+    -   For tables with **composite primary keys** (e.g., join tables like `organization_user_accesses`, `recipe_ingredients`), either:
+        -   introduce a dedicated Haskell type (e.g., a record or `newtype` wrapping the composite key fields) and use that consistently in queries, or
+        -   document explicitly that the table has no single primary-key `newtype` and use the individual foreign-key ID newtypes instead.
 -   **Enums**: Map PostgreSQL enums to Haskell sum types in `OptBeer.DB.Type`.
     -   Use `Hasql.Encoders.enum` and `Hasql.Decoders.enum` with the explicit schema (e.g., `Just "public"`).
 
