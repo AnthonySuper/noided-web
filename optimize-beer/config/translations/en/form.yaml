@@ -23,6 +23,8 @@ en:
       attributes:
         defaultUnit:
           name: "Default Unit"
+        description:
+          name: "Description"
     Recipe:
       attributes:
         batchSize:
