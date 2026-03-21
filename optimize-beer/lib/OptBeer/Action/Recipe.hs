@@ -7,20 +7,21 @@ module OptBeer.Action.Recipe where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
+import Noided.Form (urlSubmissionToMultipartSubmission)
 import Noided.Form.HKD
 import Noided.Sql
 import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchMemberOrganization)
+import OptBeer.Action.Search (useSearch)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
-import OptBeer.DB.Table.Recipe (recipesTable)
+import OptBeer.DB.Table.Recipe (RecipeF (..), recipesTable)
 import OptBeer.DB.Table.Organization (OrganizationF (..))
 import OptBeer.DB.Type.Unit (Unit (..))
 import OptBeer.Form.Type.Recipe (RecipeFormF (..))
 import OptBeer.Form.Validate.Recipe (recipeValidator)
-
-import OptBeer.Page.Recipe (recipeFormInternals, recipeFormPage, recipeFormWrapper)
+import OptBeer.Page.Recipe (recipeFormInternals, recipeFormPage, recipeFormWrapper, recipesIndexPage)
 import OptBeer.Page.Type (Page)
-import OptBeer.Routes (createRecipePath, newRecipePath, showOrganizationPath)
+import OptBeer.Routes (createRecipePath, newRecipePath, recipesPath, showOrganizationPath)
 import OptBeer.Type.OrganizationIdent (OrganizationIdent (..))
 import Optics.Core (view)
 
@@ -37,8 +38,35 @@ recipeActions ::
   ) =>
   PageRoutes Page (Eff es)
 recipeActions =
-  actGet newRecipePath newRecipeAction
+  actGet recipesPath recipesIndexAction
+    <> actGet newRecipePath newRecipeAction
     <> actPost createRecipePath createRecipeAction
+
+recipesIndexAction ::
+  ( Error Unauthorized :> es,
+    Error Forbidden :> es,
+    Error NotFound :> es,
+    Error SessionError :> es,
+    RunTransaction :> es,
+    GetQueryParams :> es,
+    CurrentActor :> es
+  ) =>
+  RouteParams '[OrganizationIdent] ->
+  Eff es (PageResponse Page)
+recipesIndexAction (ident :-$ RPNil) = do
+  org <- fetchMemberOrganization ident
+  searchForm <- parseForm . urlSubmissionToMultipartSubmission <$> getQueryParams
+  recipes <- runInfallibleTransaction $ do
+    queryVector $
+      useSearch
+        (\row -> toTSVector_ row.name `concatTSVector_` toTSVector_ row.description)
+        ( do
+            row <- addFrom_ (fromBase_ recipesTable)
+            addWhere_ $ row.organizationId ==. bindParam org.id
+            return row
+        )
+        searchForm
+  return $ respondPage200 (recipesIndexPage org searchForm recipes)
 
 newRecipeAction ::
   ( Error Unauthorized :> es,

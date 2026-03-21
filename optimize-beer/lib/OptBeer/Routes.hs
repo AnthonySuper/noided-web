@@ -50,6 +50,9 @@ createRecipePath = recipesPath
 newRecipePath :: PathTemplate '[OrganizationIdent]
 newRecipePath = "organizations" :/ capPiece :/ "recipes" :/ "new" :/ PathEnd
 
+showRecipePath :: PathTemplate '[RecipeId]
+showRecipePath = "recipes" :/ capPiece :/ PathEnd
+
 showItemPath :: PathTemplate '[ItemId]
 showItemPath = "items" :/ capPiece :/ PathEnd
 

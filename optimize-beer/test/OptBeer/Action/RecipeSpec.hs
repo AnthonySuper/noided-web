@@ -8,6 +8,7 @@ import Data.Map.Strict qualified as Map
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Effectful
+import Network.HTTP.Types (ok200)
 import Noided.Form
 import Noided.Pathname
 import Noided.Sql
@@ -18,12 +19,33 @@ import OptBeer.Action.SpecHelper
 import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
 import OptBeer.DB.Table.Organization (OrganizationF (..))
 import OptBeer.DB.Table.Recipe (RecipeF (..), recipesTable)
+import OptBeer.DB.Type.Unit (Unit (..))
 import OptBeer.Routes (showOrganizationPath)
 import OptBeer.Type.OrganizationIdent
 import Test.Hspec
 
 spec :: TransactingSpec
 spec = describe "Recipe actions" $ do
+  describe "recipesIndexAction" $ do
+    it "successfully renders the recipes index for a user with access" $ \runner -> do
+      (actor, org) <- runDBSetup runner $ createOrgWithMemberActor "IndexUser" "index@example.com" "Index Org"
+      _ <- runDBSetup runner $ querySingleRow $ insertReturningAll recipesTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Recipe 1") :::%? #batchSize :==> mutateVal_ (bindParam (20 :: Scientific)) :::%? #batchSizeUnit :==> mutateVal_ (bindParam Liter) :::%? EmptyWrappedRow))
+      
+      resp <- runEff
+        . runFailingError @SessionError
+        . runFailingError @NotFound
+        . runFailingError @Forbidden
+        . runFailingError @Unauthorized
+        . runWithQueryParams SubmissionEmpty
+        . runWithCurrentActor (Just actor)
+        . runWithRunner runner
+        $ do
+          recipesIndexAction (OrganizationById org.id :-$ RPNil)
+
+      case resp of
+        RespondPage status _ -> status `shouldBe` ok200
+        _ -> fail "Expected 200 OK"
+
   describe "createRecipeAction" $ do
     it "successfully creates a recipe for a user with access" $ \runner -> do
       (actor, org) <- runDBSetup runner $ createOrgWithMemberActor "recipecreator" "recipecreator@example.com" "Recipe Org"
