@@ -4,6 +4,7 @@
 
 -   **Warnings**: The project **must** compile without warnings.
 -   **Shadowing**: Avoid shadowing variables, especially those imported from common libraries like `Control.Monad`.
+-   **Orphan Instances**: Avoid orphan instances whenever possible. If you need an instance for a type you don't own in a class you don't own, prefer implementing it in the library that defines the class (if it's part of this monorepo) or using a `newtype` wrapper. Orphan instances make it difficult to reason about code and can cause unexpected behavior during compilation and linking. See [Haskell Wiki: Orphan Instances](https://wiki.haskell.org/Orphan_instance) for more details.
 
 ## Database Migrations (optimize-beer)
 

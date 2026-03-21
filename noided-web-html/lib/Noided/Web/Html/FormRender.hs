@@ -5,6 +5,7 @@ module Noided.Web.Html.FormRender
     FormRendererT,
     FieldRendererT,
     HtmlFormT,
+    HtmlFieldT,
     HtmlFormRendererT,
 
     -- * Building renderers

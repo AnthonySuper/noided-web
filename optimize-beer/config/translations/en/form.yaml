@@ -3,6 +3,8 @@ en:
     attributes:
       name:
         name: "Name"
+      description:
+        name: "Description"
       search:
         name: "Search"
       email:
@@ -17,10 +19,28 @@ en:
           name: "Confirm Password"
     Item:
       attributes:
-        description:
-          name: "Description"
         defaultUnit:
           name: "Default Unit"
+    Recipe:
+      attributes:
+        batchSize:
+          name: "Batch Size"
+        batchSizeUnit:
+          name: "Batch Size Unit"
+        targetOg:
+          name: "Target Original Gravity"
+        targetFg:
+          name: "Target Final Gravity"
+        targetAbv:
+          name: "Target ABV (%)"
+        targetIbu:
+          name: "Target IBU"
+        targetSrm:
+          name: "Target SRM"
+        boilTimeMinutes:
+          name: "Boil Time (min)"
+        targetEfficiency:
+          name: "Target Efficiency (%)"
     Search:
       attributes:
         search:
@@ -53,6 +73,23 @@ en:
         name: "Minutes"
       Hour:
         name: "Hours"
+    RecipeStage:
+      Preparation:
+        name: "Preparation"
+      Mash:
+        name: "Mash"
+      Sparge:
+        name: "Sparge"
+      Boil:
+        name: "Boil"
+      Whirlpool:
+        name: "Whirlpool"
+      Fermentation:
+        name: "Fermentation"
+      Conditioning:
+        name: "Conditioning"
+      Packaging:
+        name: "Packaging"
   password_policy:
     min_length: "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
     max_length: "{pluralize($count) { one { At most $count character long } default { At most $count characters long } }}"

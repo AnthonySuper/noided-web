@@ -71,7 +71,8 @@ common depends
         transformers,
         effectful-core,
         lucid2,
-        generic-optics
+        generic-optics,
+        scientific
 
 library
     -- Import common warning flags.

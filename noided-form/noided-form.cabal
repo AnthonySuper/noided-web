@@ -65,7 +65,8 @@ common deps
       http-api-data,
       deepseq,
       time,
-      uuid-types
+      uuid-types,
+      scientific
 
 library
     -- Import common warning flags.
