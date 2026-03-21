@@ -153,6 +153,7 @@ library
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
         OptBeer.Page.Item
+        OptBeer.Page.Recipe
         OptBeer.Action
         OptBeer.Action.Base
 
@@ -201,8 +202,8 @@ library
         OptBeer.Action.Organization
         OptBeer.Action.Organization.Common
         OptBeer.Action.Item
+        OptBeer.Action.Recipe
         OptBeer.Action.Search
-
 
 
     -- Modules included in this library but not exported.
@@ -301,6 +302,7 @@ test-suite optimize-beer-test
             OptBeer.Action.SessionSpec
             OptBeer.Action.OrganizationSpec
             OptBeer.Action.ItemSpec
+            OptBeer.Action.RecipeSpec
             OptBeer.Action.HomeSpec
 
 

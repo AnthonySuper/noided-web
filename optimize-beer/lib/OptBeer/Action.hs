@@ -12,6 +12,7 @@ import Noided.Web.Error
 import Noided.Web.PageAction
 import OptBeer.Action.Home (homeActions)
 import OptBeer.Action.Item (itemActions)
+import OptBeer.Action.Recipe (recipeActions)
 import OptBeer.Action.Organization (organizationActions)
 import OptBeer.Action.Session (sessionActions)
 import OptBeer.Action.User (userActions)
@@ -80,4 +81,5 @@ optBeerActions =
           <> sessionActions
           <> organizationActions
           <> itemActions
+          <> recipeActions
           <> homeActions
