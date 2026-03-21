@@ -8,7 +8,6 @@ import Data.Map.Strict qualified as Map
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Effectful
-import Effectful.Error.Static
 import Noided.Form
 import Noided.Pathname
 import Noided.Sql
@@ -19,7 +18,6 @@ import OptBeer.Action.SpecHelper
 import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
 import OptBeer.DB.Table.Organization (OrganizationF (..))
 import OptBeer.DB.Table.Recipe (RecipeF (..), recipesTable)
-import OptBeer.DB.Type.Unit
 import OptBeer.Routes (showOrganizationPath)
 import OptBeer.Type.OrganizationIdent
 import Test.Hspec

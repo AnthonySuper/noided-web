@@ -12,10 +12,12 @@ import Noided.Sql
 import OptBeer.Action.Base
 import OptBeer.Action.Organization.Common (fetchMemberOrganization)
 import OptBeer.DB.Ids.OrganizationId (OrganizationId)
-import OptBeer.DB.Table.Recipe (RecipeF (..), recipesTable)
+import OptBeer.DB.Table.Recipe (recipesTable)
 import OptBeer.DB.Table.Organization (OrganizationF (..))
+import OptBeer.DB.Type.Unit (Unit (..))
 import OptBeer.Form.Type.Recipe (RecipeFormF (..))
 import OptBeer.Form.Validate.Recipe (recipeValidator)
+
 import OptBeer.Page.Recipe (recipeFormInternals, recipeFormPage, recipeFormWrapper)
 import OptBeer.Page.Type (Page)
 import OptBeer.Routes (createRecipePath, newRecipePath, showOrganizationPath)
@@ -50,6 +52,20 @@ newRecipeAction ::
   Eff es (PageResponse Page)
 newRecipeAction (ident :-$ RPNil) = do
   org <- fetchMemberOrganization ident
+  let defaultForm =
+        RecipeForm
+          { name = fieldInputFromTyped "",
+            description = fieldInputFromTyped "",
+            batchSize = fieldInputFromTyped 20,
+            batchSizeUnit = fieldInputFromTyped Liter,
+            targetOg = fieldInputFromTyped 1.050,
+            targetFg = fieldInputFromTyped 1.010,
+            targetAbv = fieldInputFromTyped 5.2,
+            targetIbu = fieldInputFromTyped 35,
+            targetSrm = fieldInputFromTyped 12,
+            boilTimeMinutes = fieldInputFromTyped 60,
+            targetEfficiency = fieldInputFromTyped 75
+          }
   return $
     respondPage200
       ( recipeFormPage
@@ -57,7 +73,7 @@ newRecipeAction (ident :-$ RPNil) = do
           ["organization.recipes.create.title"]
           ["organization.recipes.create.button"]
           (usePathTemplate createRecipePath ident)
-          hkdFormEmpty
+          defaultForm
           mempty
       )
 

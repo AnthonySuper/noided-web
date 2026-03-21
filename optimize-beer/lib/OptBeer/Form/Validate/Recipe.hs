@@ -16,7 +16,10 @@ import Noided.Validation
 import OptBeer.DB.Ids.OrganizationId
 import OptBeer.DB.Ids.RecipeId
 import OptBeer.DB.Table.Recipe
+import OptBeer.DB.Type.Unit (unitCategory)
+import OptBeer.DB.Type.UnitCategory (UnitCategory (Volume))
 import OptBeer.Form.Type.Recipe
+import OptBeer.ValidationError.BadUnitCategory
 import OptBeer.ValidationError.ValueTaken
 
 recipeValidator :: OrganizationId -> Maybe RecipeId -> FormValidator (TransactM e) (SubformField RecipeFormF)
@@ -28,7 +31,10 @@ recipeValidator orgId mRecipeId = validateSubform $
         when (val <= 0) $
           failNonfatal $ TooSmall (0 :: Scientific)
         return val,
-      batchSizeUnit = validateInput return,
+      batchSizeUnit = validateInput $ \val -> do
+        when (unitCategory val /= Volume) $
+          failNonfatal $ BadUnitCategory Volume
+        return val,
       targetOg = validateInput return,
       targetFg = validateInput return,
       targetAbv = validateInput return,

@@ -278,9 +278,25 @@ renderEnumSelectTag ::
   -- | Base attributes to add to the select tag
   [Attributes] ->
   HtmlFieldT (InputField t) m ()
-renderEnumSelectTag attrs = renderSelectTag attrs options
+renderEnumSelectTag attrs = renderEnumSelectTag' [minBound .. maxBound] attrs
+
+renderEnumSelectTag' ::
+  forall t m.
+  ( Monad m,
+    ToHttpApiData t,
+    Typeable t,
+    Show t,
+    FetchMessages m,
+    FetchHtmlFormatters m
+  ) =>
+  -- | The values to include in the select tag
+  [t] ->
+  -- | Base attributes to add to the select tag
+  [Attributes] ->
+  HtmlFieldT (InputField t) m ()
+renderEnumSelectTag' values attrs = renderSelectTag attrs options
   where
-    options = [(u, renderEnumLabel u) | u <- [minBound .. maxBound]]
+    options = [(u, renderEnumLabel u) | u <- values]
     typeName = pack . show . typeRep $ Proxy @t
     renderEnumLabel u =
       let valName = pack (show u)

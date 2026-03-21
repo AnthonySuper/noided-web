@@ -41,7 +41,7 @@ emptyHeadingCfg = mempty
 -- | Render a heading, adding a breadcrumb for the organization
 renderHeadingOrganization :: (Monad m) => Organization -> HeadingCfg m -> HtmlT m ()
 renderHeadingOrganization org =
-  renderHeading . addBreadcrumb orgBreadcrumb
+  renderHeading . (#breadcrumbs %~ (orgBreadcrumb :))
   where
     orgBreadcrumb = do
       a_ [href_ (usePathTemplate showOrganizationPath $ OrganizationById org.id)] $

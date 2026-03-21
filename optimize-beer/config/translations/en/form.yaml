@@ -1,5 +1,7 @@
 en:
   form:
+    errors:
+      BadFormat: "Invalid format: $formatMsg"
     attributes:
       name:
         name: "Name"

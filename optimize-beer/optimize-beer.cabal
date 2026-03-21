@@ -165,6 +165,7 @@ library
         OptBeer.ValidationError.DoesNotMatchConfirmation
         OptBeer.ValidationError.InvalidCredentials
         OptBeer.ValidationError.ValueTaken
+        OptBeer.ValidationError.BadUnitCategory
         OptBeer.ValidationError.PasswordComplexity
         OptBeer.ValidationError.OnlyNumbers
         OptBeer.Validate.Password
