@@ -5,6 +5,7 @@ module Noided.Web.Html.FormRender
     FormRendererT,
     FieldRendererT,
     HtmlFormT,
+    HtmlFieldT,
     HtmlFormRendererT,
 
     -- * Building renderers
@@ -19,6 +20,7 @@ module Noided.Web.Html.FormRender
     renderInputTag',
     renderSelectTag,
     renderEnumSelectTag,
+    renderEnumSelectTag',
     renderTextareaTag,
     renderTextareaTag',
     renderFieldErrors,

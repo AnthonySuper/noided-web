@@ -2,6 +2,7 @@ module OptBeer.Routes where
 
 import Noided.Pathname
 import OptBeer.DB.Ids.ItemId
+import OptBeer.DB.Ids.RecipeId
 import OptBeer.Type.OrganizationIdent
 
 homePath :: PathTemplate '[]
@@ -39,6 +40,18 @@ createItemPath = itemsPath
 
 newItemPath :: PathTemplate '[OrganizationIdent]
 newItemPath = "organizations" :/ capPiece :/ "items" :/ "new" :/ PathEnd
+
+recipesPath :: PathTemplate '[OrganizationIdent]
+recipesPath = "organizations" :/ capPiece :/ "recipes" :/ PathEnd
+
+createRecipePath :: PathTemplate '[OrganizationIdent]
+createRecipePath = recipesPath
+
+newRecipePath :: PathTemplate '[OrganizationIdent]
+newRecipePath = "organizations" :/ capPiece :/ "recipes" :/ "new" :/ PathEnd
+
+showRecipePath :: PathTemplate '[RecipeId]
+showRecipePath = "recipes" :/ capPiece :/ PathEnd
 
 showItemPath :: PathTemplate '[ItemId]
 showItemPath = "items" :/ capPiece :/ PathEnd

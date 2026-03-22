@@ -9,6 +9,7 @@ module Noided.Translate.Internal.Type.Params where
 import Data.Aeson
 import Data.Map.Strict qualified as Map
 import Data.Proxy
+import Data.Scientific (Scientific)
 import Data.Text (Text, pack)
 import GHC.Generics
 import GHC.IsList
@@ -46,6 +47,9 @@ instance AsTranslateParam Integer where
 
 instance AsTranslateParam Double where
   asTranslateParam = ParamFloat
+
+instance AsTranslateParam Scientific where
+  asTranslateParam = ParamFloat . realToFrac
 
 instance AsTranslateParam Int where
   asTranslateParam = ParamInt . toInteger

@@ -16,5 +16,20 @@ en:
         title: "Edit Item"
         button: "Update Item"
         link: "Edit Item"
+    recipes:
+      title: "Recipes"
+      index:
+        title: "Recipes"
+        new_button: "Add New Recipe"
+        view_link: "View"
+        actions_header: "Actions"
+      create:
+        title: "Add New Recipe"
+        button: "Create Recipe"
+        link: "Add New Recipe"
+      edit:
+        title: "Edit Recipe"
+        button: "Update Recipe"
+        link: "Edit Recipe"
     create:
       button: "Create Organization"

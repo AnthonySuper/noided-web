@@ -7,10 +7,8 @@ import Data.Pool (Pool, withResource)
 import Data.Vector (Vector)
 import Hasql.Connection (Connection)
 import Noided.Sql
-import Noided.Sql.TransactM
 import Test.Hspec
 import Noided.Form.HKD
-import Data.Proxy
 
 -- | Asserts that an enum type correctly round-trips through the database.
 -- This will test every value from minBound to maxBound.

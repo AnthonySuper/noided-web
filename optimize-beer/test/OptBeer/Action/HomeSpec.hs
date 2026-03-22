@@ -14,10 +14,8 @@ import OptBeer.Action.Home
 import OptBeer.Action.SpecHelper
 import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
 import OptBeer.DB.Table.Actor qualified as Actor
-import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Table.UserDefaultOrganization qualified as UDO
-import OptBeer.Page.Type (Page)
 import Test.Hspec
 
 homeActionSpec :: TransactingSpec
@@ -53,7 +51,7 @@ homeActionSpec = describe "homeAction" $ do
       _ -> fail "Expected RespondPage"
 
   it "successfully renders for a logged-in user WITH a default org" $ \runner -> do
-    (actor, org) <- runDBSetup runner $ do
+    (actor, _) <- runDBSetup runner $ do
         (actor, org) <- createOrgWithMemberActor "homeuser2" "homeuser2@example.com" "Home Org"
         _ <- querySingleRow $
           insertReturningAll

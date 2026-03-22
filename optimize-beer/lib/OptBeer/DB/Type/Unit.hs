@@ -8,6 +8,7 @@ import Hasql.Decoders qualified as Dec
 import Hasql.Encoders qualified as Enc
 import Noided.Form
 import Noided.Sql.Define
+import OptBeer.DB.Type.UnitCategory (UnitCategory (..))
 import Web.HttpApiData
 
 data Unit
@@ -25,6 +26,22 @@ data Unit
   | Minute
   | Hour
   deriving (Show, Read, Eq, Ord, Enum, Bounded, Generic)
+
+unitCategory :: Unit -> UnitCategory
+unitCategory = \case
+  Gram -> Mass
+  Kilogram -> Mass
+  Ounce -> Mass
+  Pound -> Mass
+  Milliliter -> Volume
+  Liter -> Volume
+  Hectoliter -> Volume
+  FluidOunce -> Volume
+  Gallon -> Volume
+  UsBeerBarrel -> Volume
+  Each -> Count
+  Minute -> Time
+  Hour -> Time
 
 unitToText :: Unit -> Text
 unitToText = \case

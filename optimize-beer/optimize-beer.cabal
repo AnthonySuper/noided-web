@@ -153,6 +153,7 @@ library
         OptBeer.Page.Home
         OptBeer.Page.Organization.Show
         OptBeer.Page.Item
+        OptBeer.Page.Recipe
         OptBeer.Action
         OptBeer.Action.Base
 
@@ -164,6 +165,7 @@ library
         OptBeer.ValidationError.DoesNotMatchConfirmation
         OptBeer.ValidationError.InvalidCredentials
         OptBeer.ValidationError.ValueTaken
+        OptBeer.ValidationError.BadUnitCategory
         OptBeer.ValidationError.PasswordComplexity
         OptBeer.ValidationError.OnlyNumbers
         OptBeer.Validate.Password
@@ -172,6 +174,7 @@ library
         OptBeer.Form.Type.CreateSession
         OptBeer.Form.Type.CreateOrganization
         OptBeer.Form.Type.Item
+        OptBeer.Form.Type.Recipe
         OptBeer.Form.Type.Pagination
         OptBeer.Form.Type.Search
 
@@ -179,10 +182,13 @@ library
         OptBeer.Form.Validate.CreateSession
         OptBeer.Form.Validate.CreateOrganization
         OptBeer.Form.Validate.Item
+        OptBeer.Form.Validate.Recipe
         OptBeer.Form.Render.CreateUser
         OptBeer.Form.Render.CreateSession
         OptBeer.Form.Render.CreateOrganization
         OptBeer.Form.Render.Item
+        OptBeer.Form.Render.Recipe
+        OptBeer.Form.Render.Base
         OptBeer.Form.Render.Search
         OptBeer.Form.Render.PasswordPolicy
 
@@ -197,8 +203,8 @@ library
         OptBeer.Action.Organization
         OptBeer.Action.Organization.Common
         OptBeer.Action.Item
+        OptBeer.Action.Recipe
         OptBeer.Action.Search
-
 
 
     -- Modules included in this library but not exported.
@@ -282,6 +288,7 @@ test-suite optimize-beer-test
             OptBeer.Form.Render.CreateSessionSpec
             OptBeer.Form.Render.CreateOrganizationSpec
             OptBeer.Form.Render.ItemSpec
+            OptBeer.Form.Render.RecipeSpec
 
             OptBeer.Form.Validate.CreateUserSpec
             OptBeer.Form.Validate.ItemSpec
@@ -296,6 +303,7 @@ test-suite optimize-beer-test
             OptBeer.Action.SessionSpec
             OptBeer.Action.OrganizationSpec
             OptBeer.Action.ItemSpec
+            OptBeer.Action.RecipeSpec
             OptBeer.Action.HomeSpec
 
 

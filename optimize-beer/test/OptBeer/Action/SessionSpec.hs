@@ -109,7 +109,7 @@ logoutSpec = describe "logoutAction" $ do
   it "successfully logs out and deletes the session" $ \runner -> do
     now <- T.getCurrentTime
     -- 1. Setup: Create a user and a session
-    (user, session) <- runDBSetup runner $ do
+    (_, session) <- runDBSetup runner $ do
         actor <-
           querySingleRow $
             insertReturningAll

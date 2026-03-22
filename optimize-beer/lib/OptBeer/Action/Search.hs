@@ -5,7 +5,6 @@ module OptBeer.Action.Search where
 
 import Data.Maybe (fromMaybe)
 import Data.Ord
-import Data.Text (Text)
 import Data.Text qualified as T
 import Noided.Form.HKD
 import Noided.Sql

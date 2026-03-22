@@ -12,6 +12,7 @@ import Data.Foldable (toList)
 import Data.Int
 import Data.Kind (Constraint, Type)
 import Data.Map.Strict qualified as Map
+import Data.Scientific (Scientific)
 import Data.Sequence qualified as Seq
 import Data.Text (Text, pack)
 import Data.Text.Lazy qualified as LT
@@ -79,6 +80,9 @@ deriving via ViaHttpParam Bool instance FromFormSubmission ct Bool
 deriving via ViaHttpParam Char instance FromFormSubmission ct Char
 
 deriving via ViaHttpParam Double instance FromFormSubmission ct Double
+
+instance FromFormSubmission ct Scientific where
+  fromFormSubmission = fmap (fromRational . toRational @Double) . fromFormSubmission @ct @Double
 
 deriving via ViaHttpParam Float instance FromFormSubmission ct Float
 

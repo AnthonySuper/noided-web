@@ -2,10 +2,12 @@
 
 module OptBeer.DB.Type.UnitCategory where
 
+import Data.Text (pack)
 import GHC.Generics
 import Hasql.Decoders qualified as Dec
 import Hasql.Encoders qualified as Enc
 import Noided.Sql.Define
+import Noided.Translate (AsTranslateParam (..), TranslateParam (..))
 
 data UnitCategory
   = Mass
@@ -32,3 +34,6 @@ instance AsHaskellValue UnitCategory where
     "time" -> Just Time
     "count" -> Just Count
     _ -> Nothing
+
+instance AsTranslateParam UnitCategory where
+  asTranslateParam = ParamFragment . pack . show
