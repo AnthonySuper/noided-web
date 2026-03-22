@@ -14,6 +14,24 @@ import OptBeer.DB.Table.OrganizationUserAccess qualified as OUA
 import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Type.OrganizationAccessLevel (OrganizationAccessLevel (Member))
 
+-- | Helper to create an actor and a corresponding user record.
+createActorWithUser ::
+  Text -> -- ^ Actor name
+  Text -> -- ^ User email
+  TransactM () Actor
+createActorWithUser actorName email = do
+  actor <-
+    querySingleRow $
+      insertReturningAll
+        Actor.actorsTable
+        (singleValue_ (#name :==> mutateVal_ (bindParam actorName) :::%? EmptyWrappedRow))
+  _ <-
+    querySingleRow $
+      insertReturningAll
+        User.usersTable
+        (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam email) :::%? EmptyWrappedRow))
+  return actor
+
 -- | Helper to create an actor, a corresponding user, and an organization where the user is a member.
 createOrgWithMemberActor ::
   Text -> -- ^ Actor name
