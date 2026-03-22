@@ -4,7 +4,7 @@ module OptBeer.Action (optBeerActions) where
 
 import Data.Function
 import Data.Functor.Identity
-import Data.Text
+import Data.Text (pack)
 import Effectful
 import Noided.Sql (SessionError)
 import Noided.Web.Effect
