@@ -56,7 +56,7 @@ common warnings
 
 common deps
     build-depends:
-      base >= 4.18.3 && <= 4.20,
+      base >= 4.18.3 && <= 5,
       hkd,
       containers,
       noided-form,

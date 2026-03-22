@@ -56,7 +56,7 @@ common warnings
 
 common depends
     build-depends:
-        base >= 4.18.3.0 && <= 4.23,
+        base >= 4.18.3.0 && <= 5,
         optics-core,
         containers,
         text,
@@ -104,6 +104,8 @@ library
 
     -- Base language which the package is written in.
     default-language: GHC2021
+    if impl(ghc >= 9.8)
+       default-extensions: TypeAbstractions
 
 test-suite noided-row-test
     -- Import common warning flags.

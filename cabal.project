@@ -1,1 +1,2 @@
 packages: */*.cabal
+allow-newer: template-haskell, base, containers, time
