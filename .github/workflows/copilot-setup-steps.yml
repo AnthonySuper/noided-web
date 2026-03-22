@@ -61,7 +61,7 @@ jobs:
       uses: haskell-actions/setup@v2
       id: setup
       with:
-        ghc-version: '9.8.2'
+        ghc-version: '9.14.1'
         cabal-version: '3.10'
 
     - name: Update cabal package list
