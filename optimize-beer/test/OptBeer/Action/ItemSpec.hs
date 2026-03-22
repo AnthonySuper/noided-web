@@ -16,11 +16,9 @@ import Noided.Web
 import OptBeer.Action.Base
 import OptBeer.Action.Item
 import OptBeer.Action.SpecHelper
-import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
-import OptBeer.DB.Table.Actor qualified as Actor
+import OptBeer.Action.SpecHelper.Setup (createActorWithUser, createOrgWithMemberActor)
 import OptBeer.DB.Table.Item qualified as Item
 import OptBeer.DB.Table.Organization qualified as Org
-import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Type.Unit
 import OptBeer.Routes (showOrganizationPath)
 import OptBeer.Type.OrganizationIdent
@@ -35,10 +33,7 @@ spec = do
       _ <- runDBSetup runner $ querySingleRow $ insertReturningAll Item.itemsTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Item 2") :::%? #defaultUnit :==> mutateVal_ (bindParam Liter) :::%? EmptyWrappedRow))
 
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingCommonErrors
         . runWithQueryParams SubmissionEmpty
         . runWithCurrentActor (Just actor)
         . runWithRunner runner
@@ -55,10 +50,7 @@ spec = do
       item <- runDBSetup runner $ querySingleRow $ insertReturningAll Item.itemsTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Show Item") :::%? #defaultUnit :==> mutateVal_ (bindParam Gram) :::%? EmptyWrappedRow))
 
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingCommonErrors
         . runWithCurrentActor (Just actor)
         . runWithRunner runner
         $ do
@@ -84,11 +76,7 @@ spec = do
           body = FormBody (MultipartFormDataSubmission formData)
 
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @BadRequest
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingFormErrors
         . runWithRequestBody body
         . runWithCurrentActor (Just actor)
         . runWithRunner runner
@@ -114,16 +102,7 @@ spec = do
     it "fails for a user without access" $ \runner -> do
       -- 1. Setup: Create actor, user, and organization (no access)
       (actor, org) <- runDBSetup runner $ do
-          actor <-
-            querySingleRow $
-              insertReturningAll
-                Actor.actorsTable
-                (singleValue_ (#name :==> mutateVal_ (bindParam ("noaccess" :: Text)) :::%? EmptyWrappedRow))
-          _ <-
-            querySingleRow $
-              insertReturningAll
-                User.usersTable
-                (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("noaccess@example.com" :: Text)) :::%? EmptyWrappedRow))
+          actor <- createActorWithUser "noaccess" "noaccess@example.com"
           org <-
             querySingleRow $
               insertReturningAll
@@ -162,10 +141,7 @@ spec = do
       item <- runDBSetup runner $ querySingleRow $ insertReturningAll Item.itemsTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Original Item") :::%? #defaultUnit :==> mutateVal_ (bindParam Gram) :::%? EmptyWrappedRow))
 
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingCommonErrors
         . runWithCurrentActor (Just actor)
         . runWithRunner runner
         $ do
@@ -190,11 +166,7 @@ spec = do
           body = FormBody (MultipartFormDataSubmission formData)
 
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @BadRequest
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingFormErrors
         . runWithRequestBody body
         . runWithCurrentActor (Just actor)
         . runWithRunner runner

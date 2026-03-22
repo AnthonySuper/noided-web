@@ -32,10 +32,7 @@ spec = describe "Recipe actions" $ do
       _ <- runDBSetup runner $ querySingleRow $ insertReturningAll recipesTable (singleValue_ (#organizationId :==> mutateVal_ (bindParam org.id) :::%? #name :==> mutateVal_ (bindParam @Text "Recipe 1") :::%? #batchSize :==> mutateVal_ (bindParam (20 :: Scientific)) :::%? #batchSizeUnit :==> mutateVal_ (bindParam Liter) :::%? EmptyWrappedRow))
       
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingCommonErrors
         . runWithQueryParams SubmissionEmpty
         . runWithCurrentActor (Just actor)
         . runWithRunner runner
@@ -68,11 +65,7 @@ spec = describe "Recipe actions" $ do
           body = FormBody (MultipartFormDataSubmission formData)
 
       resp <- runEff
-        . runFailingError @SessionError
-        . runFailingError @BadRequest
-        . runFailingError @NotFound
-        . runFailingError @Forbidden
-        . runFailingError @Unauthorized
+        . runFailingFormErrors
         . runWithRequestBody body
         . runWithCurrentActor (Just actor)
         . runWithRunner runner

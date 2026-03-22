@@ -15,11 +15,10 @@ import Noided.Web
 import OptBeer.Action.Base
 import OptBeer.Action.Organization
 import OptBeer.Action.SpecHelper
-import OptBeer.Action.SpecHelper.Setup (createOrgWithMemberActor)
+import OptBeer.Action.SpecHelper.Setup (createActorWithUser, createOrgWithMemberActor)
 import OptBeer.DB.Table.Actor qualified as Actor
 import OptBeer.DB.Table.Organization qualified as Org
 import OptBeer.DB.Table.OrganizationUserAccess qualified as OUA
-import OptBeer.DB.Table.User qualified as User
 import OptBeer.DB.Table.UserDefaultOrganization qualified as UDO
 import OptBeer.DB.Type.OrganizationAccessLevel
 import OptBeer.Routes (showOrganizationPath)
@@ -30,18 +29,9 @@ createOrganizationSpec :: TransactingSpec
 createOrganizationSpec = describe "createOrganizationAction" $ do
   it "successfully creates an organization for a logged-in user" $ \runner -> do
     -- 1. Setup: Create an actor and a user
-    actor <- runDBSetup runner $ do
-        actor <-
-          querySingleRow $
-            insertReturningAll
-              Actor.actorsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("orgcreator" :: Text)) :::%? EmptyWrappedRow))
-        _ <-
-          querySingleRow $
-            insertReturningAll
-              User.usersTable
-              (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("orgcreator@example.com" :: Text)) :::%? EmptyWrappedRow))
-        return actor
+    -- The Actor.Actor annotation keeps the Actor module in scope, which GHC needs to
+    -- resolve actor.id through OverloadedRecordDot in the verification queries below.
+    actor :: Actor.Actor <- runDBSetup runner $ createActorWithUser "orgcreator" "orgcreator@example.com"
 
     -- 2. Act: Create organization
     let formData =
@@ -158,18 +148,7 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
     defaultOrg.organizationId `shouldBe` existingOrg.id
 
   it "fails if organization name is only numbers" $ \runner -> do
-    actor <- runDBSetup runner $ do
-        actor <-
-          querySingleRow $
-            insertReturningAll
-              Actor.actorsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("numberuser" :: Text)) :::%? EmptyWrappedRow))
-        _ <-
-          querySingleRow $
-            insertReturningAll
-              User.usersTable
-              (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("numberuser@example.com" :: Text)) :::%? EmptyWrappedRow))
-        return actor
+    actor <- runDBSetup runner $ createActorWithUser "numberuser" "numberuser@example.com"
 
     let formData =
           SubmissionObject $
@@ -196,16 +175,7 @@ showOrganizationSpec :: TransactingSpec
 showOrganizationSpec = describe "showOrganizationAction" $ do
   it "successfully shows an organization for a user with access" $ \runner -> do
     (actor, org) <- runDBSetup runner $ do
-        actor <-
-          querySingleRow $
-            insertReturningAll
-              Actor.actorsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("showuser" :: Text)) :::%? EmptyWrappedRow))
-        _ <-
-          querySingleRow $
-            insertReturningAll
-              User.usersTable
-              (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("show@example.com" :: Text)) :::%? EmptyWrappedRow))
+        actor <- createActorWithUser "showuser" "show@example.com"
         org <-
           querySingleRow $
             insertReturningAll
@@ -219,10 +189,7 @@ showOrganizationSpec = describe "showOrganizationAction" $ do
         return (actor, org)
 
     resp <- runEff
-      . runFailingError @SessionError
-      . runFailingError @Forbidden
-      . runFailingError @NotFound
-      . runFailingError @Unauthorized
+      . runFailingCommonErrors
       . runWithCurrentActor (Just actor)
       . runWithRunner runner
       $ do
@@ -234,16 +201,7 @@ showOrganizationSpec = describe "showOrganizationAction" $ do
 
   it "fails with Forbidden for a user without access" $ \runner -> do
     (actor, org) <- runDBSetup runner $ do
-        actor <-
-          querySingleRow $
-            insertReturningAll
-              Actor.actorsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("noaccessuser" :: Text)) :::%? EmptyWrappedRow))
-        _ <-
-          querySingleRow $
-            insertReturningAll
-              User.usersTable
-              (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("noaccess@example.com" :: Text)) :::%? EmptyWrappedRow))
+        actor <- createActorWithUser "noaccessuser" "noaccess@example.com"
         org <-
           querySingleRow $
             insertReturningAll
@@ -267,16 +225,7 @@ showOrganizationSpec = describe "showOrganizationAction" $ do
 
   it "successfully shows an organization by name" $ \runner -> do
     (actor, _) <- runDBSetup runner $ do
-        actor <-
-          querySingleRow $
-            insertReturningAll
-              Actor.actorsTable
-              (singleValue_ (#name :==> mutateVal_ (bindParam ("nameuser" :: Text)) :::%? EmptyWrappedRow))
-        _ <-
-          querySingleRow $
-            insertReturningAll
-              User.usersTable
-              (singleValue_ (#id :==> mutateVal_ (bindParam actor.id) :::%? #email :==> mutateVal_ (bindParam ("name@example.com" :: Text)) :::%? EmptyWrappedRow))
+        actor <- createActorWithUser "nameuser" "name@example.com"
         org <-
           querySingleRow $
             insertReturningAll
@@ -290,10 +239,7 @@ showOrganizationSpec = describe "showOrganizationAction" $ do
         return (actor, org)
 
     resp <- runEff
-      . runFailingError @SessionError
-      . runFailingError @Forbidden
-      . runFailingError @NotFound
-      . runFailingError @Unauthorized
+      . runFailingCommonErrors
       . runWithCurrentActor (Just actor)
       . runWithRunner runner
       $ do

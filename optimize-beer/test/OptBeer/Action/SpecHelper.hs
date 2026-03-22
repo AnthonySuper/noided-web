@@ -6,6 +6,8 @@ module OptBeer.Action.SpecHelper
     runDBSetup,
     usingTransactionRunner,
     runFailingError,
+    runFailingCommonErrors,
+    runFailingFormErrors,
     TransactingSpec,
   )
 where
@@ -88,3 +90,28 @@ usingTransactionRunner = aroundWith $ \action pool ->
     let runner = RunTransaction runTransactionShared
 
     action runner `finally` C.use conn rollback
+
+-- | Run an action, failing for common read-action errors: 'SessionError', 'NotFound', 'Forbidden', and 'Unauthorized'.
+-- Use this to reduce boilerplate in tests for actions that require authentication and organization access.
+runFailingCommonErrors ::
+  (IOE :> es) =>
+  Eff (Error Unauthorized : Error Forbidden : Error NotFound : Error SessionError : es) a ->
+  Eff es a
+runFailingCommonErrors =
+  runFailingError @SessionError
+    . runFailingError @NotFound
+    . runFailingError @Forbidden
+    . runFailingError @Unauthorized
+
+-- | Run an action, failing for common form-submission errors: 'SessionError', 'BadRequest', 'NotFound', 'Forbidden', and 'Unauthorized'.
+-- Use this to reduce boilerplate in tests for form-submission actions that require authentication and organization access.
+runFailingFormErrors ::
+  (IOE :> es) =>
+  Eff (Error Unauthorized : Error Forbidden : Error NotFound : Error BadRequest : Error SessionError : es) a ->
+  Eff es a
+runFailingFormErrors =
+  runFailingError @SessionError
+    . runFailingError @BadRequest
+    . runFailingError @NotFound
+    . runFailingError @Forbidden
+    . runFailingError @Unauthorized
