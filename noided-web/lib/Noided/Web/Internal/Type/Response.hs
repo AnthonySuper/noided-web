@@ -4,12 +4,16 @@ import Control.Monad.Trans.Class
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
 import Data.ByteString.Lazy qualified as LBS
+import Data.Monoid
 import Data.Text
 import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics
 import Lucid.Base
 import Network.HTTP.Types.Header
 import Network.HTTP.Types.Status
+import Noided.Form.HKD
+import Noided.Validation
+import Optics.Core
 
 -- | An actual response body, which will be rendered by the server.
 data ResponseBody
@@ -46,8 +50,9 @@ href_ = makeAttributes "href"
 data PageResponse renderM where
   -- | Respond with some kind of typical page.
   RespondPage :: Status -> HtmlT renderM () -> PageResponse renderM
-  -- | Respond that a form had some errors.
-  RespondFormErrors ::
+  -- | Respond with a form, either showing fragment errors, or not.
+  RespondForm ::
+    Status ->
     -- | Layout-like wrapper to be applied over the form.
     --
     -- This is only applied if the initial form request was not enhanced
@@ -68,6 +73,23 @@ data PageResponse renderM where
     -- | The actual redirection
     PageResponse renderM
 
+respondHKDForm' ::
+  (SomeValidationError -> Maybe Status) ->
+  (HtmlT renderM () -> HtmlT renderM ()) ->
+  (FormErrors field -> HtmlT renderM ()) ->
+  FormErrors field ->
+  PageResponse renderM
+respondHKDForm' determineStatus layout buildBody err = RespondForm usedStatus layout (buildBody err)
+  where
+    usedStatus
+      | Just status <- usedError = status
+      | hasErrors' = status400
+      | otherwise = status200
+    hasErrors' = has formErrors err
+    usedError =
+      getFirst $
+        foldMapOf formErrors (First . determineStatus) err
+
 respondPage :: Status -> HtmlT renderM () -> PageResponse renderM
 respondPage = RespondPage
 
@@ -82,8 +104,9 @@ liftPageResponseRendering ::
   PageResponse n
 liftPageResponseRendering f = \case
   RespondPage s h -> RespondPage s (hoistHtmlT f h)
-  RespondFormErrors wrap inner ->
-    RespondFormErrors
+  RespondForm status wrap inner ->
+    RespondForm
+      status
       ( \ht -> do
           arg' <- lift (commuteHtmlT2 ht)
           hoistHtmlT f $ wrap arg'
@@ -99,7 +122,7 @@ addPageResponseLayout ::
   PageResponse renderM
 addPageResponseLayout layout = \case
   RespondPage s html -> RespondPage s (layout html)
-  RespondFormErrors fLayout fInner -> RespondFormErrors (layout . fLayout) fInner
+  RespondForm status fLayout fInner -> RespondForm status (layout . fLayout) fInner
   r@(RespondRedirect {}) -> r
 
 data PageResponseType
@@ -120,14 +143,14 @@ pageResponseToResponse type_ = \case
           headers = [("Content-Type", contentType)],
           body = LazyByteStringBody body
         }
-  RespondFormErrors layout inner -> do
+  RespondForm status layout inner -> do
     let html = case type_ of
           FullPage -> layout inner
           Fragment -> noidedFormFragment_ [] (template_ [] inner)
     body <- renderBST html
     pure
       Response
-        { status = badRequest400,
+        { status = status,
           headers = [("Content-Type", contentType)],
           body = LazyByteStringBody body
         }

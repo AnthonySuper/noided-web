@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -52,6 +53,8 @@ module Noided.Form.HKD.Type
     traverseFormErrors,
     formErrorSets,
     formErrors,
+    traverseHkdFormErrors,
+    hkdFormErrors,
 
     -- ** Evidence that a form has well-behaved errors
     HasErrors,
@@ -83,6 +86,7 @@ import Noided.Form.HKD.Internal.Type.FormResult
 import Noided.Form.HKD.Internal.Type.FormValidator
 import Noided.Form.HKD.Internal.Type.HKDFieldType
 import Noided.Validation
+import Optics.Core
 
 inputHasErrors :: HasErrors (InputField f)
 inputHasErrors = InputHasErrors
@@ -153,3 +157,19 @@ renderSubform = SubformRenderer
 
 renderList :: FormRenderer m field -> FormRenderer m (ListField field)
 renderList = ListRenderer
+
+traverseHkdFormErrors ::
+  forall f form.
+  (Applicative f, FTraversable form) =>
+  (ValidationErrors -> f ValidationErrors) ->
+  (form FormErrors) ->
+  f (form FormErrors)
+traverseHkdFormErrors f = ftraverse travInner
+ where
+   travInner :: forall field. FormErrors field -> f (FormErrors field)
+   travInner = traverseFormErrors f
+
+hkdFormErrors
+  :: FTraversable form
+  => Traversal (form FormErrors) (form FormErrors) ValidationErrors ValidationErrors
+hkdFormErrors = traversalVL traverseHkdFormErrors
