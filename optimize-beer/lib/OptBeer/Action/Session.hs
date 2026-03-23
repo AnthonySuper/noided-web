@@ -146,9 +146,10 @@ loginAction (RPNil :: RouteParams '[]) = do
     Left errs ->
       -- On validation failure
       return $
-        RespondFormErrors
+        respondHKDForm
           wrapForm
-          (renderFormT createSessionRenderer body errs)
+          (renderFormT createSessionRenderer body)
+          errs
     Right session -> do
       setCookie $
         Cookie.defaultSetCookie

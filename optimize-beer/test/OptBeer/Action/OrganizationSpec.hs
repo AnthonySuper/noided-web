@@ -168,8 +168,8 @@ createOrganizationSpec = describe "createOrganizationAction" $ do
         createOrganizationAction RPNil
 
     case resp of
-      RespondFormErrors {} -> return ()
-      _ -> fail "Expected RespondFormErrors"
+      RespondForm {} -> return ()
+      _ -> fail "Expected RespondForm"
 
 showOrganizationSpec :: TransactingSpec
 showOrganizationSpec = describe "showOrganizationAction" $ do

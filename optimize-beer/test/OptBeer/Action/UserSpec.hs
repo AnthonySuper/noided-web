@@ -73,8 +73,8 @@ createUserSpec = describe "createUserAction" $ do
         createUserAction @_ @Page RPNil
 
       case resp of
-        RespondFormErrors {} -> return ()
-        _ -> fail "Expected RespondFormErrors"
+        RespondForm {} -> return ()
+        _ -> fail "Expected RespondForm"
 
       -- Verify database state: no user should have been created
       mUser <- runDBSetup runner $ do
