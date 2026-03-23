@@ -134,9 +134,10 @@ createItemAction (ident :-$ RPNil) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        respondHKDForm
           (itemFormWrapper org ["organization.items.create.title"])
-          (itemFormInternals ["organization.items.create.button"] (usePathTemplate createItemPath ident) body err)
+          (itemFormInternals ["organization.items.create.button"] (usePathTemplate createItemPath ident) body)
+          err
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
 
 showItemAction ::
@@ -211,9 +212,10 @@ updateItemAction (itemId :-$ RPNil) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        respondHKDForm
           (itemFormWrapper org ["organization.items.edit.title"])
-          (itemFormInternals ["organization.items.edit.button"] (usePathTemplate updateItemPath itemId) body err)
+          (itemFormInternals ["organization.items.edit.button"] (usePathTemplate updateItemPath itemId) body)
+          err
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById org.id))
 
 -- | Helper to fetch an item and ensure the current user has access to it.

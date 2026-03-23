@@ -106,7 +106,8 @@ createUserAction (RPNil :: RouteParams '[]) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        respondHKDForm
           wrapForm
-          (renderFormT createUserRenderer body err)
+          (renderFormT createUserRenderer body)
+          err
     Right _ -> return $ RespondRedirect RedirectFound "/"

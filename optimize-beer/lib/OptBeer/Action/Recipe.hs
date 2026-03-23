@@ -147,7 +147,8 @@ createRecipeAction (ident :-$ RPNil) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        respondHKDForm
           (recipeFormWrapper org ["organization.recipes.create.title"])
-          (recipeFormInternals ["organization.recipes.create.button"] (usePathTemplate createRecipePath ident) body err)
+          (recipeFormInternals ["organization.recipes.create.button"] (usePathTemplate createRecipePath ident) body)
+          err
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
