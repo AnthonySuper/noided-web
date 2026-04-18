@@ -1,3 +1,5 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
 module Noided.Sql.SqlExpr
   ( -- * Data types
     SqlExpr,
@@ -32,6 +34,7 @@ module Noided.Sql.SqlExpr
     MutationExpr,
     MutationType (..),
     mutateVal_,
+    mutateBound_,
     defaultVal_,
 
     -- * Bind params
@@ -240,3 +243,6 @@ import Noided.Sql.Internal.Type.PGTSQuery
 import Noided.Sql.Internal.Type.PGTSVector
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
+
+mutateBound_ :: (AsBindParam a) => a -> MutationExpr (ActualValue (SqlT (BoundNullability a) (BoundType a)))
+mutateBound_ = mutateVal_ . bindParam

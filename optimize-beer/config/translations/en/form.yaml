@@ -45,6 +45,22 @@ en:
           name: "Boil Time (min)"
         targetEfficiency:
           name: "Target Efficiency (%)"
+        ingredients:
+          name: "Ingredients"
+    RecipeIngredient:
+      attributes:
+        itemId:
+          name: "Item"
+        amount:
+          name: "Amount"
+        amountUnit:
+          name: "Unit"
+        additionStage:
+          name: "Stage"
+        additionTimeMinutes:
+          name: "Time (min)"
+        notes:
+          name: "Notes"
     Search:
       attributes:
         search:

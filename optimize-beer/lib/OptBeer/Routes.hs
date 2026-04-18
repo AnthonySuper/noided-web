@@ -53,6 +53,12 @@ newRecipePath = "organizations" :/ capPiece :/ "recipes" :/ "new" :/ PathEnd
 showRecipePath :: PathTemplate '[RecipeId]
 showRecipePath = "recipes" :/ capPiece :/ PathEnd
 
+editRecipePath :: PathTemplate '[RecipeId]
+editRecipePath = "recipes" :/ capPiece :/ "edit" :/ PathEnd
+
+updateRecipePath :: PathTemplate '[RecipeId]
+updateRecipePath = showRecipePath
+
 showItemPath :: PathTemplate '[ItemId]
 showItemPath = "items" :/ capPiece :/ PathEnd
 
