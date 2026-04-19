@@ -116,6 +116,7 @@ library
       Noided.Sql.Internal.Type.PGRegConfig
       Noided.Sql.Internal.Type.PGFullTextSearchWeight
       Noided.Sql.Internal.Type.OrderClause
+      Noided.Sql.Internal.Type.SelectValues
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM

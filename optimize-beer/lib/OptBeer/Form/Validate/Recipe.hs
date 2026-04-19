@@ -1,6 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
 module OptBeer.Form.Validate.Recipe where
@@ -23,26 +23,42 @@ import OptBeer.ValidationError.BadUnitCategory
 import OptBeer.ValidationError.ValueTaken
 
 recipeValidator :: OrganizationId -> Maybe RecipeId -> FormValidator (TransactM e) (SubformField RecipeFormF)
-recipeValidator orgId mRecipeId = validateSubform $
-  RecipeForm
-    { name = validateRecipeName orgId mRecipeId,
-      description = validateInput return,
-      batchSize = validateInput $ \val -> do
-        when (val <= 0) $
-          failNonfatal $ TooSmall (0 :: Scientific)
-        return val,
-      batchSizeUnit = validateInput $ \val -> do
-        when (unitCategory val /= Volume) $
-          failNonfatal $ BadUnitCategory Volume
-        return val,
-      targetOg = validateInput return,
-      targetFg = validateInput return,
-      targetAbv = validateInput return,
-      targetIbu = validateInput return,
-      targetSrm = validateInput return,
-      boilTimeMinutes = validateInput return,
-      targetEfficiency = validateInput return
-    }
+recipeValidator orgId mRecipeId =
+  validateSubform $
+    RecipeForm
+      { name = validateRecipeName orgId mRecipeId,
+        description = validateInput return,
+        batchSize = validateInput $ \val -> do
+          when (val <= 0) $
+            failNonfatal $
+              TooSmall (0 :: Scientific)
+          return val,
+        batchSizeUnit = validateInput $ \val -> do
+          when (unitCategory val /= Volume) $
+            failNonfatal $
+              BadUnitCategory Volume
+          return val,
+        targetOg = validateInput return,
+        targetFg = validateInput return,
+        targetAbv = validateInput return,
+        targetIbu = validateInput return,
+        targetSrm = validateInput return,
+        boilTimeMinutes = validateInput return,
+        targetEfficiency = validateInput return,
+        ingredients = validateList ingredientValidator
+      }
+
+ingredientValidator :: FormValidator (TransactM e) (SubformField RecipeIngredientFormF)
+ingredientValidator =
+  validateSubform $
+    RecipeIngredientForm
+      { itemId = validateInput return,
+        amount = validateInput return,
+        amountUnit = validateInput return,
+        additionStage = validateInput return,
+        additionTimeMinutes = validateInput return,
+        notes = validateInput return
+      }
 
 validateRecipeName :: OrganizationId -> Maybe RecipeId -> FormValidator (TransactM e) (InputField Text)
 validateRecipeName orgId mRecipeId = validateInput $ \nameText -> do
@@ -58,9 +74,9 @@ validateRecipeName orgId mRecipeId = validateInput $ \nameText -> do
       Just recipeId -> addWhere_ (row.id /=. bindParam recipeId)
       Nothing -> return ()
     select_ $ Element row.name
-  
+
   case exists of
     Just _ -> failNonfatal ValueTaken
     Nothing -> return ()
-  
+
   return stripped

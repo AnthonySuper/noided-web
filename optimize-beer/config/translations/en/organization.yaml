@@ -31,5 +31,9 @@ en:
         title: "Edit Recipe"
         button: "Update Recipe"
         link: "Edit Recipe"
+      update:
+        title: "Edit Recipe"
+        button: "Update Recipe"
+        link: "Edit Recipe"
     create:
       button: "Create Organization"
