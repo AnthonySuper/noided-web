@@ -117,9 +117,10 @@ createOrganizationAction (RPNil :: RouteParams '[]) = do
   case result of
     Left err ->
       return $
-        RespondForm status400
+        respondHKDForm
           wrapForm
-          (renderFormT createOrganizationRenderer body err)
+          (renderFormT createOrganizationRenderer body)
+          err
     Right orgId -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById orgId))
 
 showOrganizationAction ::
