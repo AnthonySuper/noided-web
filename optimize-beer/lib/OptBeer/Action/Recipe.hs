@@ -7,6 +7,7 @@ module OptBeer.Action.Recipe where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
+import Network.HTTP.Types.Status
 import Noided.Form.HKD
 import Noided.Sql
 import OptBeer.Action.Base
@@ -147,7 +148,7 @@ createRecipeAction (ident :-$ RPNil) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        RespondForm status400
           (recipeFormWrapper org ["organization.recipes.create.title"])
           (recipeFormInternals ["organization.recipes.create.button"] (usePathTemplate createRecipePath ident) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)

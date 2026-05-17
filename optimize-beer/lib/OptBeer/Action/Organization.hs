@@ -6,6 +6,7 @@ module OptBeer.Action.Organization where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Lucid hiding (select_)
+import Network.HTTP.Types.Status
 import Noided.Translate (MessageKey)
 import Noided.Web.Html (renderTranslated)
 import OptBeer.Action.Base
@@ -116,7 +117,7 @@ createOrganizationAction (RPNil :: RouteParams '[]) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        RespondForm status400
           wrapForm
           (renderFormT createOrganizationRenderer body err)
     Right orgId -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById orgId))

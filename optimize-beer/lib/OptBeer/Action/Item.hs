@@ -7,6 +7,7 @@ module OptBeer.Action.Item where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Data.Text (Text)
+import Network.HTTP.Types.Status
 import Noided.Form.HKD
 import Noided.Form.Types
 import Noided.Sql
@@ -134,7 +135,7 @@ createItemAction (ident :-$ RPNil) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        RespondForm status400
           (itemFormWrapper org ["organization.items.create.title"])
           (itemFormInternals ["organization.items.create.button"] (usePathTemplate createItemPath ident) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath ident)
@@ -211,7 +212,7 @@ updateItemAction (itemId :-$ RPNil) = do
   case result of
     Left err ->
       return $
-        RespondFormErrors
+        RespondForm status400
           (itemFormWrapper org ["organization.items.edit.title"])
           (itemFormInternals ["organization.items.edit.button"] (usePathTemplate updateItemPath itemId) body err)
     Right () -> return $ RespondRedirect RedirectFound (usePathTemplate showOrganizationPath (OrganizationById org.id))
