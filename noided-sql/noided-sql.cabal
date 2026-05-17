@@ -146,6 +146,7 @@ library
       Noided.Sql.Internal.Class.SelectList
       Noided.Sql.Internal.Class.SqlNumeric
       Noided.Sql.Internal.Class.UnwrapSelectList
+      Noided.Sql.Internal.Class.Nullified
 
       Noided.Sql.Internal.TH.HKDTable
       Noided.Sql.Internal.TH.HKDView
