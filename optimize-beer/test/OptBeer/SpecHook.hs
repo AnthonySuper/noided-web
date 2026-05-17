@@ -6,46 +6,75 @@ module OptBeer.SpecHook (hook) where
 import Control.Exception (Exception, throwIO)
 import Data.Pool (Pool, defaultPoolConfig, newPool)
 import Data.Text qualified as T
-import Data.Yaml qualified as Yaml
-import Hasql.Connection
+import Data.Text.Lazy qualified as LT
+import Hasql.Connection (Connection, acquire, release)
 import Hasql.Connection.Settings (connectionString)
-import Hasql.Errors
-import Noided.Web.ApplicationConfig
-import System.Directory (doesFileExist)
-import System.Environment (lookupEnv)
+import Hasql.Errors (ConnectionError)
+import Noided.Sql.Migration
+import Noided.Sql.Migration.Internal
+import Noided.Sql.TransactM (TransactionResult (..))
 import Test.Hspec
+import TestContainers qualified as TC
+import TestContainers.Config qualified as TC
+import TestContainers.Hspec qualified as TC
+import TestContainers.Monad qualified as TC
 
 data SpecHookError
-  = DatabaseUrlNotSetAndConfigMissing FilePath
-  | TestConfigMissing FilePath
-  | ConnectionAcquisitionFailed ConnectionError
+  = ConnectionAcquisitionFailed ConnectionError
+  | MigrationFailed
   deriving (Show)
 
 instance Exception SpecHookError
 
 hook :: SpecWith (Pool Connection) -> Spec
-hook s = withConnectionPool (parallel s)
+hook s = withTestContainers (withConnectionPool (parallel s))
 
--- | A spec hook that gets you a connection pool.
-withConnectionPool :: SpecWith (Pool Connection) -> Spec
-withConnectionPool = beforeAll $ do
-  mUrl <- lookupEnv "DATABASE_URL"
-  settings <- case mUrl of
-    Just url -> return $ connectionString (T.pack url)
-    Nothing -> do
-      let dbFile = "config/db.yml"
-      exists <- doesFileExist dbFile
-      if not exists
-        then throwIO $ DatabaseUrlNotSetAndConfigMissing dbFile
-        else do
-          cfg <- Yaml.decodeFileThrow dbFile :: IO DBFileConfig
-          case cfg.test of
-            Nothing -> throwIO $ TestConfigMissing dbFile
-            Just s -> return $ getHasqlSettings s
+spinUpContainers :: TC.TestContainer (T.Text, TC.Container)
+spinUpContainers = do
+  c <-
+    TC.run $
+      TC.containerRequest (TC.fromTag "postgres:18-alpine")
+        TC.& TC.setExpose [5432]
+        TC.& TC.setWaitingFor waitUntilReady
+        TC.& TC.setEnv [("POSTGRES_PASSWORD", "postgres")]
+  let port = TC.containerPort c 5432
+  let connStr = "postgres://postgres:postgres@localhost:" <> T.pack (show port) <> "/postgres"
+
+  pure (connStr, c)
+  where
+    waitUntilReady :: TC.WaitUntilReady
+    waitUntilReady =
+      mconcat
+        [ TC.waitForLogLine TC.Stderr (LT.isInfixOf "database system is ready to accept connections"),
+          TC.waitUntilMappedPortReachable 5432
+        ]
+
+withTestContainers :: SpecWith (T.Text, TC.Container) -> Spec
+withTestContainers = aroundAll (TC.withContainers spinUpContainers)
+
+withConnectionPool :: SpecWith (Pool Connection) -> SpecWith (T.Text, b)
+withConnectionPool = beforeAllWith $ \(url, _container) -> do
+  -- Apply migrations
+  putStrLn $ "Applying migrations to test container at " <> T.unpack url <> "..."
+  let dir = "db/migrations" -- Relative to optimize-beer root
+  migrations <- discoverMigrations dir
+  let config = defaultMigrationConfig dir
+
+  connRes <- acquire (connectionString url)
+  case connRes of
+    Left err -> throwIO $ ConnectionAcquisitionFailed err
+    Right conn -> do
+      res <- runMigrationsInTransactions config migrations conn :: IO (TransactionResult String ())
+      release conn
+      case res of
+        TransactOK () -> putStrLn "Migrations applied successfully"
+        _ -> do
+          putStrLn $ "Migration failed: " <> show res
+          throwIO MigrationFailed
 
   newPool $
     defaultPoolConfig
-      (acquire settings >>= either (throwIO . ConnectionAcquisitionFailed) return)
+      (acquire (connectionString url) >>= either (throwIO . ConnectionAcquisitionFailed) return)
       release
       30.0 -- Keep resources for 30 seconds
       10 -- 10 resources per stripe
