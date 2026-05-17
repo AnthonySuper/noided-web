@@ -198,6 +198,8 @@ test-suite noided-sql-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
+      Noided.Sql.Internal.Roundtrip.SpecHelper
+      Noided.Sql.Internal.RoundtripSpec
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Type.PGSeriesSpec
       Noided.Sql.Internal.Type.OrderClauseSpec
@@ -242,4 +244,8 @@ test-suite noided-sql-test
     build-depends:
         noided-sql,
         hspec,
-        hspec-golden
+        hspec-golden,
+        QuickCheck,
+        quickcheck-instances,
+        testcontainers,
+        resource-pool
