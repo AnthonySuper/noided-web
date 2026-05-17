@@ -31,6 +31,7 @@ module Noided.Web.Html.FormRender
     fieldWrapAddToId,
     fieldModelName,
     fieldAddToId,
+    fieldWrapAddInputToId,
     wrapField,
 
     -- * Context and Attributes

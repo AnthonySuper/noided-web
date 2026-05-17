@@ -114,8 +114,10 @@ library
       Noided.Sql.Internal.Type.PGTSVector
       Noided.Sql.Internal.Type.PGTSQuery
       Noided.Sql.Internal.Type.PGRegConfig
+      Noided.Sql.Internal.Type.PGRow
       Noided.Sql.Internal.Type.PGFullTextSearchWeight
       Noided.Sql.Internal.Type.OrderClause
+      Noided.Sql.Internal.Type.SelectValues
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
@@ -156,6 +158,8 @@ library
       Noided.Sql.Internal.SqlExpr.Range
       Noided.Sql.Internal.SqlExpr.Text
       Noided.Sql.Internal.SqlExpr.FullText
+      Noided.Sql.Internal.SqlExpr.SubAgg
+      Noided.Sql.Internal.SqlExpr.Row
 
       Noided.Sql.Internal.HKDTableDef
       Noided.Sql.Internal.HKDViewDef

@@ -48,6 +48,10 @@ module Noided.Sql.Select
     groupBy_,
     groupByHaving_,
 
+    -- ** List of values as FROM item
+    SelectValues,
+    selectValues_,
+
     -- ** Offset/Order/Limit/Lock on queries
     OrderLimitOffsetLock,
     ValidOrderLimitOffsetLock,
@@ -88,3 +92,4 @@ import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.OrderLimitOffsetLock
 import Noided.Sql.Internal.Select.SelectM
 import Noided.Sql.Internal.Type.PGSeries
+import Noided.Sql.Internal.Type.SelectValues

@@ -46,6 +46,7 @@ common deps
 
        noided-server,
        noided-form,
+       noided-form-hkd,
        noided-pathname,
        noided-sql,
        noided-validation,

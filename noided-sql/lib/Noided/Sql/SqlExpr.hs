@@ -1,3 +1,5 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
 module Noided.Sql.SqlExpr
   ( -- * Data types
     SqlExpr,
@@ -32,6 +34,7 @@ module Noided.Sql.SqlExpr
     MutationExpr,
     MutationType (..),
     mutateVal_,
+    mutateBound_,
     defaultVal_,
 
     -- * Bind params
@@ -53,6 +56,11 @@ module Noided.Sql.SqlExpr
     -- * Nullability functions
     isNull_,
     isNotNull_,
+    coalesce_,
+
+    -- * Working with subqueries
+    aggregatedSubqueryVal_,
+    subqueryRowsOf_,
 
     -- * Numeric functions
     SqlNumeric (SumType, AvgType),
@@ -228,6 +236,7 @@ import Noided.Sql.Internal.SqlExpr.FullText
 import Noided.Sql.Internal.SqlExpr.Inet
 import Noided.Sql.Internal.SqlExpr.Numeric
 import Noided.Sql.Internal.SqlExpr.Range
+import Noided.Sql.Internal.SqlExpr.SubAgg
 import Noided.Sql.Internal.SqlExpr.Text
 import Noided.Sql.Internal.Type.AggregateExpr
 import Noided.Sql.Internal.Type.MutationExpr
@@ -240,3 +249,6 @@ import Noided.Sql.Internal.Type.PGTSQuery
 import Noided.Sql.Internal.Type.PGTSVector
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
+
+mutateBound_ :: (AsBindParam a) => a -> MutationExpr (ActualValue (SqlT (BoundNullability a) (BoundType a)))
+mutateBound_ = mutateVal_ . bindParam

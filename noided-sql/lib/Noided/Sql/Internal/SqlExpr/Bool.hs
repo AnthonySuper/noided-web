@@ -2,7 +2,9 @@
 
 module Noided.Sql.Internal.SqlExpr.Bool where
 
+import Noided.Sql.Internal.Class.Query
 import Noided.Sql.Internal.Type.Nullability
+import Noided.Sql.Internal.Type.QueryWriter (syntaxSubquery)
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 
@@ -42,6 +44,20 @@ isNotNull_ a = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") IS NOT NULL")
 (&&.) a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") AND (" <> unsafeGetSqlExpr b <> ")")
 (||.) a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") OR (" <> unsafeGetSqlExpr b <> ")")
 
+coalesce_ :: SqlExpr scope (SqlT lhsN t) -> SqlExpr scope (SqlT rhsN t) -> SqlExpr scope (SqlT (LeastNullable lhsN rhsN) t)
+coalesce_ a b =
+  UnsafeMkSqlExpr $
+    "COALESCE("
+      <> unsafeGetSqlExpr a
+      <> ","
+      <> unsafeGetSqlExpr b
+      <> ")"
+
 true_, false_ :: SqlExpr scope (NonNullT Bool)
 true_ = UnsafeMkSqlExpr "TRUE"
 false_ = UnsafeMkSqlExpr "FALSE"
+
+exists_ :: (SelectQuery query) => query -> SqlExpr scope (NonNullT Bool)
+exists_ query =
+  UnsafeMkSqlExpr $
+    "EXISTS (" <> syntaxSubquery (writeQuerySyntax query) <> ")"
