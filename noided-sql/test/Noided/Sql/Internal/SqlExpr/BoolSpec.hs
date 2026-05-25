@@ -22,6 +22,10 @@ spec = describe "Bool Expressions" $ do
   it "renders false_" $ do
     renderExpr false_ `shouldBe` "FALSE"
 
+  it "renders not_" $ do
+    let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Bool)
+    renderExpr (not_ a) `shouldBe` "NOT (a)"
+
   describe "binary operators" $ do
     let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Bool)
     let b = UnsafeMkSqlExpr "b" :: SqlExpr NormalQuery (NonNullT Bool)

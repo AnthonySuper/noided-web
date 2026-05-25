@@ -57,6 +57,9 @@ true_, false_ :: SqlExpr scope (NonNullT Bool)
 true_ = UnsafeMkSqlExpr "TRUE"
 false_ = UnsafeMkSqlExpr "FALSE"
 
+not_ :: SqlExpr scope (SqlT n Bool) -> SqlExpr scope (SqlT n Bool)
+not_ a = UnsafeMkSqlExpr ("NOT (" <> unsafeGetSqlExpr a <> ")")
+
 exists_ :: (SelectQuery query) => query -> SqlExpr scope (NonNullT Bool)
 exists_ query =
   UnsafeMkSqlExpr $

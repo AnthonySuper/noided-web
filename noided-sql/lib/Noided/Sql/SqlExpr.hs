@@ -44,6 +44,7 @@ module Noided.Sql.SqlExpr
     -- * Boolean functions
     true_,
     false_,
+    not_,
     (&&.),
     (||.),
     (==.),
