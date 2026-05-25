@@ -7,6 +7,7 @@ module Noided.Sql.Internal.Select.FromClause where
 import Control.Monad (when)
 import GHC.Generics
 import Noided.Sql.Internal.Class.FromItem
+import Noided.Sql.Internal.Class.Nullified
 import Noided.Sql.Internal.Type.Nullability (Nullability (NonNull, Nullable))
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
@@ -52,6 +53,24 @@ data FromClause selectList where
     OnClause baseFrom (FromItemSelectList joinedItem) ->
     FromClause baseFrom ->
     FromClause (baseFrom :-: FromItemSelectList joinedItem)
+  LeftJoin ::
+    (FromItem joinedItem, Nullified (FromItemSelectList joinedItem)) =>
+    (QueriedRow baseFrom -> joinedItem) ->
+    OnClause baseFrom (FromItemSelectList joinedItem) ->
+    FromClause baseFrom ->
+    FromClause (baseFrom :-: AsNullified (FromItemSelectList joinedItem))
+  RightJoin ::
+    (FromItem joinedItem, Nullified baseFrom) =>
+    (QueriedRow baseFrom -> joinedItem) ->
+    OnClause baseFrom (FromItemSelectList joinedItem) ->
+    FromClause baseFrom ->
+    FromClause (AsNullified baseFrom :-: FromItemSelectList joinedItem)
+  FullOuterJoin ::
+    (FromItem joinedItem, Nullified baseFrom, Nullified (FromItemSelectList joinedItem)) =>
+    (QueriedRow baseFrom -> joinedItem) ->
+    OnClause baseFrom (FromItemSelectList joinedItem) ->
+    FromClause baseFrom ->
+    FromClause (AsNullified baseFrom :-: AsNullified (FromItemSelectList joinedItem))
 
 data FromFirstItem = IsFirstFromItem | IsNotFirstFromItem
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
@@ -75,6 +94,36 @@ writeFromClause ff = \case
     joinedItem <- writeFromItemAfterAs built
     writeOnClause oc selBase joinedItem
     return $ selBase :-: joinedItem
+  LeftJoin buildItem oc fromBase -> do
+    selBase <- writeFromClause ff fromBase
+    " LEFT JOIN "
+    let built = buildItem selBase
+    when (fromItemLateralUsage built == SometimesLateral) "LATERAL "
+    writeFromItem built
+    " AS "
+    joinedItem <- writeFromItemAfterAs built
+    writeOnClause oc selBase joinedItem
+    return $ selBase :-: nullifyRow joinedItem
+  RightJoin buildItem oc fromBase -> do
+    selBase <- writeFromClause ff fromBase
+    " RIGHT JOIN "
+    let built = buildItem selBase
+    when (fromItemLateralUsage built == SometimesLateral) "LATERAL "
+    writeFromItem built
+    " AS "
+    joinedItem <- writeFromItemAfterAs built
+    writeOnClause oc selBase joinedItem
+    return $ nullifyRow selBase :-: joinedItem
+  FullOuterJoin buildItem oc fromBase -> do
+    selBase <- writeFromClause ff fromBase
+    " FULL OUTER JOIN "
+    let built = buildItem selBase
+    when (fromItemLateralUsage built == SometimesLateral) "LATERAL "
+    writeFromItem built
+    " AS "
+    joinedItem <- writeFromItemAfterAs built
+    writeOnClause oc selBase joinedItem
+    return $ nullifyRow selBase :-: nullifyRow joinedItem
 
 fromBase_ ::
   (FromItem fromBase) =>
@@ -97,6 +146,54 @@ innerJoin_ ::
   FromClause baseFrom ->
   FromClause (baseFrom :-: FromItemSelectList joinedItem)
 innerJoin_ c = innerJoinLateral_ (const c)
+
+leftJoinLateral_ ::
+  (FromItem joinedItem, Nullified (FromItemSelectList joinedItem)) =>
+  (QueriedRow baseFrom -> joinedItem) ->
+  OnClause baseFrom (FromItemSelectList joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (baseFrom :-: AsNullified (FromItemSelectList joinedItem))
+leftJoinLateral_ = LeftJoin
+
+leftJoin_ ::
+  (FromItem joinedItem, Nullified (FromItemSelectList joinedItem)) =>
+  joinedItem ->
+  OnClause baseFrom (FromItemSelectList joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (baseFrom :-: AsNullified (FromItemSelectList joinedItem))
+leftJoin_ c = leftJoinLateral_ (const c)
+
+rightJoinLateral_ ::
+  (FromItem joinedItem, Nullified baseFrom) =>
+  (QueriedRow baseFrom -> joinedItem) ->
+  OnClause baseFrom (FromItemSelectList joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (AsNullified baseFrom :-: FromItemSelectList joinedItem)
+rightJoinLateral_ = RightJoin
+
+rightJoin_ ::
+  (FromItem joinedItem, Nullified baseFrom) =>
+  joinedItem ->
+  OnClause baseFrom (FromItemSelectList joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (AsNullified baseFrom :-: FromItemSelectList joinedItem)
+rightJoin_ c = rightJoinLateral_ (const c)
+
+fullOuterJoinLateral_ ::
+  (FromItem joinedItem, Nullified baseFrom, Nullified (FromItemSelectList joinedItem)) =>
+  (QueriedRow baseFrom -> joinedItem) ->
+  OnClause baseFrom (FromItemSelectList joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (AsNullified baseFrom :-: AsNullified (FromItemSelectList joinedItem))
+fullOuterJoinLateral_ = FullOuterJoin
+
+fullOuterJoin_ ::
+  (FromItem joinedItem, Nullified baseFrom, Nullified (FromItemSelectList joinedItem)) =>
+  joinedItem ->
+  OnClause baseFrom (FromItemSelectList joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (AsNullified baseFrom :-: AsNullified (FromItemSelectList joinedItem))
+fullOuterJoin_ c = fullOuterJoinLateral_ (const c)
 
 on_' ::
   forall nullability baseSelectList joinedSelectList t.

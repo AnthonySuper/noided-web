@@ -9,10 +9,20 @@ module Noided.Sql.Select
     fromBase_,
     innerJoinLateral_,
     innerJoin_,
+    leftJoin_,
+    leftJoinLateral_,
+    rightJoin_,
+    rightJoinLateral_,
+    fullOuterJoin_,
+    fullOuterJoinLateral_,
     on_,
     onNullable_,
     on_',
     (&),
+
+    -- ** Nullification for outer joins
+    Nullified (..),
+    AsNullified,
 
     -- ** Set-Returning Functions
     PGSeries,
@@ -47,6 +57,10 @@ module Noided.Sql.Select
     aggregate_,
     groupBy_,
     groupByHaving_,
+
+    -- ** List of values as FROM item
+    SelectValues,
+    selectValues_,
 
     -- ** Offset/Order/Limit/Lock on queries
     OrderLimitOffsetLock,
@@ -87,4 +101,6 @@ import Noided.Sql.Internal.Select.Combine
 import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.OrderLimitOffsetLock
 import Noided.Sql.Internal.Select.SelectM
+import Noided.Sql.Internal.Class.Nullified
 import Noided.Sql.Internal.Type.PGSeries
+import Noided.Sql.Internal.Type.SelectValues

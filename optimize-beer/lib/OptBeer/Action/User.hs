@@ -5,6 +5,7 @@ module OptBeer.Action.User where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Lucid
+import Network.HTTP.Types.Status
 import OptBeer.Action.Base
 import OptBeer.DB.Table.Actor
 import OptBeer.DB.Table.User

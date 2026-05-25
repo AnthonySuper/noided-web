@@ -88,6 +88,7 @@ library
     -- Modules exported by the library.
     exposed-modules:
       Noided.Sql.Internal.Type.Columnar
+      Noided.Sql.Internal.Type.CaseBranch
       Noided.Sql.Internal.Type.ViewColumnar
       Noided.Sql.Internal.Type.AggregateExpr
       Noided.Sql.Internal.Type.ColumnName
@@ -114,8 +115,10 @@ library
       Noided.Sql.Internal.Type.PGTSVector
       Noided.Sql.Internal.Type.PGTSQuery
       Noided.Sql.Internal.Type.PGRegConfig
+      Noided.Sql.Internal.Type.PGRow
       Noided.Sql.Internal.Type.PGFullTextSearchWeight
       Noided.Sql.Internal.Type.OrderClause
+      Noided.Sql.Internal.Type.SelectValues
 
       Noided.Sql.Internal.Select.FromClause
       Noided.Sql.Internal.Select.SelectM
@@ -144,18 +147,22 @@ library
       Noided.Sql.Internal.Class.SelectList
       Noided.Sql.Internal.Class.SqlNumeric
       Noided.Sql.Internal.Class.UnwrapSelectList
+      Noided.Sql.Internal.Class.Nullified
 
       Noided.Sql.Internal.TH.HKDTable
       Noided.Sql.Internal.TH.HKDView
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
+      Noided.Sql.Internal.SqlExpr.Case
       Noided.Sql.Internal.SqlExpr.DateTime
       Noided.Sql.Internal.SqlExpr.Inet
       Noided.Sql.Internal.SqlExpr.Numeric
       Noided.Sql.Internal.SqlExpr.Range
       Noided.Sql.Internal.SqlExpr.Text
       Noided.Sql.Internal.SqlExpr.FullText
+      Noided.Sql.Internal.SqlExpr.SubAgg
+      Noided.Sql.Internal.SqlExpr.Row
 
       Noided.Sql.Internal.HKDTableDef
       Noided.Sql.Internal.HKDViewDef
@@ -193,6 +200,8 @@ test-suite noided-sql-test
 
     -- Modules included in this executable, other than Main.
     other-modules:
+      Noided.Sql.Internal.Roundtrip.SpecHelper
+      Noided.Sql.Internal.RoundtripSpec
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Type.PGSeriesSpec
       Noided.Sql.Internal.Type.OrderClauseSpec
@@ -200,6 +209,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.Select.OrderLimitOffsetLockSpec
       Noided.Sql.Internal.Select.AggregateQuerySpec
       Noided.Sql.Internal.SqlExpr.BoolSpec
+      Noided.Sql.Internal.SqlExpr.CaseSpec
       Noided.Sql.Internal.SqlExpr.DateTimeSpec
       Noided.Sql.Internal.SqlExpr.InetSpec
       Noided.Sql.Internal.SqlExpr.NumericSpec
@@ -237,4 +247,8 @@ test-suite noided-sql-test
     build-depends:
         noided-sql,
         hspec,
-        hspec-golden
+        hspec-golden,
+        QuickCheck,
+        quickcheck-instances,
+        testcontainers,
+        resource-pool

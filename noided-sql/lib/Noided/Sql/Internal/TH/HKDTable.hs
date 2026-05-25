@@ -9,6 +9,7 @@ import Language.Haskell.TH hiding (newName)
 import Noided.Row
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.NamedColumns
+import Noided.Sql.Internal.Class.Nullified
 import Noided.Sql.Internal.Class.UnwrapSelectList
 import Noided.Sql.Internal.Type.Columnar
 
@@ -21,6 +22,10 @@ defineHKDTable name = do
   tableDefDecls <- defineTableDef name nameStripped
   inQueryDecls <- defineInQuery name nameStripped
   nullifiedInQueryDecls <- defineNullifiedInQuery name nameStripped
+  nullifiedInstanceDecls <-
+    defineNullifiedInstance
+      (mkName $ Text.unpack $ nameStripped <> "InQuery")
+      (mkName $ Text.unpack $ nameStripped <> "NullifiedInQuery")
   unwraps <- defineUnwraps nameStripped
   return $
     [ TySynD
@@ -41,6 +46,7 @@ defineHKDTable name = do
       ++ tableDefDecls
       ++ inQueryDecls
       ++ nullifiedInQueryDecls
+      ++ nullifiedInstanceDecls
       ++ unwraps
 
 defineTableDef :: Name -> Text.Text -> Q [Dec]
@@ -62,6 +68,17 @@ defineNullifiedInQuery n t = do
   hkds <- defineHKDWrapper 'NullifiedInQuery n newName
   decoder <- defineDecoder (ConT $ mkName $ Text.unpack newName)
   return $ hkds ++ decoder
+
+defineNullifiedInstance :: Name -> Name -> Q [Dec]
+defineNullifiedInstance inQueryName nullifiedInQueryName =
+  [d|
+    instance Nullified $(pure $ ConT inQueryName) where
+      type AsNullified $(pure $ ConT inQueryName) = $(pure $ ConT nullifiedInQueryName)
+
+    instance Nullified $(pure $ ConT nullifiedInQueryName) where
+      type AsNullified $(pure $ ConT nullifiedInQueryName) = $(pure $ ConT nullifiedInQueryName)
+      nullifyRow = id
+    |]
 
 defineDecoder :: (Quote m) => Type -> m [Dec]
 defineDecoder name' = [d|instance DecodeSelectList $name|]

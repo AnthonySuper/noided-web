@@ -27,5 +27,11 @@ decoderToColumn (DecodePG @n @pgt) =
     NonNullSing -> HaskT <$> Dec.column (Dec.nonNullable $ decodeHaskellValue (Proxy @pgt))
     NullableSing -> HaskT <$> Dec.column (Dec.nullable $ decodeHaskellValue (Proxy @pgt))
 
+decoderToComposite :: PGDecoder t -> Dec.Composite (HaskellT t)
+decoderToComposite (DecodePG @n @pgt) =
+  case nullabilityS @n of
+    NonNullSing -> HaskT <$> Dec.field (Dec.nonNullable $ decodeHaskellValue (Proxy @pgt))
+    NullableSing -> HaskT <$> Dec.field (Dec.nullable $ decodeHaskellValue (Proxy @pgt))
+
 useRowDecoder :: (FTraversable t) => t PGDecoder -> Dec.Row (t HaskellT)
 useRowDecoder = ftraverse decoderToColumn

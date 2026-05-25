@@ -2,11 +2,13 @@
 
 module Noided.Sql.Internal.SqlExpr.BoolSpec (spec) where
 
+import Data.HKD (Element (..))
 import Data.Text (unpack)
+import Noided.Sql.Internal.Select.SelectM (SelectM)
 import Noided.Sql.Internal.SqlExpr.Bool
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
-import Noided.Sql.Internal.Type.Syntax
+import Noided.Sql.Internal.Type.Syntax (renderSyntaxToTextNumberedBinds)
 import Test.Hspec
 
 renderExpr :: SqlExpr scope t -> String
@@ -19,6 +21,10 @@ spec = describe "Bool Expressions" $ do
 
   it "renders false_" $ do
     renderExpr false_ `shouldBe` "FALSE"
+
+  it "renders not_" $ do
+    let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Bool)
+    renderExpr (not_ a) `shouldBe` "NOT (a)"
 
   describe "binary operators" $ do
     let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Bool)
@@ -53,3 +59,8 @@ spec = describe "Bool Expressions" $ do
     let n = UnsafeMkSqlExpr "n" :: SqlExpr NormalQuery (NullableT Int)
     it "renders isNull_" $ renderExpr (isNull_ n) `shouldBe` "(n) IS NULL"
     it "renders isNotNull_" $ renderExpr (isNotNull_ n) `shouldBe` "(n) IS NOT NULL"
+
+  describe "exists_" $ do
+    it "renders exists_ with a simple query" $ do
+      let query = return (Element (UnsafeMkSqlExpr "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
+      renderExpr (exists_ query) `shouldBe` "EXISTS (SELECT 1 AS \"e\")"

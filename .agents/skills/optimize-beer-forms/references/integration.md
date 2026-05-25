@@ -34,7 +34,7 @@ handleMyFormAction (RPNil :: RouteParams '[]) = do
   case result of
     Left errs ->
       return $
-        RespondFormErrors
+        RespondForm status400
           wrapForm
           (renderFormT myFormRenderer body errs)
     Right validated -> do

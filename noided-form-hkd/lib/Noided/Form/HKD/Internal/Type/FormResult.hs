@@ -19,6 +19,12 @@ data FormResult field where
 instance (v ~ t) => HasField "val" (FormResult (InputField t)) v where
   getField (InputResult r) = r
 
+instance (v ~ Seq.Seq (FormResult inner)) => HasField "val" (FormResult (ListField inner)) v where
+  getField (ListResult l) = l
+
+instance (v ~ subform FormResult) => HasField "val" (FormResult (SubformField subform)) v where
+  getField (SubformResult sf) = sf
+
 _InputResult :: Iso' (FormResult (InputField t)) t
 _InputResult = iso (\(InputResult r) -> r) InputResult
 

@@ -6,6 +6,7 @@ module OptBeer.Action.Organization where
 
 import Control.Monad.Error.Class qualified as MonadError
 import Lucid hiding (select_)
+import Network.HTTP.Types.Status
 import Noided.Translate (MessageKey)
 import Noided.Web.Html (renderTranslated)
 import OptBeer.Action.Base

@@ -18,6 +18,7 @@ import Data.IP
 import Data.Map.Strict qualified as Map
 import Data.Password.Bcrypt qualified as BC
 import Data.Text (Text)
+import Network.HTTP.Types.Status
 import Data.Text.Encoding (decodeUtf8')
 import Data.Time (addUTCTime)
 import Data.Time qualified as T

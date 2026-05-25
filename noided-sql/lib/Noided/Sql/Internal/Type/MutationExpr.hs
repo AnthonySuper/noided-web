@@ -1,9 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Noided.Sql.Internal.Type.MutationExpr where
 
 import Data.Kind
+import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.Type.MutationType
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.Syntax (Syntax)

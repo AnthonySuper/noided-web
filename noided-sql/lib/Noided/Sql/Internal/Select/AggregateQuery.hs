@@ -10,6 +10,7 @@ import Control.Monad.Trans.State.Strict
 import Data.Coerce (coerce)
 import Data.Foldable (for_)
 import Data.HKD
+import GHC.Generics
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.FromItem
 import Noided.Sql.Internal.Class.NamedColumns
@@ -23,7 +24,10 @@ import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.Syntax
 import Noided.Sql.Internal.Type.Tie
 
-data AggregateQuery result where
+data AggregateGrouping = EntireQuery | GroupByStatement
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
+
+data AggregateQuery (grouping :: AggregateGrouping) result where
   -- | Build an aggregated query using GROUP BY
   AggregateGroupBy ::
     ( FTraversable queryResult,
@@ -36,15 +40,15 @@ data AggregateQuery result where
     Maybe (AggregatedRow groupByHKD :--: AggregateSetRow queryResult -> SqlExpr Aggregated (SqlT n Bool)) ->
     -- | Given the group by clause /and/ the results of the query (now in an aggregate set),
     (AggregatedRow groupByHKD :--: AggregateSetRow queryResult -> groupResult) ->
-    AggregateQuery groupResult
+    AggregateQuery GroupByStatement groupResult
   -- | Build an aggregate query aggregating over an entire select list, without grouping.
   AggregateEntireQuery ::
     (FTraversable queryResult) =>
     SelectM (QueriedRow queryResult) ->
     (AggregateSetRow queryResult -> aggResult) ->
-    AggregateQuery aggResult
+    AggregateQuery EntireQuery aggResult
 
-instance Functor AggregateQuery where
+instance Functor (AggregateQuery grouping) where
   fmap f (AggregateGroupBy q gb h p) = AggregateGroupBy q gb h (f . p)
   fmap f (AggregateEntireQuery q p) = AggregateEntireQuery q (f . p)
 
@@ -53,7 +57,7 @@ aggregate_ ::
   (FTraversable sl) =>
   (AggregateSetRow sl -> res) ->
   SelectM (QueriedRow sl) ->
-  AggregateQuery res
+  AggregateQuery EntireQuery res
 aggregate_ p q = AggregateEntireQuery q p
 
 -- | Group a query by a set of columns.
@@ -62,7 +66,7 @@ groupBy_ ::
   (QueriedRow sl -> QueriedRow gb) ->
   (AggregatedRow gb :--: AggregateSetRow sl -> res) ->
   SelectM (QueriedRow sl) ->
-  AggregateQuery res
+  AggregateQuery GroupByStatement res
 groupBy_ gb p q = AggregateGroupBy q gb Nothing p
 
 -- | Group a query by a set of columns, with a HAVING clause.
@@ -72,12 +76,12 @@ groupByHaving_ ::
   (AggregatedRow gb :--: AggregateSetRow sl -> SqlExpr Aggregated (SqlT n Bool)) ->
   (AggregatedRow gb :--: AggregateSetRow sl -> res) ->
   SelectM (QueriedRow sl) ->
-  AggregateQuery res
+  AggregateQuery GroupByStatement res
 groupByHaving_ gb h p q = AggregateGroupBy q gb (Just h) p
 
 renderAggregateQuery ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
-  AggregateQuery (sl (SqlExpr Aggregated)) ->
+  AggregateQuery anyGrouping (sl (SqlExpr Aggregated)) ->
   QueryWriter (sl (SqlExpr Aggregated))
 renderAggregateQuery aq = do
   case aq of
@@ -133,14 +137,14 @@ renderAggregateQuery aq = do
 
 instance
   (wrapper ~ SqlExpr Aggregated, SelectList sl) =>
-  Query (AggregateQuery (sl wrapper))
+  Query (AggregateQuery anyGrouping (sl wrapper))
   where
-  type QuerySelectList (AggregateQuery (sl wrapper)) = sl
+  type QuerySelectList (AggregateQuery anyGrouping (sl wrapper)) = sl
   writeQuerySyntax = void . renderAggregateQuery
 
 instance
   (wrapper ~ SqlExpr Aggregated, SelectList sl) =>
-  SelectQuery (AggregateQuery (sl wrapper))
+  SelectQuery (AggregateQuery anyGrouping (sl wrapper))
 
 instance
   ( wrapper ~ SqlExpr Aggregated,
@@ -148,13 +152,13 @@ instance
     UnwrapSelectList sl,
     DecodeSelectList sl
   ) =>
-  ExecutableQuery (AggregateQuery (sl wrapper))
+  ExecutableQuery (AggregateQuery anyGrouping (sl wrapper))
 
 instance
   (wrapper ~ SqlExpr Aggregated, SelectList sl) =>
-  FromItem (AggregateQuery (sl wrapper))
+  FromItem (AggregateQuery anyGrouping (sl wrapper))
   where
-  type FromItemSelectList (AggregateQuery (sl wrapper)) = sl
+  type FromItemSelectList (AggregateQuery anyGrouping (sl wrapper)) = sl
   fromItemLateralUsage _ = SometimesLateral
   writeFromItem a = do
     writeSyntax "("

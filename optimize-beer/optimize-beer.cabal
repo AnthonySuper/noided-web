@@ -323,4 +323,6 @@ test-suite optimize-beer-test
     -- Test dependencies.
     build-depends:
         optimize-beer,
-        hspec
+        hspec,
+        testcontainers,
+        noided-sql-migrations

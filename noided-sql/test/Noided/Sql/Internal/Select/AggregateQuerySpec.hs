@@ -93,7 +93,7 @@ instance NamedColumns ArrayStats where
 renderAggregateGolden ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
   String ->
-  AggregateQuery (sl (SqlExpr Aggregated)) ->
+  AggregateQuery any (sl (SqlExpr Aggregated)) ->
   Spec
 renderAggregateGolden description aq =
   golden description (return syntaxString)
