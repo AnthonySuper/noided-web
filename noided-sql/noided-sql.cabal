@@ -88,6 +88,7 @@ library
     -- Modules exported by the library.
     exposed-modules:
       Noided.Sql.Internal.Type.Columnar
+      Noided.Sql.Internal.Type.CaseBranch
       Noided.Sql.Internal.Type.ViewColumnar
       Noided.Sql.Internal.Type.AggregateExpr
       Noided.Sql.Internal.Type.ColumnName
@@ -153,6 +154,7 @@ library
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
+      Noided.Sql.Internal.SqlExpr.Case
       Noided.Sql.Internal.SqlExpr.DateTime
       Noided.Sql.Internal.SqlExpr.Inet
       Noided.Sql.Internal.SqlExpr.Numeric
