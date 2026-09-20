@@ -11,6 +11,7 @@ import Data.Char (isAlphaNum, isSpace)
 import Data.Functor (($>))
 import Data.String (IsString (..))
 import Data.Text (Text)
+import Data.Text qualified as T
 import GHC.Generics
 import Optics.Core
 
@@ -40,7 +41,7 @@ data Message where
 instance FromJSON Message where
   parseJSON =
     withText "parsed text" $
-      either fail pure . AT.parseOnly parseSyn
+      either fail pure . parseMessage
 
 instance IsString Message where
   fromString s = case parseMessage (fromString s) of
@@ -70,8 +71,21 @@ inParens = insideSurrounding (AT.char '(') (AT.char ')')
 inBraces :: AT.Parser a -> AT.Parser a
 inBraces = insideSurrounding (AT.char '{') (AT.char '}')
 
+-- | Where in a message we are currently parsing.
+--
+-- This only matters for escaping. Outside of a calculation block a @}@ carries
+-- no structural meaning, so @}}@ can be read as an escaped @}@. Inside of one,
+-- a @}@ always closes the enclosing block, so the escape would be ambiguous
+-- (consider the @}}}@ that ends a one-armed @pluralize@) and is not offered.
+data FragmentContext
+  = -- | Not inside the braces of any calculation.
+    TopLevel
+  | -- | Inside the braces of a calculation.
+    InCalc
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
+
 bracedMessageValue :: AT.Parser Message
-bracedMessageValue = inBraces parseSyn
+bracedMessageValue = inBraces $ parseSynIn InCalc
 
 pluralizedMessage :: AT.Parser (PluralizationForm, Message)
 pluralizedMessage = (,) <$> parseForm <*> bracedMessageValue
@@ -81,25 +95,63 @@ pluralizedMessage = (,) <$> parseForm <*> bracedMessageValue
         (AT.string "one" $> One)
           <|> (AT.string "many" $> Many)
 
+-- | A single arm of a @pluralize@ block, before we work out which of them is
+-- the @default@ one.
+data PluralizeArm
+  = FormArm PluralizationForm Message
+  | DefaultArm Message
+  deriving (Show, Read, Eq, Ord, Generic)
+
+pluralizeArm :: AT.Parser PluralizeArm
+pluralizeArm =
+  (uncurry FormArm <$> pluralizedMessage)
+    <|> (DefaultArm <$> (lexeme (AT.string "default") *> bracedMessageValue))
+
 parsePluralize :: AT.Parser FormatCalc
 parsePluralize = do
   _ <- lexeme $ AT.string "pluralize"
   vn <- inParens $ lexeme $ parseVarName
   inBraces $ do
-    msgs <- many pluralizedMessage
-    defMessage <- lexeme (AT.string "default") *> bracedMessageValue
-    pure $ Pluralize vn msgs defMessage
+    arms <- many pluralizeArm
+    -- @default@ is mandatory, but it may appear in any position among the
+    -- arms, not just last.
+    --
+    -- If it is given more than once, the *first* one wins. That matches the
+    -- form arms, which 'Noided.Translate.Internal.Render.renderViaWriter'
+    -- resolves with 'find', so the first matching arm wins there too.
+    case [m | DefaultArm m <- arms] of
+      [] -> fail "pluralize: a `default` clause is required"
+      (defMessage : _) ->
+        pure $ Pluralize vn [(f, m) | FormArm f m <- arms] defMessage
 
 parseCalc :: AT.Parser Message
 parseCalc = Calc <$> inBraces parsePluralize
 
+-- | Parse an entire message, failing if any of the input is left over.
+--
+-- Attoparsec's 'AT.parseOnly' succeeds on a partial parse, so without this
+-- check anything the parser cannot handle would silently end the message
+-- early and the rest of the text would be thrown away.
 parseMessage :: Text -> Either String Message
-parseMessage = fmap simplify . AT.parseOnly parseSyn
+parseMessage t = do
+  (msg, rest) <- AT.parseOnly ((,) <$> parseSyn <*> AT.takeText) t
+  unless (T.null rest) $
+    Left $
+      "parse: unexpected input at character "
+        <> show (T.length t - T.length rest)
+        <> " of message "
+        <> show t
+        <> ": "
+        <> show (T.take 40 rest)
+  pure $ simplify msg
   where
     simplify = _Syn %~ simplifySyn
 
 parseSyn :: AT.Parser Message
-parseSyn = Syn <$> many (parseVar <|> parseFragment <|> parseCalc)
+parseSyn = parseSynIn TopLevel
+
+parseSynIn :: FragmentContext -> AT.Parser Message
+parseSynIn ctx = Syn <$> many (parseVar <|> parseFragment ctx <|> parseCalc)
 
 parseVar :: AT.Parser Message
 parseVar = Var <$> parseVarName
@@ -112,11 +164,17 @@ parseVarName = do
     fail "parse: escaped var"
   AT.takeWhile1 isAlphaNum
 
-parseFragment :: AT.Parser Message
-parseFragment = Fragment <$> (parseRawFragment <|> parseEscapedDollar)
+parseFragment :: FragmentContext -> AT.Parser Message
+parseFragment ctx = Fragment <$> (parseRawFragment <|> parseEscape)
   where
     parseRawFragment = AT.takeWhile1 (\c -> c /= '$' && c /= '}' && c /= '{')
-    parseEscapedDollar = AT.string "$$" $> "$"
+    parseEscape =
+      (AT.string "$$" $> "$")
+        <|> (AT.string "{{" $> "{")
+        <|> parseEscapedCloseBrace
+    parseEscapedCloseBrace = case ctx of
+      TopLevel -> AT.string "}}" $> "}"
+      InCalc -> empty
 
 _Fragment :: Prism Message Message Text Text
 _Fragment = prism' Fragment $ \case

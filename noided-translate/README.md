@@ -33,7 +33,22 @@ Translations use a custom message format, inspired by Unicode's MessageFormat 2.
 
 You can interpolate values using a `$`.
 These will be rendered based on some sensible defaults.
-To escape a literal `$`, just type `$$`.
+
+Because `$`, `{`, and `}` all have meaning in the message format, each has an
+escape sequence:
+
+| You write | You get | Notes |
+| --------- | ------- | ----- |
+| `$$`      | `$`     | Valid anywhere. |
+| `{{`      | `{`     | Valid anywhere. |
+| `}}`      | `}`     | Only outside of a calculation block. |
+
+A single `}` inside a calculation block always closes that block, so the `}}`
+escape is not available there; if it were, the `}}}` that ends a message like
+`{pluralize ($n) { default { none } }}` would be ambiguous.
+
+A message must parse completely.
+A stray `$`, `{`, or `}` is an error, not a way to cut the message short.
 
 ### Calculations
 
@@ -74,4 +89,7 @@ The pluralize calculation allows you to match on different forms, like so:
 ```
 
 The `default` clause is mandatory, but you may skip the `one` or `many` clauses if you like.
+It may appear in any position among the clauses; it does not have to be last.
+If it is given more than once, the first one wins.
 If the passed-in parameter is a non-numeric argument, the `default` clause will always be used.
+Any clause name other than `one`, `many`, or `default` is a parse error.
