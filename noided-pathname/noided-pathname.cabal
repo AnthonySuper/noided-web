@@ -58,6 +58,7 @@ common depends
     build-depends:
         base >=4.18.2.0 && <=5,
         http-api-data,
+        http-types,
         text,
         bytestring,
         containers,

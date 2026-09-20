@@ -82,9 +82,6 @@ respondTooManyRequests = respondError tooManyRequests429
 respondUnavailableForLegalReasons :: CallStack -> Text -> PageResponse Page
 respondUnavailableForLegalReasons = respondError unavailableForLegalReasons451
 
-unavailableForLegalReasons451 :: Status
-unavailableForLegalReasons451 = mkStatus 451 "Unavailable For Legal Reasons"
-
 -- | Create a 500 Internal Server Error response with the error page.
 respondInternalError :: CallStack -> Text -> PageResponse Page
 respondInternalError = respondError internalServerError500

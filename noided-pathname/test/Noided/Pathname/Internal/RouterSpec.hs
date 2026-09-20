@@ -5,6 +5,7 @@
 
 module Noided.Pathname.Internal.RouterSpec (spec) where
 
+import Data.Either (isRight)
 import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Data.Type.Equality
@@ -13,7 +14,9 @@ import Noided.Pathname.Internal.PathTemplate
 import Noided.Pathname.Internal.PieceTemplate
 import Noided.Pathname.Internal.RouteParams
 import Noided.Pathname.Internal.Router
+import Noided.Pathname.Internal.SpecGen
 import Test.Hspec
+import Test.QuickCheck (Gen, elements, forAll)
 import Test.Inspection
 
 data RoutedShowConst t captures where
@@ -152,6 +155,75 @@ multiCaptureSpec = describe "multiple captures in a route" $ do
     isJust (firstRouterMatch ["users", "5", "posts", "42"] router) `shouldBe` True
   it "returns nothing for partial match" $
     isNothing (firstRouterMatch ["users", "5", "posts"] router) `shouldBe` True
+  it "returns both captures" $
+    -- The params are built without parentheses on purpose: ':-$' has to be
+    -- right associative for this to typecheck at all.
+    fmap routedResult (firstRouterMatch ["users", "5", "posts", "42"] router)
+      `shouldBe` Just (RouteResult (5 :-$ 42 :-$ RPNil) nestedVal)
+
+threeCaptureSpec :: Spec
+threeCaptureSpec = describe "three captures in a route" $ do
+  -- The params below are written without parentheses on purpose: ':-$' has to
+  -- be right associative for any of this to typecheck.
+  let pathTemplate =
+        StaticPiece "orgs"
+          :/ capPiece @Int
+          :/ StaticPiece "users"
+          :/ capPiece @Text
+          :/ StaticPiece "posts"
+          :/ capPiece @Int
+          :/ PathEnd
+      deepVal = RoutedShowConst ("deep" :: String)
+      router = singletonRouter pathTemplate deepVal
+      params = 7 :-$ "a/b" :-$ 42 :-$ RPNil
+      url = usePathTemplateParams pathTemplate params
+  it "returns all three captures" $
+    fmap routedResult (firstRouterMatch ["orgs", "7", "users", "ann", "posts", "42"] router)
+      `shouldBe` Just (RouteResult (7 :-$ "ann" :-$ 42 :-$ RPNil) deepVal)
+  it "escapes the captures it generates" $
+    url `shouldBe` "/orgs/7/users/a%2Fb/posts/42/"
+  it "routes the url the template generates" $
+    fmap routedResult (firstRouterMatch (splitPathPieces url) router)
+      `shouldBe` Just (RouteResult params deepVal)
+
+-- | A route that only knows how to check the params it was matched with.
+--
+-- This lets a property compare the params the router produced against the ones
+-- it was generated from, without needing to get a 'Show' or 'Eq' dictionary out
+-- of the existential in 'RouteMatch'.
+newtype CheckParams caps = CheckParams (RouteParams caps -> Bool)
+
+-- | Mangle a URL's pieces into something near, but usually not equal to, a
+-- match: the interesting disagreements between the two matchers are all about
+-- what is left over at the end of the path.
+mangle :: [Text] -> Gen [Text]
+mangle pieces =
+  elements
+    [ pieces,
+      pieces <> [""],
+      pieces <> ["", ""],
+      pieces <> ["", "junk"],
+      pieces <> ["junk"],
+      drop 1 pieces,
+      take (length pieces - 1) pieces
+    ]
+
+matcherAgreementSpec :: Spec
+matcherAgreementSpec = describe "matchPathTemplate agrees with the router" $ do
+  it "routes the url a template generates, with the same params" $
+    forAll genSomeRoute $ \(SomeRoute template params) ->
+      let router = singletonRouter template (CheckParams (== params))
+          pieces = splitPathPieces (usePathTemplateParams template params)
+       in case firstRouterMatch pieces router of
+            Nothing -> expectationFailure $ "no route matched " <> show pieces
+            Just (RouteMatched matched (CheckParams check)) ->
+              check matched `shouldBe` True
+  it "succeeds exactly when the router matches" $
+    forAll genSomeRoute $ \(SomeRoute template params) ->
+      forAll (mangle (splitPathPieces (usePathTemplateParams template params))) $ \pieces ->
+        let router = singletonRouter template (CheckParams (const True))
+         in isRight (matchPathTemplate pieces template)
+              `shouldBe` isJust (firstRouterMatch pieces router)
 
 edgeCasesSpec :: Spec
 edgeCasesSpec = describe "edge cases" $ do
@@ -185,6 +257,8 @@ spec = do
   crudRoutesSpec
   overlapRoutesSpec
   multiCaptureSpec
+  threeCaptureSpec
+  matcherAgreementSpec
   edgeCasesSpec
   inspectionSpec
   return ()

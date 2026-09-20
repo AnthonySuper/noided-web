@@ -33,6 +33,8 @@ module Noided.Pathname
     pathTemplateAppendStatic,
     usePathTemplate,
     usePathTemplateParams,
+    encodePathPiece,
+    splitPathPieces,
     splitFirstCapture,
     removeFirstCapture,
     TemplateMatchFailureMessage(..),

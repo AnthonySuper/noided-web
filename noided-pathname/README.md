@@ -132,6 +132,35 @@ userEditLink uid = usePathTemplateParams userEditPath (uid :-$ RPNil)
 
 Neat, huh?
 
+### Percent-encoding, and turning a URL back into pieces
+
+`usePathTemplate` and `usePathTemplateParams` percent-encode every piece they emit, captures and static pieces alike.
+A capture containing a `/`, `?`, `#`, a space, or a non-ASCII character is escaped, so it stays a single URL piece instead of silently generating a link to a different route:
+
+```haskell
+>>> usePathTemplateParams ("users" :/ capPiece @Text :/ PathEnd) ("a/b" :-$ RPNil)
+"/users/a%2Fb/"
+```
+
+Going the other way, `splitPathPieces` turns a URL path into the `[Text]` that `firstRouterMatch` and `matchPathTemplate` expect, percent-decoding each piece:
+
+```haskell
+>>> splitPathPieces "/users/a%2Fb/"
+["users","a/b",""]
+```
+
+The leading empty piece from the leading `/` is dropped, so the result is ready to route.
+A *trailing* `/` is kept as a trailing empty piece, which is harmless: both matchers treat a single trailing empty piece as the end of the path, so a URL matches the same templates with or without a trailing slash.
+`splitPathPieces` is the inverse of `usePathTemplateParams`, which always emits a trailing slash:
+
+```haskell
+>>> let template = "users" :/ capPiece @Int :/ PathEnd
+>>> matchPathTemplate (splitPathPieces (usePathTemplateParams template (42 :-$ RPNil))) template
+Right (42 :-$ RPNil)
+```
+
+If you are serving over WAI, you do not need this: `Network.Wai.pathInfo` already gives you decoded pieces in the same shape.
+
 ### Testing and Debugging Routes
 
 When you have a routing error, you often want to figure out what went wrong.
@@ -141,11 +170,12 @@ The function `testUrlResult` will test a given path element list against everyth
 testUrlResult :: [Text] -> Router action -> [(Some PathTemplate, TemplateMatchResult)]
 
 -- Example usage:
-let results = testUrlResult ["users", "invalid-id"] httpApplication
+let results = testUrlResult (splitPathPieces "/users/invalid-id") httpApplication
 -- Results will show which routes were tried and why they failed
 ```
 
 This is particularly useful during development and debugging to understand why a particular URL isn't matching your expected route.
+It matches URLs exactly the way the real router does, so a route it reports as matching really does route, and one it rejects really does 404.
 
 ## Features
 
