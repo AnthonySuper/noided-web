@@ -35,17 +35,14 @@ You can interpolate values using a `$`.
 These will be rendered based on some sensible defaults.
 
 Because `$`, `{`, and `}` all have meaning in the message format, each has an
-escape sequence:
+escape sequence. `$` leads them all in, and all three work anywhere in a
+message, including inside a calculation block:
 
-| You write | You get | Notes |
-| --------- | ------- | ----- |
-| `$$`      | `$`     | Valid anywhere. |
-| `{{`      | `{`     | Valid anywhere. |
-| `}}`      | `}`     | Only outside of a calculation block. |
-
-A single `}` inside a calculation block always closes that block, so the `}}`
-escape is not available there; if it were, the `}}}` that ends a message like
-`{pluralize ($n) { default { none } }}` would be ambiguous.
+| You write | You get |
+| --------- | ------- |
+| `$$`      | `$`     |
+| `${`      | `{`     |
+| `$}`      | `}`     |
 
 A message must parse completely.
 A stray `$`, `{`, or `}` is an error, not a way to cut the message short.

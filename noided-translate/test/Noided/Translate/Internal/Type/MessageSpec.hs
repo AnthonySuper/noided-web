@@ -1,26 +1,18 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Noided.Translate.Internal.Type.MessageSpec (spec) where
 
-import Data.Either (isLeft)
-import Data.Text (Text)
-import Noided.Translate.Internal.Type.Message
+import Noided.Translate (TranslateParam (..))
+import Noided.Translate.Internal.Type.Message (Message (..), parseMessage, simplifySyn)
+import Noided.Translate.SpecHelper
 import Test.Hspec
-
-shouldParseTo ::
-  Text ->
-  [Message] ->
-  Expectation
-shouldParseTo t m =
-  parseMessage t `shouldBe` Right (Syn m)
-
-shouldFailToParse :: Text -> Expectation
-shouldFailToParse t =
-  parseMessage t `shouldSatisfy` isLeft
 
 shouldSimplifyTo :: [Message] -> [Message] -> Expectation
 shouldSimplifyTo lhs rhs = simplifySyn lhs `shouldBe` rhs
 
+-- | The one group that legitimately looks at the AST, because 'simplifySyn' is
+-- a function over the AST rather than something a rendered message can show.
 simplifySpec :: Spec
 simplifySpec = describe "simplification" $ do
   it "can simplify two fragments" $
@@ -30,19 +22,21 @@ simplifySpec = describe "simplification" $ do
   it "can apply further simplification to nested syns" $
     [Fragment "foo", Syn [Fragment "bar"]] `shouldSimplifyTo` [Fragment "foobar"]
 
-parsingSpec :: Spec
-parsingSpec = describe "parsing" $ do
-  it "can parse a single fragment" $
-    "foo" `shouldParseTo` [Fragment "foo"]
-  it "can parse a var-then-fragment" $ do
-    "foo $bar" `shouldParseTo` [Fragment "foo ", Var "bar"]
-  it "can parse an escaped $" $ do
-    "foo $$bar" `shouldParseTo` [Fragment "foo $bar"]
-  it "can parse a calc" $ do
-    "foo {pluralize ( $bar ) { default { yeah } }}"
-      `shouldParseTo` [Fragment "foo ", Calc (Pluralize "bar" [] (Syn [Fragment "yeah "]))]
+renderingSpec :: Spec
+renderingSpec = describe "rendering" $ do
+  it "renders a plain fragment unchanged" $
+    "foo" `rendersTo` "foo"
+  it "interpolates a variable" $
+    rendersWith "foo $bar" [("bar", ParamFragment "baz")] "foo baz"
+  it "renders a missing variable as its own name" $
+    "foo $bar" `rendersTo` "foo $bar"
+  it "renders a calculation" $
+    rendersWith
+      "foo {pluralize ( $bar ) { default { yeah } }}"
+      [("bar", ParamInt 3)]
+      "foo yeah "
 
--- | Messages that used to parse as a silently truncated prefix, because
+-- | Messages that used to render as a silently truncated prefix, because
 -- 'Data.Attoparsec.Text.parseOnly' is happy to leave input unconsumed.
 truncationSpec :: Spec
 truncationSpec = describe "leftover input" $ do
@@ -64,40 +58,46 @@ truncationSpec = describe "leftover input" $ do
 
 escapeSpec :: Spec
 escapeSpec = describe "escapes" $ do
-  it "can parse an escaped opening brace" $
-    "Save {{50%" `shouldParseTo` [Fragment "Save {50%"]
-  it "can parse an escaped closing brace" $
-    "Save 50%}}" `shouldParseTo` [Fragment "Save 50%}"]
-  it "can parse a brace-wrapped literal" $
-    "Save {{50%}}" `shouldParseTo` [Fragment "Save {50%}"]
-  it "can parse every escape alongside a real variable" $
-    "$$ {{ }} $count!"
-      `shouldParseTo` [Fragment "$ { } ", Var "count", Fragment "!"]
-  it "can parse an escaped opening brace inside a calc" $
-    "{pluralize ($n) { default { {{none } }}"
-      `shouldParseTo` [Calc (Pluralize "n" [] (Syn [Fragment "{", Fragment "none "]))]
+  it "renders $$ as a literal $" $
+    "Cost: 5$$" `rendersTo` "Cost: 5$"
+  it "renders ${ as a literal {" $
+    "Save ${50%" `rendersTo` "Save {50%"
+  it "renders $} as a literal }" $
+    "Save 50%$}" `rendersTo` "Save 50%}"
+  it "renders a brace-wrapped literal" $
+    "Save ${50%$}" `rendersTo` "Save {50%}"
+  it "renders every escape alongside a real variable" $
+    rendersWith "$$ ${ $} $count!" [("count", ParamInt 3)] "$ { } 3!"
+  it "renders ${ inside a pluralize arm" $
+    "{pluralize ($n) { default { ${none } }}" `rendersTo` "{none "
+  -- The escaped brace is not structural, so the message still needs all three
+  -- of the closing braces that end the arm, the arms block and the calculation.
+  it "renders $} inside a pluralize arm" $
+    "{pluralize ($n) { default { none$} }}}" `rendersTo` "none} "
+  it "renders every escape alongside a real variable inside a pluralize arm" $
+    rendersWith
+      "{pluralize ($n) { default { $$ ${ $} $count! } }}"
+      [("count", ParamInt 7)]
+      "$ { } 7! "
 
 defaultPositionSpec :: Spec
 defaultPositionSpec = describe "the position of the default clause" $ do
-  let expected =
-        [ Calc $
-            Pluralize
-              "n"
-              [(One, Syn [Fragment "one "]), (Many, Syn [Fragment "lots "])]
-              (Syn [Fragment "none "])
-        ]
-  it "can parse a default clause in the last position" $
-    "{pluralize ($n) { one { one } many { lots } default { none } }}"
-      `shouldParseTo` expected
-  it "can parse a default clause in the middle position" $
-    "{pluralize ($n) { one { one } default { none } many { lots } }}"
-      `shouldParseTo` expected
-  it "can parse a default clause in the first position" $
-    "{pluralize ($n) { default { none } one { one } many { lots } }}"
-      `shouldParseTo` expected
+  -- Every arm has to keep selecting correctly no matter where @default@ sits,
+  -- so each case exercises all three: the singular, the plural, and the
+  -- fallback for a value with no plural form of its own.
+  let selectsEveryArm msg = do
+        rendersWith msg [("n", ParamInt 1)] "one "
+        rendersWith msg [("n", ParamInt 7)] "lots "
+        rendersWith msg [("n", ParamFragment "several")] "none "
+        msg `rendersTo` "none "
+  it "selects every arm with default last" $
+    selectsEveryArm "{pluralize ($n) { one { one } many { lots } default { none } }}"
+  it "selects every arm with default in the middle" $
+    selectsEveryArm "{pluralize ($n) { one { one } default { none } many { lots } }}"
+  it "selects every arm with default first" $
+    selectsEveryArm "{pluralize ($n) { default { none } one { one } many { lots } }}"
   it "uses the first default clause when there is more than one" $
-    "{pluralize ($n) { default { none } default { other } }}"
-      `shouldParseTo` [Calc (Pluralize "n" [] (Syn [Fragment "none "]))]
+    "{pluralize ($n) { default { none } default { other } }}" `rendersTo` "none "
 
 -- | Messages taken verbatim from @optimize-beer/config/translations/en@, so
 -- that a change to the parser cannot quietly invalidate a real translation
@@ -105,39 +105,26 @@ defaultPositionSpec = describe "the position of the default clause" $ do
 -- wholesale).
 realWorldSpec :: Spec
 realWorldSpec = describe "real translation strings" $ do
-  it "can parse errors.NotEnoughReqChars" $
-    "Missing required characters in category: $category (need at least $minAmount)."
-      `shouldParseTo` [ Fragment "Missing required characters in category: ",
-                        Var "category",
-                        Fragment " (need at least ",
-                        Var "minAmount",
-                        Fragment ")."
-                      ]
-  it "can parse form.password_policy.min_length" $
-    "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
-      `shouldParseTo` [ Calc $
-                          Pluralize
-                            "count"
-                            [ ( One,
-                                Syn
-                                  [ Fragment "At least ",
-                                    Var "count",
-                                    Fragment " character long "
-                                  ]
-                              )
-                            ]
-                            ( Syn
-                                [ Fragment "At least ",
-                                  Var "count",
-                                  Fragment " characters long "
-                                ]
-                            )
-                      ]
+  it "renders errors.NotEnoughReqChars" $
+    rendersWith
+      "Missing required characters in category: $category (need at least $minAmount)."
+      [("category", ParamFragment "symbols"), ("minAmount", ParamInt 2)]
+      "Missing required characters in category: symbols (need at least 2)."
+  it "renders form.password_policy.min_length in the singular" $
+    rendersWith
+      "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
+      [("count", ParamInt 1)]
+      "At least 1 character long "
+  it "renders form.password_policy.min_length in the plural" $
+    rendersWith
+      "{pluralize($count) { one { At least $count character long } default { At least $count characters long } }}"
+      [("count", ParamInt 8)]
+      "At least 8 characters long "
 
 spec :: Spec
 spec = do
   simplifySpec
-  parsingSpec
+  renderingSpec
   truncationSpec
   escapeSpec
   defaultPositionSpec

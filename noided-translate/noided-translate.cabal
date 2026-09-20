@@ -116,6 +116,7 @@ test-suite noided-translate-test
         Noided.Translate.Internal.Type.MessageSpec
         Noided.Translate.Internal.Type.MessagesSpec
         Noided.Translate.Internal.RenderSpec
+        Noided.Translate.SpecHelper
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

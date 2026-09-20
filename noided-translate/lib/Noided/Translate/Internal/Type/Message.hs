@@ -71,21 +71,8 @@ inParens = insideSurrounding (AT.char '(') (AT.char ')')
 inBraces :: AT.Parser a -> AT.Parser a
 inBraces = insideSurrounding (AT.char '{') (AT.char '}')
 
--- | Where in a message we are currently parsing.
---
--- This only matters for escaping. Outside of a calculation block a @}@ carries
--- no structural meaning, so @}}@ can be read as an escaped @}@. Inside of one,
--- a @}@ always closes the enclosing block, so the escape would be ambiguous
--- (consider the @}}}@ that ends a one-armed @pluralize@) and is not offered.
-data FragmentContext
-  = -- | Not inside the braces of any calculation.
-    TopLevel
-  | -- | Inside the braces of a calculation.
-    InCalc
-  deriving (Show, Read, Eq, Ord, Bounded, Enum, Generic)
-
 bracedMessageValue :: AT.Parser Message
-bracedMessageValue = inBraces $ parseSynIn InCalc
+bracedMessageValue = inBraces parseSyn
 
 pluralizedMessage :: AT.Parser (PluralizationForm, Message)
 pluralizedMessage = (,) <$> parseForm <*> bracedMessageValue
@@ -148,33 +135,51 @@ parseMessage t = do
     simplify = _Syn %~ simplifySyn
 
 parseSyn :: AT.Parser Message
-parseSyn = parseSynIn TopLevel
-
-parseSynIn :: FragmentContext -> AT.Parser Message
-parseSynIn ctx = Syn <$> many (parseVar <|> parseFragment ctx <|> parseCalc)
+parseSyn = Syn <$> many (parseVar <|> parseFragment <|> parseCalc)
 
 parseVar :: AT.Parser Message
 parseVar = Var <$> parseVarName
 
+-- | Parse @$name@.
+--
+-- The character after the @$@ decides between this and 'parseEscape', so the
+-- guard here is deliberate rather than incidental: a @$@ followed by anything
+-- that cannot start a variable name is rejected before any of it is consumed,
+-- leaving 'parseEscape' to try the same input from the @$@.
 parseVarName :: AT.Parser Text
 parseVarName = do
   _ <- AT.char '$'
   nc <- AT.peekChar'
-  when (nc == '$') $
-    fail "parse: escaped var"
+  unless (isAlphaNum nc) $
+    fail "parse: `$` must be followed by a variable name, or by one of `$`, `{`, `}`"
   AT.takeWhile1 isAlphaNum
 
-parseFragment :: FragmentContext -> AT.Parser Message
-parseFragment ctx = Fragment <$> (parseRawFragment <|> parseEscape)
+parseFragment :: AT.Parser Message
+parseFragment = Fragment <$> (parseRawFragment <|> parseEscape)
   where
     parseRawFragment = AT.takeWhile1 (\c -> c /= '$' && c /= '}' && c /= '{')
-    parseEscape =
-      (AT.string "$$" $> "$")
-        <|> (AT.string "{{" $> "{")
-        <|> parseEscapedCloseBrace
-    parseEscapedCloseBrace = case ctx of
-      TopLevel -> AT.string "}}" $> "}"
-      InCalc -> empty
+
+-- | Parse one escape sequence: @$$@, @${@ or @$}@.
+--
+-- @$@ is the lead-in for every escape because, of the three characters the format
+-- treats specially, it is the only one with no structural role: a @$@ is only ever
+-- the start of a variable or of an escape, so @$@ followed by any of @$@, @{@ or
+-- @}@ has exactly one reading, everywhere in a message.
+--
+-- Doubling (@{{@, @}}@) cannot give that. Braces do carry structure, and a @}@
+-- inside a calculation block always closes it, so @}}@ would be ambiguous with
+-- the run of closing braces that ends a message like
+-- @{pluralize ($n) { default { none }}}@ -- a greedy escape eats two of the
+-- three. That is why the doubled-brace escapes were removed; please do not
+-- re-add them. A bare @{{@ or @}}@ that is not valid calculation syntax is a
+-- parse error.
+parseEscape :: AT.Parser Text
+parseEscape =
+  AT.char '$'
+    *> ( (AT.char '$' $> "$")
+           <|> (AT.char '{' $> "{")
+           <|> (AT.char '}' $> "}")
+       )
 
 _Fragment :: Prism Message Message Text Text
 _Fragment = prism' Fragment $ \case
