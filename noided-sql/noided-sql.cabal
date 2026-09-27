@@ -151,6 +151,9 @@ library
 
       Noided.Sql.Internal.TH.HKDTable
       Noided.Sql.Internal.TH.HKDView
+      Noided.Sql.Internal.TH.PlainTable
+      Noided.Sql.Internal.Type.Col
+      Noided.Sql.Internal.PlainTableDef
 
       Noided.Sql.Internal.SqlExpr.Bind
       Noided.Sql.Internal.SqlExpr.Bool
@@ -227,6 +230,7 @@ test-suite noided-sql-test
 
       Noided.Sql.Internal.TH.HKDTableSpec
       Noided.Sql.Internal.TH.HKDViewSpec
+      Noided.Sql.Internal.TH.PlainTableSpec
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
