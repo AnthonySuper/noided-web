@@ -12,19 +12,19 @@ import Noided.Sql.Internal.Type.TableName (TableName)
 -- | Build a 'TableDefinition' for a table defined with
 -- 'Noided.Sql.Internal.TH.PlainTable.defineTable'.
 --
--- > usersTable :: TableDefinition (TableColumns UserF) UserF
+-- > usersTable :: TableDefinition (TableColumns UserF) (UserF NotNulled)
 -- > usersTable = plainTableDef "users"
 plainTableDef ::
   forall t.
   ( PlainTable t,
-    Generic (t ColumnName),
-    GSnakeCasedNames (Rep (t ColumnName))
+    Generic (t NotNulled ColumnName),
+    GSnakeCasedNames (Rep (t NotNulled ColumnName))
   ) =>
   TableName ->
-  TableDefinition (TableColumns t) t
+  TableDefinition (TableColumns t) (t NotNulled)
 plainTableDef tn =
   DefineTable
     { tableName = tn,
       columnNames = plainColumnNames @t,
-      selectedNames = to (genericSnakeCasedNames @(Rep (t ColumnName)))
+      selectedNames = to (genericSnakeCasedNames @(Rep (t NotNulled ColumnName)))
     }

@@ -77,6 +77,9 @@ module Noided.Sql.Define
 
     -- * Plain HKD tables (prototype)
     Col,
+    NullTag (..),
+    ApplyTag,
+    DenullRow (..),
     PlainTable (..),
     defineTable,
     defineTableDeriving,
@@ -140,6 +143,7 @@ import Noided.Sql.Internal.TH.HKDTable
 import Noided.Sql.Internal.TH.HKDView
 import Noided.Sql.Internal.TH.PlainTable
 import Noided.Sql.Internal.Type.Col
+import Noided.Sql.Internal.Class.DenullRow
 import Noided.Sql.Internal.PlainTableDef
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.Columnar

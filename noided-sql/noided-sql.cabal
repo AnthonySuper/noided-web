@@ -153,6 +153,7 @@ library
       Noided.Sql.Internal.TH.HKDView
       Noided.Sql.Internal.TH.PlainTable
       Noided.Sql.Internal.Type.Col
+      Noided.Sql.Internal.Class.DenullRow
       Noided.Sql.Internal.PlainTableDef
 
       Noided.Sql.Internal.SqlExpr.Bind

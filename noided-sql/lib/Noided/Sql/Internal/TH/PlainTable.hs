@@ -8,10 +8,10 @@
 --
 -- Given
 --
--- > data UserF f = UserF
--- >   { id :: Col (IdentityColumn Int64) f,
--- >     name :: Col (RegularColumn Text) f,
--- >     profile :: ProfileF f
+-- > data UserF nt f = UserF
+-- >   { id :: Col (IdentityColumn Int64) nt f,
+-- >     name :: Col (RegularColumn Text) nt f,
+-- >     profile :: ProfileF nt f
 -- >   }
 -- >   deriving (Generic)
 -- >
@@ -21,9 +21,13 @@
 --
 -- * @data User = User { id :: Int64, name :: Text, profile :: Profile }@, a
 --   real record (so you need @DuplicateRecordFields@ in the defining module);
--- * 'FFunctor', 'FFoldable', 'FTraversable', 'FRepeat', 'FZip',
---   'NamedColumns', 'DecodeSelectList' instances for @UserF@;
--- * @instance UnwrapSelectList UserF@ with @SelectListUnwrapped UserF = User@;
+-- * @type UserQ = UserF 'NotNulled@;
+-- * 'FFunctor', 'FFoldable', 'FTraversable', 'FRepeat', 'FZip' for @UserF nt@;
+-- * 'NamedColumns', 'DecodeSelectList', 'Nullified' for both tags, with
+--   @AsNullified (UserF tag) = UserF 'Nulled@;
+-- * @SelectListUnwrapped (UserF 'NotNulled) = User@ and
+--   @SelectListUnwrapped (UserF 'Nulled) = Maybe User@ (a custom type error
+--   if the table has no NON NULL column to detect a missing row with);
 -- * @instance PlainTable UserF@, carrying the flattened column definitions
 --   (defaults included) recovered from the /declared/ field types.
 --
@@ -44,7 +48,10 @@ import Noided.Row
 import Noided.Sql.Internal.Class.AsHaskellValue
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.NamedColumns
+import Noided.Sql.Internal.Class.DenullRow
+import Noided.Sql.Internal.Class.Nullified
 import Noided.Sql.Internal.Class.UnwrapSelectList
+import GHC.TypeLits (ErrorMessage (Text), TypeError)
 import Noided.Sql.Internal.HKDTableDef (camelToSnake)
 import Noided.Sql.Internal.Type.Col
 import Noided.Sql.Internal.Type.ColumnName
@@ -82,34 +89,67 @@ defineTableDeriving derivs hkdName = do
           Nothing
           [RecC plainName plainFields]
           [DerivClause Nothing (map ConT (''Generic : derivs))]
-      hkdT = pure (ConT hkdName)
+  cols <- flattenColumns classified
+  let hkdT = pure (ConT hkdName)
       plainT = pure (ConT plainName)
+      synName = mkName (nameBase plainName <> "Q")
+      hasNonNull = any (isNonNullColumn . snd) cols
+  -- Structural instances hold for every tag.
   hkdInstances <-
     [d|
-      instance FFunctor $hkdT where
+      instance FFunctor ($hkdT nt) where
         ffmap = ffmapDefault
 
-      instance FFoldable $hkdT where
+      instance FFoldable ($hkdT nt) where
         ffoldMap = ffoldMapDefault
 
-      instance FTraversable $hkdT where
+      instance FTraversable ($hkdT nt) where
         ftraverse = gftraverse
 
-      instance FRepeat $hkdT where
+      instance FRepeat ($hkdT nt) where
         frepeat = gfrepeat
 
-      instance FZip $hkdT where
+      instance FZip ($hkdT nt) where
         fzipWith = gfzipWith
 
-      instance NamedColumns $hkdT
+      instance DecodeSelectList ($hkdT NotNulled)
 
-      instance DecodeSelectList $hkdT
+      instance DecodeSelectList ($hkdT Nulled)
 
-      instance UnwrapSelectList $hkdT where
-        type SelectListUnwrapped $hkdT = $plainT
+      instance UnwrapSelectList ($hkdT NotNulled) where
+        type SelectListUnwrapped ($hkdT NotNulled) = $plainT
+
+      instance Nullified ($hkdT NotNulled) where
+        type AsNullified ($hkdT NotNulled) = $hkdT Nulled
+
+      instance Nullified ($hkdT Nulled) where
+        type AsNullified ($hkdT Nulled) = $hkdT Nulled
+        nullifyRow = id
+
+      instance DenullRow $hkdT
       |]
-  tableInstance <- plainTableInstance hkdName classified
-  pure $ plainDecl : hkdInstances ++ [tableInstance]
+  namedInstances <- namedColumnsInstances hkdT
+  nulledUnwrap <-
+    if hasNonNull
+      then
+        [d|
+          instance UnwrapSelectList ($hkdT Nulled) where
+            type SelectListUnwrapped ($hkdT Nulled) = Maybe $plainT
+            unwrapSelectList = fmap unwrapSelectList . denullRow
+          |]
+      else do
+        let msg =
+              "Table "
+                <> nameBase hkdName
+                <> " has no NON NULL columns, so a missing outer-joined row cannot be told apart from a row of NULLs. Select its columns individually instead."
+        [d|
+          instance (TypeError (Text $(litT (strTyLit msg)))) => UnwrapSelectList ($hkdT Nulled) where
+            type SelectListUnwrapped ($hkdT Nulled) = Maybe $plainT
+            unwrapSelectList = error "unreachable"
+          |]
+  let synDecl = TySynD synName [] (ConT hkdName `AppT` PromotedT 'NotNulled)
+  tableInstance <- plainTableInstance hkdName cols
+  pure $ plainDecl : synDecl : hkdInstances ++ namedInstances ++ nulledUnwrap ++ [tableInstance]
 
 -- | A field of a plain HKD, after looking at its declared type.
 data FieldKind
@@ -121,15 +161,15 @@ data FieldKind
 reifyHKD :: Name -> Q (Name, [VarBangType])
 reifyHKD n =
   reify n >>= \case
-    TyConI (DataD _ _ [_] _ [RecC con fields] _) -> pure (con, fields)
-    TyConI (NewtypeD _ _ [_] _ (RecC con fields) _) -> pure (con, fields)
+    TyConI (DataD _ _ [_, _] _ [RecC con fields] _) -> pure (con, fields)
+    TyConI (NewtypeD _ _ [_, _] _ (RecC con fields) _) -> pure (con, fields)
     _ ->
       fail $
         "defineTable: "
           <> nameBase n
-          <> " must be a single-constructor record with exactly one type parameter, like: data "
+          <> " must be a single-constructor record with exactly two type parameters, like: data "
           <> nameBase n
-          <> " f = "
+          <> " nt f = "
           <> nameBase n
           <> " { ... }"
 
@@ -142,15 +182,15 @@ stripF n =
 classifyField :: VarBangType -> Q FieldKind
 classifyField (fname, _, ty) =
   case unApp (stripParens ty) of
-    (ConT col, [c, VarT _]) | col == ''Col -> ColumnField fname <$> expandSyns c
-    (ConT sub, [VarT _]) -> pure (NestedField fname sub)
+    (ConT col, [c, VarT _, VarT _]) | col == ''Col -> ColumnField fname <$> expandSyns c
+    (ConT sub, [VarT _, VarT _]) -> pure (NestedField fname sub)
     _ ->
       fail $
         "defineTable: field "
           <> nameBase fname
           <> " has type "
           <> pprint ty
-          <> ", but fields must be either `Col (Column ...) f` or a nested table `SubF f`"
+          <> ", but fields must be either `Col (Column ...) nt f` or a nested table `SubF nt f`"
 
 plainField :: FieldKind -> Q VarBangType
 plainField k = do
@@ -190,9 +230,8 @@ resolveHaskellTypeOf t = do
 -- them) rather than referenced through @TableColumns Sub@, so the instance is
 -- a single literal list and the user's module doesn't need
 -- @UndecidableInstances@.
-plainTableInstance :: Name -> [FieldKind] -> Q Dec
-plainTableInstance hkdName fields = do
-  cols <- flattenColumns fields
+plainTableInstance :: Name -> [(Name, Type)] -> Q Dec
+plainTableInstance hkdName cols = do
   let colsTy =
         foldr
           ( \(n, c) acc ->
@@ -285,3 +324,29 @@ freeVars = \case
   ParensT t -> freeVars t
   SigT t _ -> freeVars t
   _ -> []
+
+isNonNullColumn :: Type -> Bool
+isNonNullColumn c = case unApp c of
+  (h, [_, nullability, _]) | isNamed "Column" h -> isNamed "NonNull" nullability
+  _ -> False
+
+-- | 'NamedColumns' for both tags, plus tag defaulting for hand-built rows.
+--
+-- A row built by hand, @PostF { id = p.id, ... }@, leaves its tag ambiguous:
+-- @ApplyTag nt0 'NonNull ~ 'NonNull@ does not determine @nt0@. Every query
+-- over the row needs @NamedColumns (PostF nt0)@, so we make that the place
+-- where the tag defaults: the INCOHERENT @nt ~ 'NotNulled@ instance is chosen
+-- while @nt0@ is still unknown, and the concrete @'Nulled@ instance (also
+-- INCOHERENT, so it does not block that choice) wins once the tag is known.
+--
+-- Consequences: a hand-built row meant to be @'Nulled@ must say so
+-- (@PostF \@Nulled ...@), and code polymorphic in the tag needs an explicit
+-- @NamedColumns (PostF nt)@ constraint.
+namedColumnsInstances :: Q Type -> Q [Dec]
+namedColumnsInstances hkdT =
+  [d|
+    instance {-# INCOHERENT #-} (nt ~ NotNulled) => NamedColumns ($hkdT nt) where
+      namedColumns = gnamedColumns
+
+    instance {-# INCOHERENT #-} NamedColumns ($hkdT Nulled)
+    |]
