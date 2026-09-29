@@ -9,6 +9,8 @@ module Noided.Sql.Select
     fromBase_,
     innerJoinLateral_,
     innerJoin_,
+    crossJoinLateral_,
+    crossJoin_,
     leftJoin_,
     leftJoinLateral_,
     rightJoin_,

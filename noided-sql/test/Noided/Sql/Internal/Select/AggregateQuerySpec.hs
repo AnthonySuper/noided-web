@@ -7,7 +7,7 @@ module Noided.Sql.Internal.Select.AggregateQuerySpec (spec) where
 
 import Data.Coerce (coerce)
 import Data.HKD
-import Data.Int (Int64)
+import Data.Int (Int32, Int64)
 import Data.Scientific (Scientific)
 import Data.Text (unpack)
 import GHC.Generics
@@ -90,6 +90,23 @@ instance FZip ArrayStats where fzipWith = gfzipWith
 instance NamedColumns ArrayStats where
   namedColumns = ArrayStats "id" "vals"
 
+data BoolStats f = BoolStats
+  { bsAny :: f (NullableT Bool),
+    bsEvery :: f (NullableT Bool)
+  }
+  deriving (Generic)
+
+instance FFunctor BoolStats where ffmap = ffmapDefault
+
+instance FFoldable BoolStats where ffoldMap = ffoldMapDefault
+
+instance FTraversable BoolStats where ftraverse = gftraverse
+
+instance FZip BoolStats where fzipWith = gfzipWith
+
+instance NamedColumns BoolStats where
+  namedColumns = BoolStats "any" "every"
+
 renderAggregateGolden ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
   String ->
@@ -107,6 +124,12 @@ spec = do
     renderAggregateGolden "Simple count and sum over a table" $
       aggregate_
         (\(Table1 _ val) -> Stats (agg $ count_ val) (agg $ sum_ val))
+        (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
+
+  describe "AggregateBoolean" $ do
+    renderAggregateGolden "any_ renders BOOL_OR" $
+      aggregate_
+        (\(Table1 _ val) -> BoolStats (agg $ any_ (val ==. UnsafeMkSqlExpr "1")) (agg $ every_ (val ==. UnsafeMkSqlExpr "1")))
         (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
 
   describe "AggregateGroupBy" $ do
@@ -130,3 +153,16 @@ spec = do
         (\t1 -> Element t1.t1Id)
         (\(Element idAgg :--: t1Agg) -> ArrayStats (coerce idAgg) (agg $ arrayAgg_ t1Agg.t1Val))
         baseQuery
+
+  describe "stddev_ / variance_ result types" $ do
+    -- These only need to compile: Postgres returns numeric for integer/numeric input, double for float input.
+    it "returns numeric for integer input" $ do
+      let _stddevInt :: SqlExpr s (SqlT n Int32) -> AggregateExpr s (NullableT Scientific)
+          _stddevInt = stddev_
+          _varInt :: SqlExpr s (SqlT n Int64) -> AggregateExpr s (NullableT Scientific)
+          _varInt = varPop_
+      True `shouldBe` True
+    it "returns double for double input" $ do
+      let _stddevDouble :: SqlExpr s (SqlT n Double) -> AggregateExpr s (NullableT Double)
+          _stddevDouble = stddevSamp_
+      True `shouldBe` True

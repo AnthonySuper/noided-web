@@ -71,7 +71,7 @@ module Noided.Sql.SqlExpr
     subqueryRowsOf_,
 
     -- * Numeric functions
-    SqlNumeric (SumType, AvgType),
+    SqlNumeric (SumType, AvgType, StddevType),
     (+.),
     (-.),
     (*.),
@@ -219,7 +219,11 @@ module Noided.Sql.SqlExpr
     boolAnd_,
     boolOr_,
     stddev_,
+    stddevSamp_,
+    stddevPop_,
     variance_,
+    varSamp_,
+    varPop_,
     arrayAgg_,
 
     -- * Order clauses
