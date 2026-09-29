@@ -1,5 +1,9 @@
 module Noided.Sql.Update
-  ( UpdateQuery,
+  ( FromM,
+    WhereM,
+    addFromItem_,
+    addWhereCondition_,
+    UpdateQuery,
     updateReturning,
     update,
     updateReturningAll,
@@ -12,5 +16,6 @@ module Noided.Sql.Update
   )
 where
 
+import Noided.Sql.Internal.Select.SelectM (FromM, WhereM, addFromItem_, addWhereCondition_)
 import Noided.Sql.Internal.Update.Sets
 import Noided.Sql.Internal.Update.Update

@@ -26,17 +26,23 @@ data UpdateQuery returning where
   Update ::
     (SelectList tableSelectList) =>
     TableDefinition tableCols tableSelectList ->
-    (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols, returning)) ->
+    FromM fromRow ->
+    (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols, returning)) ->
     UpdateQuery returning
 
 instance Functor UpdateQuery where
-  fmap f (Update td q) = Update td (fmap (fmap f) . q)
+  fmap f (Update td from q) = Update td from (\t r -> fmap (fmap f) (q t r))
 
 -- | Construct an UPDATE query returning results.
+--
+-- The 'FromM' action builds the @FROM@ items. Postgres does not let these reference the row being updated,
+-- so it is not available there. The second stage gets the target row and the result of the 'FromM' action, and
+-- may add @WHERE@ conditions (including correlated subqueries), the @SET@ values, and the @RETURNING@ value.
 updateReturning ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
-  (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols, returning)) ->
+  FromM fromRow ->
+  (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols, returning)) ->
   UpdateQuery returning
 updateReturning = Update
 
@@ -44,25 +50,28 @@ updateReturning = Update
 update ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
-  (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols)) ->
+  FromM fromRow ->
+  (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols)) ->
   UpdateQuery ()
-update td q = Update td (fmap (,()) . q)
+update td from q = Update td from (\t r -> (,()) <$> q t r)
 
 updateReturningAll ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
+  FromM fromRow ->
   ( QueriedRow tableSelectList ->
-    SelectM (ColumnUpdates tableCols)
+    fromRow ->
+    WhereM (ColumnUpdates tableCols)
   ) ->
   UpdateQuery (QueriedRow tableSelectList)
-updateReturningAll td buildUpdates =
-  updateReturning td $ \res -> (,res) <$> buildUpdates res
+updateReturningAll td from buildUpdates =
+  updateReturning td from $ \res fr -> (,res) <$> buildUpdates res fr
 
 writeUpdateQuery ::
   (SelectList returningList) =>
   UpdateQuery (QueriedRow returningList) ->
   QueryWriter ()
-writeUpdateQuery (Update td q) = do
+writeUpdateQuery (Update td fromM q) = do
   "UPDATE "
   writeTableName td.tableName
   " AS "
@@ -70,14 +79,15 @@ writeUpdateQuery (Update td q) = do
   writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
 
-  -- Run the SelectM action to get updates, returning, and state (FROM/WHERE)
-  ((updates, returningList), finalState) <- runStateT (unsafeGetSelectM (q targetRow)) mempty
+  -- The FROM items are built first, without access to the target row.
+  (fromRow, fromState) <- runStateT (unsafeGetSelectM (unsafeGetFromM fromM)) mempty
+  ((updates, returningList), whereState) <- runStateT (unsafeGetSelectM (unsafeGetWhereM (q targetRow fromRow))) mempty
 
   " SET "
   writeUpdateSets updates td.columnNames
 
   -- FROM clause
-  let froms = fromSyntaxes finalState
+  let froms = fromSyntaxes fromState
   if Seq.null froms
     then pure ()
     else do
@@ -85,7 +95,7 @@ writeUpdateQuery (Update td q) = do
       writeSyntax $ fromCommaSepSyntax $ foldMap Written froms
 
   -- WHERE clause
-  for_ (writeAnds (whereSyntaxes finalState)) $ \act -> do
+  for_ (writeAnds (whereSyntaxes whereState)) $ \act -> do
     " WHERE "
     act
 

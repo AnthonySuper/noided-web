@@ -25,17 +25,23 @@ data DeleteQuery returning where
   Delete ::
     (SelectList tableSelectList) =>
     TableDefinition tableCols tableSelectList ->
-    (QueriedRow tableSelectList -> SelectM returning) ->
+    FromM fromRow ->
+    (QueriedRow tableSelectList -> fromRow -> WhereM returning) ->
     DeleteQuery returning
 
 instance Functor DeleteQuery where
-  fmap f (Delete td q) = Delete td (\r -> fmap f (q r))
+  fmap f (Delete td from q) = Delete td from (\t r -> fmap f (q t r))
 
 -- | Construct a DELETE query returning results.
+--
+-- The 'FromM' action builds the @USING@ items. Postgres does not let these reference the row being deleted,
+-- so it is not available there. The second stage gets the target row and the result of the 'FromM' action, and
+-- may add @WHERE@ conditions (including correlated subqueries) and the @RETURNING@ value.
 deleteReturning ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
-  (QueriedRow tableSelectList -> SelectM returning) ->
+  FromM fromRow ->
+  (QueriedRow tableSelectList -> fromRow -> WhereM returning) ->
   DeleteQuery returning
 deleteReturning = Delete
 
@@ -43,15 +49,16 @@ deleteReturning = Delete
 delete ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
-  (QueriedRow tableSelectList -> SelectM ()) ->
+  FromM fromRow ->
+  (QueriedRow tableSelectList -> fromRow -> WhereM ()) ->
   DeleteQuery ()
-delete td q = Delete td q
+delete = Delete
 
 writeDeleteQuery ::
   (SelectList returningList) =>
   DeleteQuery (QueriedRow returningList) ->
   QueryWriter ()
-writeDeleteQuery (Delete td q) = do
+writeDeleteQuery (Delete td fromM q) = do
   "DELETE FROM "
   writeTableName td.tableName
   " AS "
@@ -59,11 +66,12 @@ writeDeleteQuery (Delete td q) = do
   writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
   
-  -- Run the SelectM action
-  (returningList, finalState) <- runStateT (unsafeGetSelectM (q targetRow)) mempty
+  -- The USING items are built first, without access to the target row.
+  (fromRow, fromState) <- runStateT (unsafeGetSelectM (unsafeGetFromM fromM)) mempty
+  (returningList, whereState) <- runStateT (unsafeGetSelectM (unsafeGetWhereM (q targetRow fromRow))) mempty
 
   -- USING clause (populated from fromSyntaxes)
-  let froms = fromSyntaxes finalState
+  let froms = fromSyntaxes fromState
   if Seq.null froms
     then pure ()
     else do
@@ -71,7 +79,7 @@ writeDeleteQuery (Delete td q) = do
       writeSyntax $ fromCommaSepSyntax $ foldMap Written froms
 
   -- WHERE clause
-  for_ (writeAnds (whereSyntaxes finalState)) $ \act -> do
+  for_ (writeAnds (whereSyntaxes whereState)) $ \act -> do
     " WHERE "
     act
 

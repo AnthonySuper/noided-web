@@ -66,20 +66,17 @@ renderGolden description query =
 spec :: Spec
 spec = describe "UpdateQuery" $ do
   renderGolden "simple-update" $
-    updateReturning userTable $ \r -> do
+    updateReturning userTable (pure ()) $ \r () -> do
       return (#name |= MutateVal (bindParam @Text "New Name"), r)
 
   renderGolden "update-with-where" $
-    updateReturning userTable $ \r -> do
-      addWhere_ (r.id ==. bindParam @Int64 123)
-      return (#score |= MutateVal (bindParam @Int64 100), r.id :::% EmptyWrappedRow) :: SelectM (ColumnUpdates UserTable, WrappedRow IdRow (SqlExpr NormalQuery))
+    updateReturning userTable (pure ()) $ \r () -> do
+      addWhereCondition_ (r.id ==. bindParam @Int64 123)
+      return (#score |= MutateVal (bindParam @Int64 100), r.id :::% EmptyWrappedRow) :: WhereM (ColumnUpdates UserTable, WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "update-from-another-table" $
-    updateReturning userTable $ \u -> do
-      -- Join with another table (self-join for simplicity of test definition)
-      other <- addFrom_ (fromBase_ (mkTableDef "other_users"))
-      
-      addWhere_ (u.id ==. other.id)
+    updateReturning userTable (addFromItem_ (fromBase_ (mkTableDef "other_users"))) $ \u other -> do
+      addWhereCondition_ (u.id ==. other.id)
       
       return (#score |= MutateVal other.score, u)
 

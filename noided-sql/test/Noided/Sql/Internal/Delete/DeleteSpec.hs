@@ -64,19 +64,16 @@ type IdRow = '[ "id" :=> SqlT NonNull Int64 ]
 spec :: Spec
 spec = describe "DeleteQuery" $ do
   renderGolden "simple-delete" $ 
-    deleteReturning userTable $ \r -> return r
+    deleteReturning userTable (pure ()) $ \r () -> return r
 
   renderGolden "delete-with-where" $ 
-    deleteReturning userTable $ \r -> do
-      addWhere_ (r.id ==. bindParam @Int64 123)
-      return (r.id :::% EmptyWrappedRow) :: SelectM (WrappedRow IdRow (SqlExpr NormalQuery))
+    deleteReturning userTable (pure ()) $ \r () -> do
+      addWhereCondition_ (r.id ==. bindParam @Int64 123)
+      return (r.id :::% EmptyWrappedRow) :: WhereM (WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "delete-with-using" $ 
-    deleteReturning userTable $ \u -> do
-      -- Join with another table
-      other <- addFrom_ (fromBase_ (mkTableDef "other_users"))
-      
-      addWhere_ (u.id ==. other.id)
+    deleteReturning userTable (addFromItem_ (fromBase_ (mkTableDef "other_users"))) $ \u other -> do
+      addWhereCondition_ (u.id ==. other.id)
       
       return u
 
