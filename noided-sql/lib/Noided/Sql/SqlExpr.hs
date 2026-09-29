@@ -69,6 +69,11 @@ module Noided.Sql.SqlExpr
     -- * Working with subqueries
     aggregatedSubqueryVal_,
     subqueryRowsOf_,
+    exists_,
+
+    -- * Row values
+    PGRow,
+    row_,
 
     -- * Numeric functions
     SqlNumeric (SumType, AvgType, StddevType),
@@ -254,6 +259,7 @@ import Noided.Sql.Internal.SqlExpr.FullText
 import Noided.Sql.Internal.SqlExpr.Inet
 import Noided.Sql.Internal.SqlExpr.Numeric
 import Noided.Sql.Internal.SqlExpr.Range
+import Noided.Sql.Internal.SqlExpr.Row
 import Noided.Sql.Internal.SqlExpr.SubAgg
 import Noided.Sql.Internal.SqlExpr.Text
 import Noided.Sql.Internal.Type.AggregateExpr
@@ -264,6 +270,7 @@ import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.OrderClause
 import Noided.Sql.Internal.Type.PGFullTextSearchWeight
 import Noided.Sql.Internal.Type.PGRegConfig
+import Noided.Sql.Internal.Type.PGRow (PGRow)
 import Noided.Sql.Internal.Type.PGTSQuery
 import Noided.Sql.Internal.Type.PGTSVector
 import Noided.Sql.Internal.Type.TSValue

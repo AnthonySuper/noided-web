@@ -60,6 +60,9 @@ false_ = UnsafeMkSqlExpr "FALSE"
 not_ :: SqlExpr scope (SqlT n Bool) -> SqlExpr scope (SqlT n Bool)
 not_ a = UnsafeMkSqlExpr ("NOT (" <> unsafeGetSqlExpr a <> ")")
 
+-- | @EXISTS (subquery)@: true when the given query returns at least one row.
+--
+-- The query is rendered as a subquery, so it may be any 'SelectQuery'.
 exists_ :: (SelectQuery query) => query -> SqlExpr scope (NonNullT Bool)
 exists_ query =
   UnsafeMkSqlExpr $
