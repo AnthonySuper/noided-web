@@ -97,12 +97,28 @@ boolOr_ :: SqlExpr valScope (SqlT n Bool) -> AggregateExpr valScope (NullableT B
 boolOr_ = unsafeBuildSingleArgAgg "BOOL_OR"
 
 -- | Sql @STDDEV@ aggregate function.
-stddev_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT Double)
+stddev_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (StddevType r))
 stddev_ = unsafeBuildSingleArgAgg "STDDEV"
 
+-- | Sql @STDDEV_SAMP@ aggregate function.
+stddevSamp_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (StddevType r))
+stddevSamp_ = unsafeBuildSingleArgAgg "STDDEV_SAMP"
+
+-- | Sql @STDDEV_POP@ aggregate function.
+stddevPop_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (StddevType r))
+stddevPop_ = unsafeBuildSingleArgAgg "STDDEV_POP"
+
 -- | Sql @VARIANCE@ aggregate function.
-variance_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT Double)
+variance_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (StddevType r))
 variance_ = unsafeBuildSingleArgAgg "VARIANCE"
+
+-- | Sql @VAR_SAMP@ aggregate function.
+varSamp_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (StddevType r))
+varSamp_ = unsafeBuildSingleArgAgg "VAR_SAMP"
+
+-- | Sql @VAR_POP@ aggregate function.
+varPop_ :: (SqlNumeric r) => SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (StddevType r))
+varPop_ = unsafeBuildSingleArgAgg "VAR_POP"
 
 -- | Sql @ARRAY_AGG@ aggregate function.
 arrayAgg_ :: SqlExpr valScope (SqlT n r) -> AggregateExpr valScope (NullableT (PGArray (SqlT n r)))
