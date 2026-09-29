@@ -5,7 +5,8 @@ module Noided.Sql.Internal.Type.PGSeriesSpec (spec) where
 
 import Data.Function ((&))
 import Data.HKD
-import Data.Int (Int64)
+import Data.Int (Int32, Int64)
+import Data.Scientific (Scientific)
 import Data.Text (unpack)
 import Data.Time (LocalTime, UTCTime)
 import Noided.Sql.Internal.Type.Interval
@@ -70,3 +71,17 @@ spec = do
             (bindParam @Interval (intervalFromDiffTime 86400))
     return r
 
+
+  renderGolden "generate_series with Int32" $ do
+    r <- addFrom_ $ fromBase_ (generateSeries (bindParam @Int32 1) (bindParam @Int32 10))
+    return r
+
+  renderGolden "generate_series with Scientific and step" $ do
+    r <-
+      addFrom_ $
+        fromBase_ $
+          generateSeriesStep
+            (bindParam @Scientific 0)
+            (bindParam @Scientific 1)
+            (bindParam @Scientific 0.25)
+    return r
