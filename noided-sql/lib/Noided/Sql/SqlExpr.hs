@@ -93,7 +93,12 @@ module Noided.Sql.SqlExpr
     -- * Full-text search functions
     PGTSVector,
     PGTSQuery,
+    TSVector (..),
+    TSQuery (..),
     PGRegConfig,
+    regConfig_,
+    tsVectorFromText_,
+    tsQueryFromText_,
     PGFullTextSearchWeight (..),
     (@@.),
     concatTSVector_,
@@ -261,6 +266,7 @@ import Noided.Sql.Internal.Type.PGFullTextSearchWeight
 import Noided.Sql.Internal.Type.PGRegConfig
 import Noided.Sql.Internal.Type.PGTSQuery
 import Noided.Sql.Internal.Type.PGTSVector
+import Noided.Sql.Internal.Type.TSValue
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 

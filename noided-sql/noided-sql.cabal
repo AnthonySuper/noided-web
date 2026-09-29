@@ -72,7 +72,8 @@ common deps
         scientific,
         iproute,
         postgresql-binary,
-        bytestring
+        bytestring,
+        binary
 
 common extensions
     default-extensions:
@@ -115,6 +116,8 @@ library
       Noided.Sql.Internal.Type.PGTSVector
       Noided.Sql.Internal.Type.PGTSQuery
       Noided.Sql.Internal.Type.PGRegConfig
+      Noided.Sql.Internal.Type.TSBinary
+      Noided.Sql.Internal.Type.TSValue
       Noided.Sql.Internal.Type.PGRow
       Noided.Sql.Internal.Type.PGFullTextSearchWeight
       Noided.Sql.Internal.Type.OrderClause
@@ -203,6 +206,7 @@ test-suite noided-sql-test
     -- Modules included in this executable, other than Main.
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
+      Noided.Sql.Internal.Type.TSBinarySpec
       Noided.Sql.Internal.Type.PGSeriesSpec
       Noided.Sql.Internal.Type.IntervalSpec
       Noided.Sql.Internal.Type.OrderClauseSpec

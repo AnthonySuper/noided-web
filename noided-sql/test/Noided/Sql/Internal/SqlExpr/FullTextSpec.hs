@@ -82,3 +82,13 @@ spec = do
 
     it "renders ts_rank_cd" $ do
       renderTS (tsRankCd_ v q) `shouldBe` "ts_rank_cd(v, q)"
+
+    it "binds and casts a regconfig" $ do
+      renderTS (regConfig_ "english") `shouldBe` "($1)::regconfig"
+
+    it "can use a regconfig with a config function" $ do
+      renderTS (toTSVectorWithConfig_ (regConfig_ "english") txt) `shouldBe` "to_tsvector(($1)::regconfig, txt)"
+
+    it "binds and casts tsvector and tsquery text" $ do
+      renderTS (tsVectorFromText_ "a:1") `shouldBe` "($1)::tsvector"
+      renderTS (tsQueryFromText_ "a & b") `shouldBe` "($1)::tsquery"
