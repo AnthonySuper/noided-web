@@ -6,6 +6,7 @@ module Noided.Sql.Internal.Type.AggregateExpr where
 import Data.Int
 import Data.Kind
 import Noided.Sql.Internal.Class.SqlNumeric
+import Noided.Sql.Internal.SqlExpr.Bool ((&&.))
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
@@ -25,12 +26,17 @@ data AggregateExpr scope dt
     aggExprWhere :: AggregateFilter scope
   }
 
+-- | Add a @FILTER (WHERE ...)@ to an aggregate. If one is already present, the conditions are combined with @AND@.
 filterWhere_ ::
   AggregateExpr scope res ->
   SqlExpr scope (SqlT n Bool) ->
   AggregateExpr scope res
-filterWhere_ (UnsafeMkAggExpr expr _) fr =
-  UnsafeMkAggExpr {aggExprSyntax = expr, aggExprWhere = AggregateFilterWhere fr}
+filterWhere_ (UnsafeMkAggExpr expr existing) fr =
+  UnsafeMkAggExpr {aggExprSyntax = expr, aggExprWhere = newFilter}
+  where
+    newFilter = case existing of
+      NoAggregateFilter -> AggregateFilterWhere fr
+      AggregateFilterWhere prev -> AggregateFilterWhere (prev &&. fr)
 
 -- | Convert an aggregate function over a grouping set to a normal function.
 agg :: AggregateExpr AggregateSet dt -> SqlExpr Aggregated dt

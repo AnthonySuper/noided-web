@@ -9,6 +9,7 @@ import Data.Coerce (coerce)
 import Data.HKD
 import Data.Int (Int64)
 import Data.Scientific (Scientific)
+import Data.List (isInfixOf)
 import Data.Text (unpack)
 import GHC.Generics
 import Noided.Sql.Internal.Class.NamedColumns
@@ -130,3 +131,11 @@ spec = do
         (\t1 -> Element t1.t1Id)
         (\(Element idAgg :--: t1Agg) -> ArrayStats (coerce idAgg) (agg $ arrayAgg_ t1Agg.t1Val))
         baseQuery
+
+  describe "filterWhere_" $ do
+    it "ANDs repeated filters instead of replacing them" $ do
+      let cond :: Syntax -> SqlExpr AggregateSet (NonNullT Bool)
+          cond = UnsafeMkSqlExpr
+          a = countAll_ `filterWhere_` cond "a" `filterWhere_` cond "b"
+      unpack (renderSyntaxToTextNumberedBinds (unsafeAggToSyntax a))
+        `shouldSatisfy` (\t -> "(a) AND (b)" `isInfixOf` t)
