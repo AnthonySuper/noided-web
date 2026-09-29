@@ -38,24 +38,24 @@ instance Functor UpdateQuery where
 -- The 'OptionalFrom' is the @FROM@ item (use 'noFrom_' for none, or 'crossJoin_' to combine several). Postgres does not let
 -- it reference the row being updated, so the target row is not available there. The second stage gets the target row and the FROM row, and
 -- may add @WHERE@ conditions (including correlated subqueries), the @SET@ values, and the @RETURNING@ value.
-updateReturning ::
+updateReturning_ ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
   OptionalFrom fromRow ->
   (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols, returning)) ->
   UpdateQuery returning
-updateReturning = Update
+updateReturning_ = Update
 
 -- | Construct an UPDATE query returning nothing (actually returns (), typically used with execute_).
-update ::
+update_ ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
   OptionalFrom fromRow ->
   (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols)) ->
   UpdateQuery ()
-update td from q = Update td from (\t r -> (,()) <$> q t r)
+update_ td from q = Update td from (\t r -> (,()) <$> q t r)
 
-updateReturningAll ::
+updateReturningAll_ ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
   OptionalFrom fromRow ->
@@ -64,8 +64,8 @@ updateReturningAll ::
     WhereM (ColumnUpdates tableCols)
   ) ->
   UpdateQuery (QueriedRow tableSelectList)
-updateReturningAll td from buildUpdates =
-  updateReturning td from $ \res fr -> (,res) <$> buildUpdates res fr
+updateReturningAll_ td from buildUpdates =
+  updateReturning_ td from $ \res fr -> (,res) <$> buildUpdates res fr
 
 writeUpdateQuery ::
   (SelectList returningList) =>
@@ -75,7 +75,7 @@ writeUpdateQuery (Update td fromM q) = do
   "UPDATE "
   writeTableName td.tableName
   " AS "
-  ln <- toUniqueAlias "to_update"
+  ln <- toQuotedUniqueAlias "to_update"
   writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
 

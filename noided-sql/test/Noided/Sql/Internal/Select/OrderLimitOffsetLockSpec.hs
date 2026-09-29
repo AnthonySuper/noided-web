@@ -16,7 +16,7 @@ import Noided.Sql.Internal.Class.SelectList
 import Noided.Sql.Internal.Select.AggregateQuery (AggregateQuery, aggregate_)
 import Noided.Sql.Internal.Select.OrderLimitOffsetLock
 import Noided.Sql.Internal.Select.SelectM
-import Noided.Sql.Internal.Type.AggregateExpr (agg, count_, sum_)
+import Noided.Sql.Internal.Type.AggregateExpr (agg_, count_, sum_)
 import Noided.Sql.Internal.Type.OrderClause
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
@@ -110,7 +110,7 @@ spec = do
               (LockingClause ForShare SkipLocked))
 
     describe "AggregateQuery" $ do
-      let simpleAgg = aggregate_ (\r -> TableAgg (agg $ count_ r.t1Id) (agg $ sum_ r.t1Val)) (select_ (Table1 col1 col1))
+      let simpleAgg = aggregate_ (\r -> TableAgg (agg_ $ count_ r.t1Id) (agg_ $ sum_ r.t1Val)) (select_ (Table1 col1 col1))
 
       renderGolden "Aggregate with ORDER BY" $
         OrderLimitOffsetLockAggregated simpleAgg $ \res ->

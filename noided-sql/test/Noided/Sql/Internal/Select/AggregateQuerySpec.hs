@@ -123,13 +123,13 @@ spec = do
   describe "AggregateEntireQuery" $ do
     renderAggregateGolden "Simple count and sum over a table" $
       aggregate_
-        (\(Table1 _ val) -> Stats (agg $ count_ val) (agg $ sum_ val))
+        (\(Table1 _ val) -> Stats (agg_ $ count_ val) (agg_ $ sum_ val))
         (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
 
   describe "AggregateBoolean" $ do
     renderAggregateGolden "any_ renders BOOL_OR" $
       aggregate_
-        (\(Table1 _ val) -> BoolStats (agg $ any_ (val ==. UnsafeMkSqlExpr "1")) (agg $ every_ (val ==. UnsafeMkSqlExpr "1")))
+        (\(Table1 _ val) -> BoolStats (agg_ $ any_ (val ==. UnsafeMkSqlExpr "1")) (agg_ $ every_ (val ==. UnsafeMkSqlExpr "1")))
         (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
 
   describe "AggregateGroupBy" $ do
@@ -138,20 +138,20 @@ spec = do
     renderAggregateGolden "Group by id and count vals" $
       groupBy_
         (\t1 -> Element t1.t1Id)
-        (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg $ count_ t1Agg.t1Val))
+        (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg_ $ count_ t1Agg.t1Val))
         baseQuery
 
     renderAggregateGolden "Group by id with HAVING clause" $
       groupByHaving_
         (\t1 -> Element t1.t1Id)
-        (\(_ :--: t1Agg) -> agg (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
-        (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg $ count_ t1Agg.t1Val))
+        (\(_ :--: t1Agg) -> agg_ (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
+        (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg_ $ count_ t1Agg.t1Val))
         baseQuery
 
     renderAggregateGolden "Group by id and array_agg vals" $
       groupBy_
         (\t1 -> Element t1.t1Id)
-        (\(Element idAgg :--: t1Agg) -> ArrayStats (coerce idAgg) (agg $ arrayAgg_ t1Agg.t1Val))
+        (\(Element idAgg :--: t1Agg) -> ArrayStats (coerce idAgg) (agg_ $ arrayAgg_ t1Agg.t1Val))
         baseQuery
 
   describe "stddev_ / variance_ result types" $ do

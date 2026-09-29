@@ -50,7 +50,7 @@ render = renderSyntaxToTextNumberedBinds . renderQueryWriter . writeQuerySyntax
 selectFirstNames :: SelectM (Element (SqlT NonNull Text) (SqlExpr NormalQuery))
 selectFirstNames = do
   u <- addFrom_ (fromBase_ userSummaryView)
-  addWhere_ (u.contact.phoneNumber ==. bindParam ("555" :: Text))
+  addWhere_ (u.contact.phoneNumber ==. bindParam_ ("555" :: Text))
   pure (Element u.firstName)
 
 decodedSummary :: UserSummaryF HaskellT

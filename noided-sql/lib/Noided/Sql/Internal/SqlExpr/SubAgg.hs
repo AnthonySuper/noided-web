@@ -37,4 +37,4 @@ subqueryRowsOf_ query = nullable `coalesce_` emptyRow
   where
     nullable =
       aggregatedSubqueryVal_ $
-        aggregate_ (Element . agg . arrayAgg_ . row_) query
+        aggregate_ (Element . agg_ . arrayAgg_ . row_) query

@@ -37,22 +37,22 @@ instance Functor DeleteQuery where
 -- The 'OptionalFrom' is the @USING@ item (use 'noFrom_' for none, or 'crossJoin_' to combine several). Postgres does not let
 -- it reference the row being deleted, so the target row is not available there. The second stage gets the target row and the USING row, and
 -- may add @WHERE@ conditions (including correlated subqueries) and the @RETURNING@ value.
-deleteReturning ::
+deleteReturning_ ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
   OptionalFrom fromRow ->
   (QueriedRow tableSelectList -> fromRow -> WhereM returning) ->
   DeleteQuery returning
-deleteReturning = Delete
+deleteReturning_ = Delete
 
 -- | Construct a DELETE query returning nothing.
-delete ::
+delete_ ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
   OptionalFrom fromRow ->
   (QueriedRow tableSelectList -> fromRow -> WhereM ()) ->
   DeleteQuery ()
-delete = Delete
+delete_ = Delete
 
 writeDeleteQuery ::
   (SelectList returningList) =>
@@ -62,7 +62,7 @@ writeDeleteQuery (Delete td fromM q) = do
   "DELETE FROM "
   writeTableName td.tableName
   " AS "
-  ln <- toUniqueAlias "to_delete"
+  ln <- toQuotedUniqueAlias "to_delete"
   writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
   

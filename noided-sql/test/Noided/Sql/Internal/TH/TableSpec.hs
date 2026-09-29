@@ -77,7 +77,7 @@ render = renderSyntaxToTextNumberedBinds . renderQueryWriter . writeQuerySyntax
 selectNames :: SelectM (Element (SqlT NonNull Text) (SqlExpr NormalQuery))
 selectNames = do
   u <- addFrom_ (fromBase_ usersTable)
-  addWhere_ (u.name ==. bindParam ("bob" :: Text))
+  addWhere_ (u.name ==. bindParam_ ("bob" :: Text))
   pure (Element u.profile.bio)
 
 userPosts :: SelectM ((UserF :-: PostF) (SqlExpr NormalQuery))
@@ -94,10 +94,10 @@ userPostTitles = do
   let title :: SqlExpr NormalQuery (NullableT Text)
       title = p.title
       titleOrPlaceholder :: SqlExpr NormalQuery (NonNullT Text)
-      titleOrPlaceholder = coalesce_ p.title (bindParam ("?" :: Text))
+      titleOrPlaceholder = coalesce_ p.title (bindParam_ ("?" :: Text))
       noPost :: SqlExpr NormalQuery (NonNullT Bool)
       noPost = isNull_ p.id
-  addWhere_ (noPost ||. (title ==. bindParam ("hi" :: Text)))
+  addWhere_ (noPost ||. (title ==. bindParam_ ("hi" :: Text)))
   pure (Element u.name :*: Element titleOrPlaceholder)
 
 -- | Nested table under a left join: every nested column is nullable too.
@@ -132,12 +132,12 @@ handBuiltNulledRow = do
 selectLegacyNames :: SelectM (Element (SqlT NonNull Text) (SqlExpr NormalQuery))
 selectLegacyNames = do
   u <- addFrom_ (fromBase_ legacyUsersTable)
-  addWhere_ (u.name ==. bindParam ("bob" :: Text))
+  addWhere_ (u.name ==. bindParam_ ("bob" :: Text))
   pure (Element u.profile.bio)
 
 insertLegacyUser :: InsertQuery (Element (SqlT NonNull Int64) (SqlExpr NormalQuery))
 insertLegacyUser =
-  insertReturning
+  insertReturning_
     legacyUsersTable
     ( singleValue_
         ( #name :==> mutateBound_ ("bob" :: Text)
@@ -149,7 +149,7 @@ insertLegacyUser =
 
 insertUser :: InsertQuery (Element (SqlT NonNull Int64) (SqlExpr NormalQuery))
 insertUser =
-  insertReturning
+  insertReturning_
     usersTable
     ( singleValue_
         ( #name :==> mutateBound_ ("bob" :: Text)
@@ -225,7 +225,7 @@ spec = do
         `shouldBe` "SELECT \"posts\".\"id\" AS \"id\", \"users\".\"id\" AS \"userId\", \"users\".\"name\" AS \"title\" FROM \"users\" AS \"users\", \"posts\" AS \"posts\""
     it "renders an insert" $
       render insertUser
-        `shouldBe` "INSERT INTO \"users\" AS to_insert (\"name\", \"bio\") VALUES ($1, $2) RETURNING to_insert.\"id\" AS \"e\""
+        `shouldBe` "INSERT INTO \"users\" AS \"to_insert\" (\"name\", \"bio\") VALUES ($1, $2) RETURNING \"to_insert\".\"id\" AS \"e\""
     it "unwraps to the generated plain record" $
       unwrapSelectList decodedUser `shouldBe` plainUser
     it "exposes flattened table columns with snake_cased names" $
@@ -243,7 +243,7 @@ spec = do
         `shouldBe` "SELECT \"tbl_usr\".\"usr_bio\" AS \"e\" FROM \"tbl_usr\" AS \"tbl_usr\" WHERE ((\"tbl_usr\".\"usr_nm\") = ($1))"
     it "renders an insert with the given names" $
       render insertLegacyUser
-        `shouldBe` "INSERT INTO \"tbl_usr\" AS to_insert (\"usr_nm\", \"usr_bio\") VALUES ($1, $2) RETURNING to_insert.\"usr_id\" AS \"e\""
+        `shouldBe` "INSERT INTO \"tbl_usr\" AS \"to_insert\" (\"usr_nm\", \"usr_bio\") VALUES ($1, $2) RETURNING \"to_insert\".\"usr_id\" AS \"e\""
 
   describe "left joins on tables" $ do
     it "renders bare nullable field access, COALESCE and IS NULL" $

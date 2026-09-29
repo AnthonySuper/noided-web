@@ -1,8 +1,8 @@
 module Noided.Sql.Insert
   ( InsertQuery,
-    insertReturning,
-    insertReturningAll,
-    insertDefaultValuesReturning,
+    insertReturning_,
+    insertReturningAll_,
+    insertDefaultValuesReturning_,
 
     -- * Insert values
     InsertValues,

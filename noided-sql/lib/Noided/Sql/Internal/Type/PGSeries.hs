@@ -23,7 +23,7 @@ type family StepType t where
 -- | Represents a call to the PostgreSQL @generate_series@ set-returning function.
 -- This can be used as a FROM item in a SELECT query.
 --
--- Use 'generateSeries' or 'generateSeriesStep' to construct values of this type.
+-- Use 'generateSeries_' or 'generateSeriesStep_' to construct values of this type.
 data PGSeries (t :: SqlType)
   = PGSeries
   { pgSeriesStart :: SqlExpr NormalQuery t
@@ -51,20 +51,20 @@ instance FromItem (PGSeries t) where
 
 -- | Construct a @generate_series@ FROM item with a start and stop value.
 -- The step defaults to 1.
-generateSeries ::
+generateSeries_ ::
   SqlExpr NormalQuery t ->
   SqlExpr NormalQuery t ->
   PGSeries t
-generateSeries start stop = PGSeries start stop Nothing
+generateSeries_ start stop = PGSeries start stop Nothing
 
 -- | Construct a @generate_series@ FROM item with a start, stop, and step value.
 -- For integer and numeric types, the step has the same type as the elements.
 -- For timestamp types (@UTCTime@, @LocalTime@), the step must be a 'Interval'
 -- (PostgreSQL @interval@) — see 'StepType'.
-generateSeriesStep ::
+generateSeriesStep_ ::
   SqlExpr NormalQuery t ->
   SqlExpr NormalQuery t ->
   SqlExpr NormalQuery (StepType t) ->
   PGSeries t
-generateSeriesStep start stop step = PGSeries start stop (Just step)
+generateSeriesStep_ start stop step = PGSeries start stop (Just step)
 

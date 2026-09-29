@@ -81,56 +81,56 @@ renderGolden description query =
 spec :: Spec
 spec = describe "InsertQuery" $ do
   renderGolden "insert-default-values" $
-    insertDefaultValuesReturning tableWithDefaults id
+    insertDefaultValuesReturning_ tableWithDefaults id
 
   renderGolden "insert-single-row" $
-    insertReturningAll
+    insertReturningAll_
       userTable
       ( ValuesList $
           NE.fromList
             [ DefaultVal
-                :::% MutateVal (bindParam @Text "Alice")
-                :::% MutateVal (bindParam @Text "alice@example.com")
+                :::% MutateVal (bindParam_ @Text "Alice")
+                :::% MutateVal (bindParam_ @Text "alice@example.com")
                 :::% EmptyWrappedRow
             ] ::
           InsertValues FullInsertRow
       )
 
   renderGolden "insert-multiple-rows" $
-    insertReturningAll
+    insertReturningAll_
       userTable
       ( ValuesList $
           NE.fromList
             [ DefaultVal
-                :::% MutateVal (bindParam @Text "Alice")
-                :::% MutateVal (bindParam @Text "alice@example.com")
+                :::% MutateVal (bindParam_ @Text "Alice")
+                :::% MutateVal (bindParam_ @Text "alice@example.com")
                 :::% EmptyWrappedRow,
               DefaultVal
-                :::% MutateVal (bindParam @Text "Bob")
-                :::% MutateVal (bindParam @Text "bob@example.com")
+                :::% MutateVal (bindParam_ @Text "Bob")
+                :::% MutateVal (bindParam_ @Text "bob@example.com")
                 :::% EmptyWrappedRow
             ] ::
           InsertValues FullInsertRow
       )
 
   renderGolden "insert-partial-columns" $
-    insertReturningAll
+    insertReturningAll_
       userTable
       ( ValuesList $
           NE.fromList
-            [ MutateVal (bindParam @Text "Charlie")
+            [ MutateVal (bindParam_ @Text "Charlie")
                 :::% EmptyWrappedRow
             ] ::
           InsertValues PartialInsertRow
       )
 
   renderGolden "insert-select" $
-    insertReturningAll userTable $
+    insertReturningAll_ userTable $
       InsertSelect
         ( do
             return
-              ( bindParam @Text "Dave"
-                  :::% bindParam @Text "dave@example.com"
+              ( bindParam_ @Text "Dave"
+                  :::% bindParam_ @Text "dave@example.com"
                   :::% EmptyWrappedRow
               ) ::
               SelectM (WrappedRow SelectedRow (SqlExpr NormalQuery))

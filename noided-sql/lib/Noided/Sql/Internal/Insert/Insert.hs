@@ -31,7 +31,7 @@ data InsertQuery returning where
 instance Functor InsertQuery where
   fmap f (Insert td iv bf) = Insert td iv (f . bf)
 
-insertReturning ::
+insertReturning_ ::
   ( InsertForTable tableColumns insertedCols,
     SelectList tableSelectList
   ) =>
@@ -39,25 +39,25 @@ insertReturning ::
   InsertValues insertedCols ->
   (QueriedRow tableSelectList -> returning) ->
   InsertQuery returning
-insertReturning = Insert
+insertReturning_ = Insert
 
-insertReturningAll ::
+insertReturningAll_ ::
   ( InsertForTable tableColumns insertedCols,
     SelectList tableSelectList
   ) =>
   TableDefinition tableColumns tableSelectList ->
   InsertValues insertedCols ->
   InsertQuery (QueriedRow tableSelectList)
-insertReturningAll td iv = Insert td iv id
+insertReturningAll_ td iv = Insert td iv id
 
-insertDefaultValuesReturning ::
+insertDefaultValuesReturning_ ::
   ( InsertForTable tableColumns '[],
     SelectList tableSelectList
   ) =>
   TableDefinition tableColumns tableSelectList ->
   (QueriedRow tableSelectList -> returning) ->
   InsertQuery returning
-insertDefaultValuesReturning td = insertReturning td DefaultValues
+insertDefaultValuesReturning_ td = insertReturning_ td DefaultValues
 
 writeInsertQuery ::
   (SelectList returningList) =>
@@ -67,7 +67,7 @@ writeInsertQuery (Insert td iv qr) = do
   "INSERT INTO "
   writeTableName td.tableName
   " AS "
-  ln <- toUniqueAlias "to_insert"
+  ln <- toQuotedUniqueAlias "to_insert"
   let toUse = qualifyColumnNames ln td.selectedNames
   let returningList = qr toUse
   writeSyntax ln

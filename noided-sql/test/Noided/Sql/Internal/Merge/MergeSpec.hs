@@ -82,7 +82,7 @@ renderGolden description query =
 spec :: Spec
 spec = describe "MergeQuery" $ do
   renderGolden "merge-matched-update-not-matched-insert" $
-    mergeReturningAll
+    mergeReturningAll_
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
@@ -100,14 +100,14 @@ spec = describe "MergeQuery" $ do
       )
 
   renderGolden "merge-matched-delete" $
-    mergeReturningAll
+    mergeReturningAll_
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
       (NE.singleton $ whenMatched_ MergeMatchedDelete)
 
   renderGolden "merge-do-nothing" $
-    mergeReturning
+    mergeReturning_
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
@@ -115,22 +115,22 @@ spec = describe "MergeQuery" $ do
       (\r -> r.id :::% EmptyWrappedRow :: WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "merge-with-extra-condition" $
-    mergeReturning
+    mergeReturning_
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      ( whenMatchedAnd_ (\t _ -> t.score >. bindParam @Int64 100) MergeMatchedDelete
+      ( whenMatchedAnd_ (\t _ -> t.score >. bindParam_ @Int64 100) MergeMatchedDelete
           NE.:| [whenNotMatchedBySource_ MergeBySourceDelete]
       )
       (\r -> r.id :::% EmptyWrappedRow :: WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "merge-not-matched-conditions-and-by-source-update" $
-    mergeReturning
+    mergeReturning_
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
       ( whenNotMatchedAnd_
-          (\s -> s.score >. bindParam @Int64 0)
+          (\s -> s.score >. bindParam_ @Int64 0)
           ( MergeNotMatchedInsert $ \s ->
               ( mergeValues_
                   ( MutateVal s.name
@@ -142,7 +142,7 @@ spec = describe "MergeQuery" $ do
               )
           )
           NE.:| [ whenNotMatchedBySourceAnd_
-                    (\t -> t.score >. bindParam @Int64 100)
+                    (\t -> t.score >. bindParam_ @Int64 100)
                     (MergeBySourceUpdate $ \t -> #score |= MutateVal t.score)
                 ]
       )

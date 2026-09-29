@@ -62,14 +62,14 @@ renderGolden description selectM =
 spec :: Spec
 spec = do
   renderGolden "A one-element select, with no FROM or WHERE" $ do
-    return $ Element (bindParam @Int64 10)
+    return $ Element (bindParam_ @Int64 10)
   renderGolden "Selecting two FROMs" $ do
-    r1 <- addFrom_ $ fromBase_ (select_ $ Element $ bindParam @Int64 10)
-    r2 <- addFrom_ $ fromBase_ (select_ $ Element $ bindParam @Int64 10)
+    r1 <- addFrom_ $ fromBase_ (select_ $ Element $ bindParam_ @Int64 10)
+    r2 <- addFrom_ $ fromBase_ (select_ $ Element $ bindParam_ @Int64 10)
     select_ $ r1 :-: r2
 
   renderGolden "Selecting with an INNER JOIN" $ do
-    let subq1 = select_ (Table1 (bindParam @Int64 1) (bindParam @Int64 2))
-    let subq2 = select_ (Table2 (bindParam @Int64 3) (bindParam @Int64 4))
+    let subq1 = select_ (Table1 (bindParam_ @Int64 1) (bindParam_ @Int64 2))
+    let subq2 = select_ (Table2 (bindParam_ @Int64 3) (bindParam_ @Int64 4))
     r <- addFrom_ $ fromBase_ subq1 & innerJoin_ subq2 `on_` (\t1 t2 -> t1Id t1 ==. t2Ref t2)
     select_ r
