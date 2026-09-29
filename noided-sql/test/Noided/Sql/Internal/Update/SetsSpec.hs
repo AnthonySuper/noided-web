@@ -33,14 +33,14 @@ spec :: Spec
 spec = describe "writeUpdateSets" $ do
   it "renders simple updates" $ do
     let updates = #col1 |= MutateVal (bindParam_ @Text "val1")
-    renderSets updates `shouldBe` "\"col1\" = $1"
+    renderSets updates `shouldBe` "col1 = $1"
 
   it "renders multiple updates" $ do
     let updates = #col1 |= MutateVal (bindParam_ @Text "val1")
                <> #col2 |= MutateVal (bindParam_ @Text "val2")
-    renderSets updates `shouldBe` "\"col1\" = $1, \"col2\" = $2"
+    renderSets updates `shouldBe` "col1 = $1, col2 = $2"
 
   it "last one wins (deduplication)" $ do
     let updates = #col1 |= MutateVal (bindParam_ @Text "first")
                <> #col1 |= MutateVal (bindParam_ @Text "second")
-    renderSets updates `shouldBe` "\"col1\" = $1"
+    renderSets updates `shouldBe` "col1 = $1"

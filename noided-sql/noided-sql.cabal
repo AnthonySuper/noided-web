@@ -98,7 +98,9 @@ library
       Noided.Sql.Internal.Type.MutationType
       Noided.Sql.Internal.Type.Nullability
       Noided.Sql.Internal.Type.PGDecoder
+      Noided.Sql.Internal.Type.PGKeywords
       Noided.Sql.Internal.Type.QueryWriter
+      Noided.Sql.Internal.Type.QuoteIdentifier
       Noided.Sql.Internal.Type.SqlExpr
       Noided.Sql.Internal.Type.SqlQuery
       Noided.Sql.Internal.Type.SqlType
@@ -206,6 +208,7 @@ test-suite noided-sql-test
     -- Modules included in this executable, other than Main.
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
+      Noided.Sql.Internal.Type.QuoteIdentifierSpec
       Noided.Sql.Internal.Type.TSBinarySpec
       Noided.Sql.Internal.Type.PGSeriesSpec
       Noided.Sql.Internal.Type.IntervalSpec
