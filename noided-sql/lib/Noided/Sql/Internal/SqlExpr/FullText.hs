@@ -3,6 +3,7 @@
 module Noided.Sql.Internal.SqlExpr.FullText where
 
 import Data.Text (Text)
+import Noided.Sql.Internal.SqlExpr.Bind
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGFullTextSearchWeight
 import Noided.Sql.Internal.Type.PGRegConfig
@@ -10,6 +11,7 @@ import Noided.Sql.Internal.Type.PGTSQuery
 import Noided.Sql.Internal.Type.PGTSVector
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
+import Noided.Sql.Internal.Type.Syntax (Syntax)
 
 infix 4 @@.
 
@@ -128,3 +130,19 @@ tsRankCd_ ::
   SqlExpr scope (SqlT (MostNullable n n') Float)
 tsRankCd_ v q =
   UnsafeMkSqlExpr ("ts_rank_cd(" <> unsafeGetSqlExpr v <> ", " <> unsafeGetSqlExpr q <> ")")
+
+-- | Build a @regconfig@ from its name, e.g. @regConfig_ "english"@.
+-- The name is bound as a parameter and cast with @::regconfig@.
+regConfig_ :: Text -> SqlExpr scope (NonNullT PGRegConfig)
+regConfig_ = castBoundText "regconfig"
+
+-- | Parse text as a @tsvector@ (in Postgres's tsvector text format), binding it as a parameter.
+tsVectorFromText_ :: Text -> SqlExpr scope (NonNullT PGTSVector)
+tsVectorFromText_ = castBoundText "tsvector"
+
+-- | Parse text as a @tsquery@ (in Postgres's tsquery text format), binding it as a parameter.
+tsQueryFromText_ :: Text -> SqlExpr scope (NonNullT PGTSQuery)
+tsQueryFromText_ = castBoundText "tsquery"
+
+castBoundText :: Syntax -> Text -> SqlExpr scope (NonNullT r)
+castBoundText ty t = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr (bindParam t) <> ")::" <> ty)

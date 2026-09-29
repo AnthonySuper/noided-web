@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -16,6 +17,9 @@ import Data.Vector (Vector)
 import Hasql.Decoders qualified as Dec
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGArray
+import Noided.Sql.Internal.Type.PGTSQuery
+import Noided.Sql.Internal.Type.PGTSVector
+import Noided.Sql.Internal.Type.TSText
 import Noided.Sql.Internal.Type.SqlType
 import PostgreSQL.Binary.Range (Range)
 
@@ -81,6 +85,16 @@ instance AsHaskellValue UTCTime where
 
 instance AsHaskellValue LocalTime where
   decodeHaskellValue _ = Dec.timestamp
+
+-- | Decoded as the text form of the tsvector.
+instance AsHaskellValue PGTSVector where
+  type HaskellTypeOf PGTSVector = Text
+  decodeHaskellValue _ = Dec.custom Nothing "tsvector" (Just (3614, 3643)) [] (\_ -> decodeTSVectorText)
+
+-- | Decoded as the text form of the tsquery.
+instance AsHaskellValue PGTSQuery where
+  type HaskellTypeOf PGTSQuery = Text
+  decodeHaskellValue _ = Dec.custom Nothing "tsquery" (Just (3615, 3645)) [] (\_ -> decodeTSQueryText)
 
 instance AsHaskellValue IPRange where
   decodeHaskellValue _ = Dec.inet
