@@ -14,12 +14,12 @@
 module Noided.Sql.Internal.Type.Col
   ( Col,
     PlainTable (..),
+    QueryCol (..),
   )
 where
 
 import Data.Kind (Type)
 import Noided.Row
-import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.SqlType
 
@@ -34,5 +34,11 @@ type family Col c f where
 class PlainTable (t :: (SqlType -> Type) -> Type) where
   type TableColumns t :: [RowLabel ColumnType]
 
-  -- | Actual (snake_cased) column names, in declaration order.
-  plainColumnNames :: WrappedRow (TableColumns t) ColumnName
+  -- | Flatten a row into its columns, in declaration order, nested tables
+  -- included.
+  toColumnRow :: t f -> WrappedRow (TableColumns t) (QueryCol f)
+
+-- | A table field, indexed by its column definition rather than by the
+-- 'SqlType' it has in a query.
+type QueryCol :: (SqlType -> Type) -> ColumnType -> Type
+newtype QueryCol f c = QueryCol {getQueryCol :: f (ColumnInQuery c)}

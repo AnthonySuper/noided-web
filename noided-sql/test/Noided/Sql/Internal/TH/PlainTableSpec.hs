@@ -53,10 +53,22 @@ data PostF f = PostF
 $(defineTable ''PostF)
 
 usersTable :: TableDefinition (TableColumns UserF) UserF
-usersTable = plainTableDef "users"
+usersTable = defineTableSnakeCased "users"
 
 postsTable :: TableDefinition (TableColumns PostF) PostF
-postsTable = plainTableDef "posts"
+postsTable = defineTableSnakeCased "posts"
+
+-- | The same shape as 'usersTable', with explicit column names.
+legacyUsersTable :: TableDefinition (TableColumns UserF) UserF
+legacyUsersTable =
+  defineTableWithNames
+    "tbl_usr"
+    UserF
+      { id = "usr_id",
+        name = "usr_nm",
+        nick = "usr_nick",
+        profile = ProfileF {bio = "usr_bio", websiteUrl = "usr_url"}
+      }
 
 render :: (Query q) => q -> Text
 render = renderSyntaxToTextNumberedBinds . renderQueryWriter . writeQuerySyntax
@@ -116,6 +128,24 @@ handBuiltNulledRow = do
     addFrom_ $
       fromBase_ usersTable & leftJoin_ postsTable `on_` (\u p -> u.id ==. p.userId)
   pure PostNullF {id = p.id, userId = p.userId, title = p.title}
+
+selectLegacyNames :: SelectM (Element (SqlT NonNull Text) (SqlExpr NormalQuery))
+selectLegacyNames = do
+  u <- addFrom_ (fromBase_ legacyUsersTable)
+  addWhere_ (u.name ==. bindParam ("bob" :: Text))
+  pure (Element u.profile.bio)
+
+insertLegacyUser :: InsertQuery (Element (SqlT NonNull Int64) (SqlExpr NormalQuery))
+insertLegacyUser =
+  insertReturning
+    legacyUsersTable
+    ( singleValue_
+        ( #name :==> mutateBound_ ("bob" :: Text)
+            :::%? #bio :==> mutateBound_ ("hi" :: Text)
+            :::%? EmptyWrappedRow
+        )
+    )
+    (\u -> Element u.id)
 
 insertUser :: InsertQuery (Element (SqlT NonNull Int64) (SqlExpr NormalQuery))
 insertUser =
@@ -199,8 +229,21 @@ spec = do
     it "unwraps to the generated plain record" $
       unwrapSelectList decodedUser `shouldBe` plainUser
     it "exposes flattened table columns with snake_cased names" $
-      ffoldMap (\(MkColumnName n) -> [n]) (plainColumnNames @UserF)
+      ffoldMap (\(MkColumnName n) -> [n]) (tableColumnNames usersTable.selectedNames)
         `shouldBe` ["id", "name", "nick", "bio", "website_url"]
+    it "flattens any row into its columns, not just names" $
+      flength (toColumnRow decodedUser) `shouldBe` 5
+
+  describe "plain HKD tables with explicit column names" $ do
+    it "flattens the given names in declaration order" $
+      ffoldMap (\(MkColumnName n) -> [n]) legacyUsersTable.columnNames
+        `shouldBe` ["usr_id", "usr_nm", "usr_nick", "usr_bio", "usr_url"]
+    it "renders a select with the given names" $
+      render selectLegacyNames
+        `shouldBe` "SELECT \"tbl_usr\".\"usr_bio\" AS \"e\" FROM \"tbl_usr\" AS \"tbl_usr\" WHERE ((\"tbl_usr\".\"usr_nm\") = ($1))"
+    it "renders an insert with the given names" $
+      render insertLegacyUser
+        `shouldBe` "INSERT INTO \"tbl_usr\" AS to_insert (\"usr_nm\", \"usr_bio\") VALUES ($1, $2) RETURNING to_insert.\"usr_id\" AS \"e\""
 
   describe "left joins on plain HKD tables" $ do
     it "renders bare nullable field access, COALESCE and IS NULL" $

@@ -32,7 +32,8 @@
 --   @SelectListUnwrapped UserNullF = Maybe User@ (a custom type error if the
 --   table has no NON NULL column to detect a missing row with);
 -- * @instance PlainTable UserF@, carrying the flattened column definitions
---   (defaults included) recovered from the /declared/ field types.
+--   (defaults included) recovered from the /declared/ field types, and a
+--   'toColumnRow' that flattens a row into them.
 --
 -- Nested HKD fields (@ProfileF f@) must themselves have been defined with
 -- 'defineTable' earlier in the module (or imported, along with their
@@ -56,9 +57,7 @@ import Noided.Sql.Internal.Class.DenullRow
 import Noided.Sql.Internal.Class.NamedColumns
 import Noided.Sql.Internal.Class.Nullified
 import Noided.Sql.Internal.Class.UnwrapSelectList
-import Noided.Sql.Internal.HKDTableDef (camelToSnake)
 import Noided.Sql.Internal.Type.Col
-import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.SqlType
 
@@ -145,7 +144,7 @@ defineTableDeriving derivs hkdName = do
             type SelectListUnwrapped $nullT = Maybe $plainT
             unwrapSelectList = error "unreachable"
           |]
-  tableInstance <- plainTableInstance hkdName cols
+  tableInstance <- plainTableInstance hkdName conName classified cols
   pure $ plainDecl : nullDecl : hkdInstances ++ tableInstances ++ nullUnwrap ++ [tableInstance]
 
 -- | Instances shared by a table and its nullable copy.
@@ -269,8 +268,8 @@ resolveHaskellTypeOf t = do
 -- them) rather than referenced through @TableColumns Sub@, so the instance is
 -- a single literal list and the user's module doesn't need
 -- @UndecidableInstances@.
-plainTableInstance :: Name -> [(Name, Type)] -> Q Dec
-plainTableInstance hkdName cols = do
+plainTableInstance :: Name -> Name -> [FieldKind] -> [(Name, Type)] -> Q Dec
+plainTableInstance hkdName conName classified cols = do
   let colsTy =
         foldr
           ( \(n, c) acc ->
@@ -280,21 +279,35 @@ plainTableInstance hkdName cols = do
           )
           PromotedNilT
           cols
+  (pat, vars) <- flatPattern conName classified
   body <-
     foldr
-      (\(n, _) acc -> [|MkColumnName (Text.pack $(litE (stringL (snake n)))) :::% $acc|])
+      (\v acc -> [|QueryCol $(varE v) :::% $acc|])
       [|EmptyWrappedRow|]
-      cols
+      vars
   pure $
     InstanceD
       Nothing
       []
       (ConT ''PlainTable `AppT` ConT hkdName)
       [ TySynInstD (TySynEqn Nothing (ConT ''TableColumns `AppT` ConT hkdName) colsTy),
-        ValD (VarP 'plainColumnNames) (NormalB body) []
+        FunD 'toColumnRow [Clause [pat] (NormalB body) []]
       ]
+
+-- | A pattern matching a row (and its nested tables) all the way down,
+-- binding one variable per column, in declaration order.
+flatPattern :: Name -> [FieldKind] -> Q (Pat, [Name])
+flatPattern con kinds = do
+  parts <- traverse go kinds
+  pure (ConP con [] (map fst parts), concatMap snd parts)
   where
-    snake = Text.unpack . camelToSnake . Text.pack . nameBase
+    go = \case
+      ColumnField n _ -> do
+        v <- newName (nameBase n)
+        pure (VarP v, [v])
+      NestedField _ sub -> do
+        (subCon, subFields) <- reifyHKD sub
+        traverse classifyField subFields >>= flatPattern subCon
 
 flattenColumns :: [FieldKind] -> Q [(Name, Type)]
 flattenColumns = fmap concat . traverse go

@@ -79,9 +79,12 @@ module Noided.Sql.Define
     Col,
     DenullRow (..),
     PlainTable (..),
+    QueryCol (..),
     defineTable,
     defineTableDeriving,
-    plainTableDef,
+    defineTableSnakeCased,
+    defineTableWithNames,
+    tableColumnNames,
 
     -- * HKD Table Helpers
     defineHKDTable,
