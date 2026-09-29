@@ -127,8 +127,22 @@ isSerializationFailure (ScriptSessionError _ s) = isSerializationFailureServer s
 isSerializationFailure (StatementSessionError _ _ _ _ _ (ServerStatementError e)) = isSerializationFailureServer e
 isSerializationFailure _ = False
 
+-- | Send @ROLLBACK@, ignoring any errors from doing so.
+-- A failed statement leaves the transaction aborted, so we must roll back before the connection is reused
+-- (or before retrying with a new @BEGIN@).
+rollbackIgnoringErrors :: StatementCallback -> Session ()
+rollbackIgnoringErrors cb =
+  execCommandCallback cb "ROLLBACK;" `catchError` \_ -> pure ()
+
+-- | Run a session; if it fails with a 'SessionError', roll back the transaction and rethrow.
+rollbackOnSessionError :: StatementCallback -> Session a -> Session a
+rollbackOnSessionError cb sess =
+  sess `catchError` \e -> do
+    rollbackIgnoringErrors cb
+    throwError e
+
 runTransactMCommitting :: StatementCallback -> TransactM e a -> Session (TransactionResult e a)
-runTransactMCommitting cb action = do
+runTransactMCommitting cb action = rollbackOnSessionError cb $ do
   res <- runTransactM action cb
   case res of
     Left e -> do
@@ -157,7 +171,7 @@ transactDryRun :: StatementCallback -> TransactM e a -> C.Connection -> IO (Tran
 transactDryRun cb action conn = do
   sessRes <- C.use conn $ do
     execCommandCallback cb "BEGIN ISOLATION LEVEL REPEATABLE READ;"
-    res <- runTransactM action cb
+    res <- rollbackOnSessionError cb $ runTransactM action cb
     execCommandCallback cb "ROLLBACK;"
     pure $ case res of
       Left e -> TransactErr e
