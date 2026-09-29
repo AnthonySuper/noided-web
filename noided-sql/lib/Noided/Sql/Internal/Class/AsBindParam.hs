@@ -18,6 +18,7 @@ import Data.Vector qualified as V
 import PostgreSQL.Binary.Range (Range)
 import Hasql.Encoders qualified as Enc
 import Noided.Sql.Internal.Class.PGType
+import Noided.Sql.Internal.Type.Interval
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.SqlType
@@ -117,6 +118,11 @@ instance AsBindParam LocalTime where
 
 instance AsBindParam DiffTime where
   bindParamEncoder = EncodeNonNull Enc.interval
+
+instance AsBindParam Interval where
+  bindParamEncoder =
+    EncodeNonNull $
+      Enc.custom Nothing "interval" (Just (1186, 1187)) [] (\_ iv -> intervalToBinary iv) intervalToText
 
 instance AsBindParam IPRange where
   bindParamEncoder = EncodeNonNull Enc.inet

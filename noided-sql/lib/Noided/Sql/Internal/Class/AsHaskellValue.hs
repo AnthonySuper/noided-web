@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -14,6 +15,7 @@ import Data.Typeable
 import Data.UUID (UUID)
 import Data.Vector (Vector)
 import Hasql.Decoders qualified as Dec
+import Noided.Sql.Internal.Type.Interval
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.SqlType
@@ -81,6 +83,10 @@ instance AsHaskellValue UTCTime where
 
 instance AsHaskellValue LocalTime where
   decodeHaskellValue _ = Dec.timestamp
+
+instance AsHaskellValue Interval where
+  decodeHaskellValue _ =
+    Dec.custom Nothing "interval" (Just (1186, 1187)) [] (\_ bs -> intervalFromBinary bs)
 
 instance AsHaskellValue IPRange where
   decodeHaskellValue _ = Dec.inet

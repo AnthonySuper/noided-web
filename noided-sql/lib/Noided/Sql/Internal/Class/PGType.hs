@@ -10,6 +10,7 @@ import Data.Text (Text)
 import Data.Time
 import Data.UUID (UUID)
 import PostgreSQL.Binary.Range (Range)
+import Noided.Sql.Internal.Type.Interval
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.PGTSVector
 import Noided.Sql.Internal.Type.PGTSQuery
@@ -91,6 +92,9 @@ instance PGType LocalTime where
   pgTypeName _ = "timestamp"
 
 instance PGType DiffTime where
+  pgTypeName _ = "interval"
+
+instance PGType Interval where
   pgTypeName _ = "interval"
 
 instance PGType IPRange where

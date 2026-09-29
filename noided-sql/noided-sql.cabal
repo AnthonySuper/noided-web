@@ -71,7 +71,8 @@ common deps
         template-haskell,
         scientific,
         iproute,
-        postgresql-binary
+        postgresql-binary,
+        bytestring
 
 common extensions
     default-extensions:
@@ -110,6 +111,7 @@ library
       Noided.Sql.Internal.Type.WindowFrame
       Noided.Sql.Internal.Type.PGArray
       Noided.Sql.Internal.Type.PGSeries
+      Noided.Sql.Internal.Type.Interval
       Noided.Sql.Internal.Type.PGTSVector
       Noided.Sql.Internal.Type.PGTSQuery
       Noided.Sql.Internal.Type.PGRegConfig
@@ -202,6 +204,7 @@ test-suite noided-sql-test
     other-modules:
       Noided.Sql.Internal.Type.ColumnNameSpec
       Noided.Sql.Internal.Type.PGSeriesSpec
+      Noided.Sql.Internal.Type.IntervalSpec
       Noided.Sql.Internal.Type.OrderClauseSpec
       Noided.Sql.Internal.Select.SelectMSpec
       Noided.Sql.Internal.Select.OrderLimitOffsetLockSpec
