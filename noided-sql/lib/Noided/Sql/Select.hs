@@ -33,8 +33,8 @@ module Noided.Sql.Select
     SeriesDefaultStep,
     SeriesStep,
     SeriesResult,
-    generateSeries,
-    generateSeriesStep,
+    generateSeries_,
+    generateSeriesStep_,
 
     -- ** Combining Queries (Union/Intersect/Except)
     CombineType (..),
@@ -42,21 +42,21 @@ module Noided.Sql.Select
 
     -- *** UNION semigroups
     QueryCombineUnion,
-    combiningUnion,
+    combiningUnion_,
     QueryCombineUnionAll,
-    combingingUnionAll,
+    combiningUnionAll_,
 
     -- *** INTERSECT semigroups
     QueryCombineIntersect,
-    combiningIntersect,
+    combiningIntersect_,
     QueryCombineIntersectAll,
-    combiningIntersectAll,
+    combiningIntersectAll_,
 
     -- *** EXCEPT semigroups
     QueryCombineExcept,
-    combiningExcept,
+    combiningExcept_,
     QueryCombineExceptAll,
-    combiningExceptAll,
+    combiningExceptAll_,
 
     -- ** Aggregate Queries
     AggregateQuery,

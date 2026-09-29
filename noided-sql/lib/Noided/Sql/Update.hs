@@ -5,9 +5,9 @@ module Noided.Sql.Update
     WhereM,
     addWhereCondition_,
     UpdateQuery,
-    updateReturning,
-    update,
-    updateReturningAll,
+    updateReturning_,
+    update_,
+    updateReturningAll_,
 
     -- * Column updates
     ColumnUpdates,

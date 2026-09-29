@@ -56,7 +56,7 @@ type UnsupportedSeries a =
     ':$$: 'Text "Hint: cast Int16 to Int32 first. For Day, cast to LocalTime (::timestamp) first."
 
 -- | Element types for which PostgreSQL has a two-argument @generate_series@
--- (no step). Timestamps are deliberately excluded: they need 'generateSeriesStep'.
+-- (no step). Timestamps are deliberately excluded: they need 'generateSeriesStep_'.
 type SeriesDefaultStep :: Type -> Constraint
 type family SeriesDefaultStep a where
   SeriesDefaultStep Int32 = ()
@@ -68,7 +68,7 @@ type family SeriesDefaultStep a where
 
 type NeedsStep a =
   'Text "PostgreSQL has no two-argument generate_series for " ':<>: 'ShowType a ':<>: 'Text "."
-    ':$$: 'Text "Use generateSeriesStep with an Interval step instead."
+    ':$$: 'Text "Use generateSeriesStep_ with an Interval step instead."
 
 -- | Maps a series element type to its step type, via 'SeriesStep'.
 type StepType :: SqlType -> SqlType
@@ -78,7 +78,7 @@ type family StepType t where
 -- | Represents a call to the PostgreSQL @generate_series@ set-returning function.
 -- This can be used as a FROM item in a SELECT query.
 --
--- Use 'generateSeries' or 'generateSeriesStep' to construct values of this type.
+-- Use 'generateSeries_' or 'generateSeriesStep_' to construct values of this type.
 data PGSeries (t :: SqlType)
   = PGSeries
   { pgSeriesStart :: SqlExpr NormalQuery t
@@ -106,23 +106,23 @@ instance (SeriesElement a) => FromItem (PGSeries (SqlT n a)) where
 
 -- | Construct a @generate_series@ FROM item with a start and stop value.
 -- The step defaults to 1. Only available for @Int32@, @Int64@ and @Scientific@;
--- timestamp series must use 'generateSeriesStep'.
-generateSeries ::
+-- timestamp series must use 'generateSeriesStep_'.
+generateSeries_ ::
   (SeriesDefaultStep a) =>
   SqlExpr NormalQuery (SqlT n a) ->
   SqlExpr NormalQuery (SqlT n a) ->
   PGSeries (SqlT n a)
-generateSeries start stop = PGSeries start stop Nothing
+generateSeries_ start stop = PGSeries start stop Nothing
 
 -- | Construct a @generate_series@ FROM item with a start, stop, and step value.
 -- For integer and numeric types, the step has the same type as the elements.
 -- For timestamp types (@UTCTime@, @LocalTime@), the step must be a 'Interval'
 -- (PostgreSQL @interval@) — see 'StepType'.
-generateSeriesStep ::
+generateSeriesStep_ ::
   (SeriesElement a) =>
   SqlExpr NormalQuery (SqlT n a) ->
   SqlExpr NormalQuery (SqlT n a) ->
   SqlExpr NormalQuery (SqlT n (SeriesStep a)) ->
   PGSeries (SqlT n a)
-generateSeriesStep start stop step = PGSeries start stop (Just step)
+generateSeriesStep_ start stop step = PGSeries start stop (Just step)
 

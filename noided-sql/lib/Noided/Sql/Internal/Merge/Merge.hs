@@ -125,7 +125,7 @@ instance Functor MergeQuery where
   fmap f (Merge td src onCond clauses br) = Merge td src onCond clauses (f . br)
 
 -- | Construct a MERGE query with a custom RETURNING clause.
-mergeReturning ::
+mergeReturning_ ::
   (SelectList targetSelectList, FromItem source) =>
   TableDefinition targetCols targetSelectList ->
   source ->
@@ -133,17 +133,17 @@ mergeReturning ::
   NonEmpty (MergeClause targetCols targetSelectList (FromItemSelectList source)) ->
   (QueriedRow targetSelectList -> returning) ->
   MergeQuery returning
-mergeReturning = Merge
+mergeReturning_ = Merge
 
 -- | Construct a MERGE query returning all target table columns.
-mergeReturningAll ::
+mergeReturningAll_ ::
   (SelectList targetSelectList, FromItem source) =>
   TableDefinition targetCols targetSelectList ->
   source ->
   (QueriedRow targetSelectList -> QueriedRow (FromItemSelectList source) -> SqlExpr NormalQuery (SqlT n Bool)) ->
   NonEmpty (MergeClause targetCols targetSelectList (FromItemSelectList source)) ->
   MergeQuery (QueriedRow targetSelectList)
-mergeReturningAll td src onCond clauses = Merge td src onCond clauses id
+mergeReturningAll_ td src onCond clauses = Merge td src onCond clauses id
 
 -- | Construct a WHEN MATCHED THEN ... clause.
 whenMatched_ ::
@@ -239,7 +239,7 @@ writeMergeQuery (Merge targetDef source onCond clauses buildReturning) = do
   "MERGE INTO "
   writeTableName targetDef.tableName
   " AS "
-  targetAlias <- toUniqueAlias "to_merge"
+  targetAlias <- toQuotedUniqueAlias "to_merge"
   writeSyntax targetAlias
   let targetRow = qualifyColumnNames targetAlias targetDef.selectedNames
   " USING "

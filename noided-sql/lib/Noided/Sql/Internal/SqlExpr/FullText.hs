@@ -145,4 +145,4 @@ tsQueryFromText_ :: Text -> SqlExpr scope (NonNullT PGTSQuery)
 tsQueryFromText_ = castBoundText "tsquery"
 
 castBoundText :: Syntax -> Text -> SqlExpr scope (NonNullT r)
-castBoundText ty t = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr (bindParam t) <> ")::" <> ty)
+castBoundText ty t = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr (bindParam_ t) <> ")::" <> ty)

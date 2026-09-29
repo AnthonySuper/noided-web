@@ -5,8 +5,8 @@ module Noided.Sql.Delete
     WhereM,
     addWhereCondition_,
     DeleteQuery,
-    deleteReturning,
-    delete,
+    deleteReturning_,
+    delete_,
   )
 where
 

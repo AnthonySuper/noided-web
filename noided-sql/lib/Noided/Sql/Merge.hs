@@ -1,7 +1,7 @@
 module Noided.Sql.Merge
   ( MergeQuery,
-    mergeReturning,
-    mergeReturningAll,
+    mergeReturning_,
+    mergeReturningAll_,
 
     -- * Merge clauses
     MergeClause,

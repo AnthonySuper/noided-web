@@ -33,8 +33,8 @@ filterWhere_ (UnsafeMkAggExpr expr _) fr =
   UnsafeMkAggExpr {aggExprSyntax = expr, aggExprWhere = AggregateFilterWhere fr}
 
 -- | Convert an aggregate function over a grouping set to a normal function.
-agg :: AggregateExpr AggregateSet dt -> SqlExpr Aggregated dt
-agg = UnsafeMkSqlExpr . unsafeAggToSyntax
+agg_ :: AggregateExpr AggregateSet dt -> SqlExpr Aggregated dt
+agg_ = UnsafeMkSqlExpr . unsafeAggToSyntax
 
 -- | The expression @ COUNT(*) @.
 countAll_ :: AggregateExpr scope (NonNullT Int64)

@@ -38,13 +38,13 @@ instance NamedColumns TestTable where namedColumns = TestTable "col1" "col2"
 
 -- Helper query
 q1 :: SelectM (TestTable (SqlExpr NormalQuery))
-q1 = return $ TestTable (bindParam @Int64 1) (bindParam @Int64 2)
+q1 = return $ TestTable (bindParam_ @Int64 1) (bindParam_ @Int64 2)
 
 q2 :: SelectM (TestTable (SqlExpr NormalQuery))
-q2 = return $ TestTable (bindParam @Int64 3) (bindParam @Int64 4)
+q2 = return $ TestTable (bindParam_ @Int64 3) (bindParam_ @Int64 4)
 
 q3 :: SelectM (TestTable (SqlExpr NormalQuery))
-q3 = return $ TestTable (bindParam @Int64 5) (bindParam @Int64 6)
+q3 = return $ TestTable (bindParam_ @Int64 5) (bindParam_ @Int64 6)
 
 renderGolden ::
   (Query q) =>

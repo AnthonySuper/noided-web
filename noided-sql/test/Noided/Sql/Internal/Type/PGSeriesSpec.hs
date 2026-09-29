@@ -35,53 +35,53 @@ renderGolden description selectM =
 spec :: Spec
 spec = do
   renderGolden "generate_series with start and stop" $ do
-    r <- addFrom_ $ fromBase_ (generateSeries (bindParam @Int64 1) (bindParam @Int64 10))
+    r <- addFrom_ $ fromBase_ (generateSeries_ (bindParam_ @Int64 1) (bindParam_ @Int64 10))
     return r
 
   renderGolden "generate_series with start, stop, and step" $ do
-    r <- addFrom_ $ fromBase_ (generateSeriesStep (bindParam @Int64 0) (bindParam @Int64 100) (bindParam @Int64 5))
+    r <- addFrom_ $ fromBase_ (generateSeriesStep_ (bindParam_ @Int64 0) (bindParam_ @Int64 100) (bindParam_ @Int64 5))
     return r
 
   renderGolden "generate_series in a lateral join" $ do
-    let series1 = generateSeries (bindParam @Int64 1) (bindParam @Int64 5)
-    let series2 = generateSeries (bindParam @Int64 6) (bindParam @Int64 10)
+    let series1 = generateSeries_ (bindParam_ @Int64 1) (bindParam_ @Int64 5)
+    let series2 = generateSeries_ (bindParam_ @Int64 6) (bindParam_ @Int64 10)
     r <- addFrom_ $
       fromBase_ series1
         & innerJoin_ series2
-        `on_` (\_ _ -> bindParam True)
+        `on_` (\_ _ -> bindParam_ True)
     return r
 
   renderGolden "generate_series with UTCTime and interval step" $ do
     r <-
       addFrom_ $
         fromBase_ $
-          generateSeriesStep
-            (bindParam @UTCTime (read "2024-01-01 00:00:00 UTC"))
-            (bindParam @UTCTime (read "2024-12-31 00:00:00 UTC"))
-            (bindParam @Interval (intervalFromDiffTime 86400))
+          generateSeriesStep_
+            (bindParam_ @UTCTime (read "2024-01-01 00:00:00 UTC"))
+            (bindParam_ @UTCTime (read "2024-12-31 00:00:00 UTC"))
+            (bindParam_ @Interval (intervalFromDiffTime 86400))
     return r
 
   renderGolden "generate_series with LocalTime and interval step" $ do
     r <-
       addFrom_ $
         fromBase_ $
-          generateSeriesStep
-            (bindParam @LocalTime (read "2024-01-01 00:00:00"))
-            (bindParam @LocalTime (read "2024-12-31 00:00:00"))
-            (bindParam @Interval (intervalFromDiffTime 86400))
+          generateSeriesStep_
+            (bindParam_ @LocalTime (read "2024-01-01 00:00:00"))
+            (bindParam_ @LocalTime (read "2024-12-31 00:00:00"))
+            (bindParam_ @Interval (intervalFromDiffTime 86400))
     return r
 
 
   renderGolden "generate_series with Int32" $ do
-    r <- addFrom_ $ fromBase_ (generateSeries (bindParam @Int32 1) (bindParam @Int32 10))
+    r <- addFrom_ $ fromBase_ (generateSeries_ (bindParam_ @Int32 1) (bindParam_ @Int32 10))
     return r
 
   renderGolden "generate_series with Scientific and step" $ do
     r <-
       addFrom_ $
         fromBase_ $
-          generateSeriesStep
-            (bindParam @Scientific 0)
-            (bindParam @Scientific 1)
-            (bindParam @Scientific 0.25)
+          generateSeriesStep_
+            (bindParam_ @Scientific 0)
+            (bindParam_ @Scientific 1)
+            (bindParam_ @Scientific 0.25)
     return r

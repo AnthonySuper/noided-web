@@ -39,7 +39,7 @@ module Noided.Sql.SqlExpr
 
     -- * Bind params
     AsBindParam (BoundNullability, BoundType),
-    bindParam,
+    bindParam_,
 
     -- * Boolean functions
     true_,
@@ -205,7 +205,7 @@ module Noided.Sql.SqlExpr
 
     -- * Aggregate functions
     AggregateExpr,
-    agg,
+    agg_,
     filterWhere_,
     countAll_,
     count_,
@@ -271,4 +271,4 @@ import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 
 mutateBound_ :: (AsBindParam a) => a -> MutationExpr (ActualValue (SqlT (BoundNullability a) (BoundType a)))
-mutateBound_ = mutateVal_ . bindParam
+mutateBound_ = mutateVal_ . bindParam_
