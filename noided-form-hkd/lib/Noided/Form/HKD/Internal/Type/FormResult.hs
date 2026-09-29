@@ -2,6 +2,7 @@
 
 module Noided.Form.HKD.Internal.Type.FormResult where
 
+import Data.Aeson (ToJSON (..))
 import Data.Kind
 import Data.Sequence qualified as Seq
 import GHC.Records
@@ -15,6 +16,15 @@ data FormResult field where
   ListResult ::
     Seq.Seq (FormResult inner) ->
     FormResult (ListField inner)
+
+instance (ToJSON t) => ToJSON (FormResult (InputField t)) where
+  toJSON (InputResult t) = toJSON t
+
+instance (ToJSON (subform FormResult)) => ToJSON (FormResult (SubformField subform)) where
+  toJSON (SubformResult s) = toJSON s
+
+instance (ToJSON (FormResult inner)) => ToJSON (FormResult (ListField inner)) where
+  toJSON (ListResult l) = toJSON l
 
 instance (v ~ t) => HasField "val" (FormResult (InputField t)) v where
   getField (InputResult r) = r
