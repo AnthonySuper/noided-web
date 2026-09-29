@@ -6,6 +6,7 @@
 module Noided.Form.HKD.Internal.Type.FormInput where
 
 import Data.Aeson
+import Data.Aeson.Types (parseEither)
 import Data.Kind (Type)
 import Data.Sequence (Seq)
 import GHC.Generics
@@ -27,8 +28,11 @@ data FieldInput a
     NotPresent
   deriving (Show, Eq, Ord, Functor, Foldable, Traversable, Generic)
 
+-- | A JSON @null@ or a missing key becomes 'NotPresent', so validators report it like a blank form field.
 instance (FromJSON a) => FromJSON (FieldInput a) where
-  parseJSON = fmap FromTyped . parseJSON
+  parseJSON Null = pure NotPresent
+  parseJSON v = FromTyped <$> parseJSON v
+  omittedField = Just NotPresent
 
 _FromForm :: Prism (FieldInput a) (FieldInput a) (FormValue MultipartFormData) (FormValue MultipartFormData)
 _FromForm = prism FromForm $ \case
@@ -82,13 +86,18 @@ deriving instance (Show (FormInput input)) => Show (FormInput (ListField input))
 
 instance (FromJSON a) => FromJSON (FormInput (InputField a)) where
   parseJSON = fmap InputInput . parseJSON
+  omittedField = Just (InputInput NotPresent)
 
 deriving instance (Eq a) => Eq (FormInput (InputField a))
 
 deriving instance (Eq (subform FormInput)) => Eq (FormInput (SubformField subform))
 
+-- | A missing key or @null@ decodes an empty object, so each field of the subform falls back to its own
+-- 'omittedField'. If some field can't be omitted, the subform's key is required instead.
 instance (FromJSON (subform FormInput)) => FromJSON (FormInput (SubformField subform)) where
-  parseJSON = fmap SubformInput . parseJSON
+  parseJSON Null = maybe (fail "expected a subform object") pure omittedField
+  parseJSON v = SubformInput <$> parseJSON v
+  omittedField = either (const Nothing) (Just . SubformInput) $ parseEither parseJSON (Object mempty)
 
 deriving instance (Eq (FormInput input)) => Eq (FormInput (ListField input))
 
@@ -99,7 +108,9 @@ deriving instance (Ord (subform FormInput)) => Ord (FormInput (SubformField subf
 deriving instance (Ord (FormInput input)) => Ord (FormInput (ListField input))
 
 instance (FromJSON (FormInput input)) => FromJSON (FormInput (ListField input)) where
-  parseJSON = fmap ListInput . parseJSON
+  parseJSON Null = pure (ListInput mempty)
+  parseJSON v = ListInput <$> parseJSON v
+  omittedField = Just (ListInput mempty)
 
 _InputInput :: Iso' (FormInput (InputField a)) (FieldInput a)
 _InputInput = iso (\(InputInput a) -> a) InputInput
