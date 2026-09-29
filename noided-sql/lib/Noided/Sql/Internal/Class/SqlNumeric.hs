@@ -12,31 +12,40 @@ class SqlNumeric t where
   type SumType t :: Type
   -- | The type that results from an @AVG@ operation on this type.
   type AvgType t :: Type
+  -- | The type that results from @STDDEV@ and @VARIANCE@ operations (and their samp/pop variants) on this type.
+  type StddevType t :: Type
 
 instance SqlNumeric Int16 where
   type SumType Int16 = Int64
+  type StddevType Int16 = Scientific
   type AvgType Int16 = Scientific
 
 instance SqlNumeric Int32 where
   type SumType Int32 = Int64
+  type StddevType Int32 = Scientific
   type AvgType Int32 = Scientific
 
 instance SqlNumeric Int64 where
   type SumType Int64 = Scientific
+  type StddevType Int64 = Scientific
   type AvgType Int64 = Scientific
 
 instance SqlNumeric Int where
   type SumType Int = Scientific
+  type StddevType Int = Scientific
   type AvgType Int = Scientific
 
 instance SqlNumeric Float where
   type SumType Float = Float
+  type StddevType Float = Double
   type AvgType Float = Double
 
 instance SqlNumeric Double where
   type SumType Double = Double
+  type StddevType Double = Double
   type AvgType Double = Double
 
 instance SqlNumeric Scientific where
   type SumType Scientific = Scientific
+  type StddevType Scientific = Scientific
   type AvgType Scientific = Scientific
