@@ -22,6 +22,7 @@ parseFormInner fl sub =
         fmap (parseFormInner ll) $
           case sub of
             SubmissionArray a -> a
+            SubmissionEmpty -> mempty
             o -> pure o
     SubformLabelInner sl ->
       SubformInput $

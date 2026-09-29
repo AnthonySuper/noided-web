@@ -118,7 +118,7 @@ data OrderLimitOffsetLock expectedScope result where
     ( ValidOrderLimitOffsetLock ti obu slu,
       slu ~ Nothing
     ) =>
-    AggregateQuery aggregatedResult ->
+    AggregateQuery anyGrouping aggregatedResult ->
     (aggregatedResult -> (result, OrderLimitOffsetLockCfg Aggregated ti obu slu)) ->
     OrderLimitOffsetLock Aggregated result
 
@@ -222,8 +222,8 @@ instance OrderOffsetLimitQuery SelectM where
           }
       )
 
-instance OrderOffsetLimitQuery AggregateQuery where
-  type OrderOffsetLimitScope AggregateQuery = Aggregated
+instance OrderOffsetLimitQuery (AggregateQuery anyGrouping) where
+  type OrderOffsetLimitScope (AggregateQuery anyGrouping) = Aggregated
   offsetOrderLimit_ off bo ff q =
     OrderLimitOffsetLockAggregated q $ \r ->
       ( r,

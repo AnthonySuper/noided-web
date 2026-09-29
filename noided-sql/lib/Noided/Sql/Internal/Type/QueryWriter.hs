@@ -10,10 +10,12 @@ module Noided.Sql.Internal.Type.QueryWriter
     toUniqueAlias,
     toQuotedUniqueAlias,
     delayWriting,
+    syntaxSubquery,
   )
 where
 
 import Control.Monad.State.Class
+import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State.Strict (StateT (StateT), evalStateT)
 import Control.Monad.Trans.Writer.CPS (Writer, runWriter)
 import Control.Monad.Writer.Class
@@ -26,8 +28,14 @@ import Optics.Core
 type QueryWriterState = Map.Map Text Int
 
 newtype QueryWriter a
-  = QueryWrite {getQueryWrite :: StateT QueryWriterState (Writer Syntax) a}
-  deriving (Functor, Applicative, Monad) via (StateT QueryWriterState (Writer Syntax))
+  = QueryWrite {getQueryWrite :: ReaderT Word (StateT QueryWriterState (Writer Syntax)) a}
+  deriving (Functor, Applicative, Monad) via (ReaderT Word (StateT QueryWriterState (Writer Syntax)))
+
+syntaxSubquery :: QueryWriter a -> Syntax
+syntaxSubquery qr = Syn $ \depth ->
+  let newDepth = depth + 1
+      (_, Syn newSyn) = runQueryWriterAtDepth newDepth qr
+   in newSyn newDepth
 
 -- | Delay writing until later.
 delayWriting :: QueryWriter a -> QueryWriter (a, Syntax)
@@ -35,8 +43,16 @@ delayWriting qs =
   toQueryWrite $
     censor mempty (listen (getQueryWrite qs))
 
+runQueryWriterAtDepth :: Word -> QueryWriter a -> (a, Syntax)
+runQueryWriterAtDepth depth a =
+  runWriter
+    ( evalStateT
+        (runReaderT (getQueryWrite a) depth)
+        mempty
+    )
+
 runQueryWriter :: QueryWriter a -> (a, Syntax)
-runQueryWriter a = runWriter (evalStateT (getQueryWrite a) mempty)
+runQueryWriter = runQueryWriterAtDepth 0
 
 renderQueryWriter :: QueryWriter a -> Syntax
 renderQueryWriter = snd . runQueryWriter
@@ -52,7 +68,7 @@ writeText = writeSyntax . syntaxFromText
 writeSyntax :: Syntax -> QueryWriter ()
 writeSyntax syn = toQueryWrite $ tell syn
 
-toQueryWrite :: StateT QueryWriterState (Writer Syntax) a -> QueryWriter a
+toQueryWrite :: ReaderT Word (StateT QueryWriterState (Writer Syntax)) a -> QueryWriter a
 toQueryWrite = QueryWrite
 
 -- | Qualify a name to be unique within a given scope.
@@ -66,7 +82,8 @@ toUniqueAlias alias = toQueryWrite $ do
           Nothing -> alias
           Just i -> alias <> pack ("_" <> show i)
   modify (at alias % non 0 %~ (+ 1))
-  return $ Syn $ \nesting ->
+  nesting <- ask
+  return $ Syn $ \_ ->
     let suffix = if nesting > 0 then pack ("_nested_" <> show nesting <> "_deep") else mempty
      in pure (RawSyntax $ nestedAlias <> suffix)
 

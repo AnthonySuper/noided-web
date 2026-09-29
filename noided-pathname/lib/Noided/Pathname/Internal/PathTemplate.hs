@@ -12,8 +12,12 @@ import Data.GADT.Compare
 import Data.GADT.Show
 import Data.Kind (Type)
 import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Text.Encoding (decodeUtf8With, encodeUtf8)
+import Data.Text.Encoding.Error (lenientDecode)
 import Data.Type.Equality
 import GHC.Generics hiding (prec)
+import Network.HTTP.Types.URI (decodePathSegments, urlEncode)
 import Noided.Pathname.Internal.PathCaptures
 import Noided.Pathname.Internal.PieceTemplate
 import Noided.Pathname.Internal.RouteParams
@@ -82,7 +86,11 @@ instance TestEquality PathTemplate where
     h :/ rest' ->
       case h of
         StaticPiece _ -> testEquality rest rest'
-        CapPiece -> Nothing
+        -- The right-hand side captures here and we do not, so drop our static
+        -- piece and try again. This mirrors the 'CapPiece' case below, which
+        -- drops a static piece on the right; without it 'testEquality' is not
+        -- symmetric.
+        CapPiece -> testEquality rest (h :/ rest')
     PathEnd -> testEquality rest PathEnd
   testEquality r@(c@CapPiece :/ rest) = \case
     h :/ rest' ->
@@ -168,14 +176,14 @@ class UsePath args result | args -> result where
 
 instance UsePath '[] Text where
   usePathR !t = \case
-    (StaticPiece piece :/ rest) -> usePathR (t <> piece <> "/") rest
+    (StaticPiece piece :/ rest) -> usePathR (t <> encodePathPiece piece <> "/") rest
     PathEnd -> t
 
 instance (UsePath rest restResult) => UsePath (templateArg ': rest) (templateArg -> restResult) where
   usePathR !txt template arg =
     case template of
-      (CapPiece :/ rest) -> usePathR (txt <> toUrlPiece arg <> "/") rest
-      (StaticPiece piece :/ rest) -> usePathR (txt <> piece <> "/") rest arg
+      (CapPiece :/ rest) -> usePathR (txt <> encodePathPiece (toUrlPiece arg) <> "/") rest
+      (StaticPiece piece :/ rest) -> usePathR (txt <> encodePathPiece piece <> "/") rest arg
 
 pathTemplateAppendStatic :: Text -> PathTemplate r -> PathTemplate r
 pathTemplateAppendStatic txt = go
@@ -187,6 +195,50 @@ pathTemplateAppendStatic txt = go
 usePathTemplate :: (UsePath args result) => PathTemplate args -> result
 usePathTemplate = usePathR "/"
 
+-- | Percent-encode a single piece of a URL.
+--
+-- Every character that is not allowed unescaped in a path segment is escaped,
+-- including @\/@, @?@, @#@ and spaces, and non-ASCII characters are escaped as
+-- their UTF-8 bytes. 'Web.HttpApiData.toUrlPiece' deliberately does /not/ do
+-- this, so every piece we put into a generated URL has to go through here, or
+-- a capture containing a @\/@ would silently generate a URL for a different
+-- route.
+--
+-- This is @http-types@\' @encodePathSegment@, specialised to 'Text'.
+encodePathPiece :: Text -> Text
+encodePathPiece = decodeUtf8With lenientDecode . urlEncode False . encodeUtf8
+
+-- | Split a URL path into the percent-decoded pieces that 'matchPathTemplate'
+-- and 'Noided.Pathname.firstRouterMatch' expect, undoing 'encodePathPiece' on
+-- each one.
+--
+-- The empty piece in front of the leading @\/@ of an absolute path is dropped,
+-- so the output can be handed straight to a matcher:
+--
+-- >>> splitPathPieces "/users/42"
+-- ["users","42"]
+--
+-- A trailing @\/@, on the other hand, is kept, as a trailing empty piece:
+--
+-- >>> splitPathPieces "/users/42/"
+-- ["users","42",""]
+--
+-- That is deliberate, and harmless: both matchers treat a single trailing empty
+-- piece as the end of the path, so a URL with a trailing slash matches the same
+-- templates as one without. It matters because 'usePathTemplate' and
+-- 'usePathTemplateParams' always emit a trailing slash, and this function is
+-- their inverse.
+--
+-- The root path is the one place the two collapse together: both @"\/"@ and
+-- @""@ split to @[]@, which matches 'PathEnd'.
+splitPathPieces :: Text -> [Text]
+splitPathPieces = decodePathSegments . encodeUtf8
+
+-- | Generate the URL for a template, given the parameters it captures.
+--
+-- Each piece is percent-encoded with 'encodePathPiece'. The result has both a
+-- leading and a trailing slash, and 'splitPathPieces' turns it back into pieces
+-- that match the template it came from.
 usePathTemplateParams :: PathTemplate args -> RouteParams args -> Text
 usePathTemplateParams pt' rp' = "/" <> go pt' rp'
   where
@@ -194,11 +246,11 @@ usePathTemplateParams pt' rp' = "/" <> go pt' rp'
     go pt rp =
       case pt of
         PathEnd -> mempty
-        (StaticPiece piece :/ rest) -> piece <> "/" <> go rest rp
+        (StaticPiece piece :/ rest) -> encodePathPiece piece <> "/" <> go rest rp
         (CapPiece :/ rest) ->
           case rp of
             (arg :-$ restParams) ->
-              toUrlPiece arg <> "/" <> go rest restParams
+              encodePathPiece (toUrlPiece arg) <> "/" <> go rest restParams
 
 -- | Why matching a URL to a path template failed.
 data TemplateMatchFailureMessage
@@ -225,18 +277,35 @@ splitFirstCapture = go id
 removeFirstCapture :: PathTemplate (x ': xs) -> PathTemplate xs
 removeFirstCapture = snd . splitFirstCapture
 
+-- | Is this the end of a URL's pieces?
+--
+-- A single empty piece is the trailing slash of the URL, and ends the path just
+-- like running out of pieces does. Note that this is only true in /final/
+-- position: an empty piece with anything after it is a real, empty piece, and
+-- matches nothing. 'Noided.Pathname.Internal.Router.foldrRouterOfMatches' makes
+-- exactly the same distinction, and the two must agree.
+endOfPathPieces :: [Text] -> Bool
+endOfPathPieces [] = True
+endOfPathPieces [x] = Text.null x
+endOfPathPieces _ = False
+
 -- | Try to match a given path template to a URL.
 -- If the match is successful it will give you route params for that URL.
 -- Otherwise, it will specify how and when matching failed.
+--
+-- This is the matcher behind 'Noided.Pathname.testUrlResult', so it has to
+-- accept exactly the same URLs as the real router does: anything this reports
+-- as a match must route, and anything it rejects must 404.
 matchPathTemplate :: [Text] -> PathTemplate caps -> Either TemplateFailure (RouteParams caps)
 matchPathTemplate = go []
   where
     go :: forall caps'. [Text] -> [Text] -> PathTemplate caps' -> Either TemplateFailure (RouteParams caps')
-    go _ [] PathEnd = pure RPNil
-    go _ r@(x : _) PathEnd
-      | x == "" = pure RPNil
-      | otherwise = Left $ ExtraPieces r
-    go usedRev [] (_ :/ _) = Left $ MatchFailedAfter (reverse usedRev) NotEnough
+    go usedRev pieces template
+      | endOfPathPieces pieces =
+          case template of
+            PathEnd -> pure RPNil
+            (_ :/ _) -> Left $ MatchFailedAfter (reverse usedRev) NotEnough
+    go _ r PathEnd = Left $ ExtraPieces r
     go usedRev (x : xs) (h :/ t) =
       case h of
         StaticPiece txt
@@ -246,6 +315,9 @@ matchPathTemplate = go []
           case parseUrlPiece x of
             Right p -> (p :-$) <$> go (x : usedRev) xs t
             Left err -> Left $ MatchFailedAfter (reverse usedRev) $ CaptureFailed (SomeTypeRep $ typeRep @r) x err
+    -- Unreachable: 'endOfPathPieces' above covers an empty list, but GHC cannot
+    -- see that through the guard.
+    go usedRev [] (_ :/ _) = Left $ MatchFailedAfter (reverse usedRev) NotEnough
 
 -- | GADT to match on if a template result existed or not.
 data SomeTemplateResult where

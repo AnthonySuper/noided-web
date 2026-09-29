@@ -15,7 +15,11 @@ data RouteParams (t :: [Type]) where
   -- | Cons for a route params list
   (:-$) :: t -> RouteParams rest -> RouteParams (t ': rest)
 
-infixl 3 :-$
+-- | Right-associative, and at the same precedence as @:\/@ in
+-- "Noided.Pathname.Internal.PathTemplate", so that a route's params are written
+-- the same way its template is: @5 :-$ 42 :-$ RPNil@. Left associativity would
+-- parse that as @(5 :-$ 42) :-$ RPNil@, which does not typecheck at all.
+infixr 5 :-$
 
 deriving instance Show (RouteParams '[])
 

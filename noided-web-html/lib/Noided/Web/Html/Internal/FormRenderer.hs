@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -78,6 +79,15 @@ fieldWrapAddToId ::
   HtmlFormRendererT m field ->
   HtmlFormRendererT m field
 fieldWrapAddToId comp = wrapField (fieldAddToId comp)
+
+fieldWrapAddInputToId ::
+  (Monad m) =>
+  (FormInput field -> DomIdWriter) ->
+  HtmlFormRendererT m field ->
+  HtmlFormRendererT m field
+fieldWrapAddInputToId mapper = aroundRendering $ \ctx b ->
+  let domId = mapper ctx.input
+   in hoistHtmlT (localFormContext (#modifyDomId %~ (<> Endo (<> domId)))) b
 
 -- | Add a suffix to all dom ids generated in the inner block.
 -- This is useful if you want to add some kind of \"identifier\" to the dom ids,

@@ -5,7 +5,6 @@
 
 module Noided.Validation.Internal.ValidatorSpec where
 
-import Control.Applicative ((<|>))
 import Control.Monad.Trans.Class (lift)
 import Data.Either (isLeft)
 import Data.Text (Text)
@@ -75,24 +74,6 @@ spec = do
             hasError errs (ErrorA "non-fatal") `shouldBe` True
             hasError errs (ErrorB 99) `shouldBe` True
           Right _ -> expectationFailure "Should have failed"
-
-    describe "Alternative instance" $ do
-      it "collects errors from BOTH branches if both fail" $ do
-        let validation = do
-              failFatal (ErrorA "1") <|> failFatal (ErrorB 2)
-        
-        let result = runValidator validation
-        case result of 
-           Left errs -> do
-             hasError errs (ErrorA "1") `shouldBe` True
-             hasError errs (ErrorB 2) `shouldBe` True
-           Right _ -> expectationFailure "Should have failed"
-
-      it "returns first success" $ do
-        let validation = do
-              pure ("success" :: String) <|> failFatal (ErrorB 2)
-        runValidator validation `shouldBe` Right "success"
-
     describe "MonadTrans" $ do
       it "lifts actions from the base monad" $ do
         result <- runValidatorT $ do

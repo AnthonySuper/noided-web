@@ -1,7 +1,7 @@
 module Noided.Sql.Internal.Type.Nullability where
 
-import GHC.Generics
 import Data.Typeable
+import GHC.Generics
 
 -- | Data kind used to determine the nullability of an SQL value.
 data Nullability = NonNull | Nullable
@@ -28,3 +28,10 @@ type family MostNullable lhs rhs where
   MostNullable Nullable NonNull = Nullable
   MostNullable NonNull Nullable = Nullable
   MostNullable Nullable Nullable = Nullable
+
+type LeastNullable :: Nullability -> Nullability -> Nullability
+type family LeastNullable lhs rhs where
+  LeastNullable NonNull NonNull = NonNull
+  LeastNullable Nullable NonNull = NonNull
+  LeastNullable NonNull Nullable = NonNull
+  LeastNullable Nullable Nullable = Nullable
