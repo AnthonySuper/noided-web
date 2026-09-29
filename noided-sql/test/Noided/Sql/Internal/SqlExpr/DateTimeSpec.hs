@@ -4,7 +4,8 @@ module Noided.Sql.Internal.SqlExpr.DateTimeSpec (spec) where
 
 import Data.Int (Int32)
 import Data.Text (unpack)
-import Data.Time (Day, DiffTime, LocalTime, UTCTime)
+import Data.Time (Day, LocalTime, UTCTime)
+import Noided.Sql.Internal.Type.Interval
 import Noided.Sql.Internal.SqlExpr.DateTime
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
@@ -20,7 +21,7 @@ spec = do
     let d = UnsafeMkSqlExpr "d" :: SqlExpr NormalQuery (NonNullT Day)
         ts = UnsafeMkSqlExpr "ts" :: SqlExpr NormalQuery (NonNullT LocalTime)
         tstz = UnsafeMkSqlExpr "tstz" :: SqlExpr NormalQuery (NonNullT UTCTime)
-        iv = UnsafeMkSqlExpr "iv" :: SqlExpr NormalQuery (NonNullT DiffTime)
+        iv = UnsafeMkSqlExpr "iv" :: SqlExpr NormalQuery (NonNullT Interval)
         ndays = UnsafeMkSqlExpr "n" :: SqlExpr NormalQuery (NonNullT Int32)
         ep = UnsafeMkSqlExpr "ep" :: SqlExpr NormalQuery (NonNullT Double)
 

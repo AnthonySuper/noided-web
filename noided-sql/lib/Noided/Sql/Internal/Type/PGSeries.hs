@@ -3,7 +3,8 @@
 module Noided.Sql.Internal.Type.PGSeries where
 
 import Data.HKD
-import Data.Time (DiffTime, LocalTime, UTCTime)
+import Data.Time (LocalTime, UTCTime)
+import Noided.Sql.Internal.Type.Interval
 import Noided.Sql.Internal.Class.FromItem
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
@@ -12,11 +13,11 @@ import Noided.Sql.Internal.Type.SqlType
 -- | Maps a series element type to its step type.
 -- For most types, the step has the same type as the elements.
 -- For timestamp types (@UTCTime@, @LocalTime@), the step is an @interval@
--- (represented as 'DiffTime'), matching PostgreSQL's @generate_series@ signature.
+-- (represented as 'Interval'), matching PostgreSQL's @generate_series@ signature.
 type StepType :: SqlType -> SqlType
 type family StepType t where
-  StepType (SqlT n UTCTime) = SqlT n DiffTime
-  StepType (SqlT n LocalTime) = SqlT n DiffTime
+  StepType (SqlT n UTCTime) = SqlT n Interval
+  StepType (SqlT n LocalTime) = SqlT n Interval
   StepType t = t
 
 -- | Represents a call to the PostgreSQL @generate_series@ set-returning function.
@@ -58,7 +59,7 @@ generateSeries start stop = PGSeries start stop Nothing
 
 -- | Construct a @generate_series@ FROM item with a start, stop, and step value.
 -- For integer and numeric types, the step has the same type as the elements.
--- For timestamp types (@UTCTime@, @LocalTime@), the step must be a 'DiffTime'
+-- For timestamp types (@UTCTime@, @LocalTime@), the step must be a 'Interval'
 -- (PostgreSQL @interval@) — see 'StepType'.
 generateSeriesStep ::
   SqlExpr NormalQuery t ->
