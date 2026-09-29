@@ -10,6 +10,7 @@ import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 import Noided.Sql.Internal.Type.Syntax (renderSyntaxToTextNumberedBinds)
 import Test.Hspec
+import Test.Hspec.Golden
 
 renderExpr :: SqlExpr scope t -> String
 renderExpr = unpack . renderSyntaxToTextNumberedBinds . unsafeGetSqlExpr
@@ -64,3 +65,7 @@ spec = describe "Bool Expressions" $ do
     it "renders exists_ with a simple query" $ do
       let query = return (Element (UnsafeMkSqlExpr "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
       renderExpr (exists_ query) `shouldBe` "EXISTS (SELECT 1 AS \"e\")"
+
+    describe "exists_ golden" $ do
+      let query = return (Element (UnsafeMkSqlExpr "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
+      golden "exists-simple-query" (return (renderExpr (exists_ query)))

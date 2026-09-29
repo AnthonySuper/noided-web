@@ -218,6 +218,7 @@ test-suite noided-sql-test
       Noided.Sql.Internal.SqlExpr.DateTimeSpec
       Noided.Sql.Internal.SqlExpr.InetSpec
       Noided.Sql.Internal.SqlExpr.NumericSpec
+      Noided.Sql.Internal.SqlExpr.RowSpec
       Noided.Sql.Internal.SqlExpr.TextSpec
       Noided.Sql.Internal.SqlExpr.FullTextSpec
       Noided.Sql.Internal.Insert.InsertSpec
