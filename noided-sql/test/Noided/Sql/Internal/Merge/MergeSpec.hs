@@ -86,16 +86,15 @@ spec = describe "MergeQuery" $ do
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      ( whenMatched_ (MergeUpdate $ \_ s -> #name |= MutateVal s.name)
-          NE.:| [ whenNotMatched_ $ MergeInsert $ \_ s ->
-                    ( ValuesList $
-                        NE.fromList
-                          [ MutateVal s.name
-                              :::% MutateVal s.email
-                              :::% MutateVal s.score
-                              :::% EmptyWrappedRow
-                          ] ::
-                        InsertValues NameEmailScoreInsertRow
+      ( whenMatched_ (MergeMatchedUpdate $ \_ s -> #name |= MutateVal s.name)
+          NE.:| [ whenNotMatched_ $ MergeNotMatchedInsert $ \s ->
+                    ( mergeValues_
+                        ( MutateVal s.name
+                            :::% MutateVal s.email
+                            :::% MutateVal s.score
+                            :::% EmptyWrappedRow
+                        ) ::
+                        MergeInsertValues NameEmailScoreInsertRow
                     )
                 ]
       )
@@ -105,7 +104,7 @@ spec = describe "MergeQuery" $ do
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      (NE.singleton $ whenMatched_ MergeDelete)
+      (NE.singleton $ whenMatched_ MergeMatchedDelete)
 
   renderGolden "merge-do-nothing" $
     mergeReturning
@@ -120,7 +119,31 @@ spec = describe "MergeQuery" $ do
       userTable
       (mkSourceTable "source_users")
       (\t s -> t.id ==. s.id)
-      ( andMergeCondition_ (\t _ -> t.score >. bindParam @Int64 100) (whenMatched_ MergeDelete)
-          NE.:| [whenNotMatchedBySource_ MergeDelete]
+      ( whenMatchedAnd_ (\t _ -> t.score >. bindParam @Int64 100) MergeMatchedDelete
+          NE.:| [whenNotMatchedBySource_ MergeBySourceDelete]
+      )
+      (\r -> r.id :::% EmptyWrappedRow :: WrappedRow IdRow (SqlExpr NormalQuery))
+
+  renderGolden "merge-not-matched-conditions-and-by-source-update" $
+    mergeReturning
+      userTable
+      (mkSourceTable "source_users")
+      (\t s -> t.id ==. s.id)
+      ( whenNotMatchedAnd_
+          (\s -> s.score >. bindParam @Int64 0)
+          ( MergeNotMatchedInsert $ \s ->
+              ( mergeValues_
+                  ( MutateVal s.name
+                      :::% MutateVal s.email
+                      :::% MutateVal s.score
+                      :::% EmptyWrappedRow
+                  ) ::
+                  MergeInsertValues NameEmailScoreInsertRow
+              )
+          )
+          NE.:| [ whenNotMatchedBySourceAnd_
+                    (\t -> t.score >. bindParam @Int64 100)
+                    (MergeBySourceUpdate $ \t -> #score |= MutateVal t.score)
+                ]
       )
       (\r -> r.id :::% EmptyWrappedRow :: WrappedRow IdRow (SqlExpr NormalQuery))
