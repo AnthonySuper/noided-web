@@ -99,7 +99,7 @@ defaultPositionSpec = describe "the position of the default clause" $ do
   it "uses the first default clause when there is more than one" $
     "{pluralize ($n) { default { none } default { other } }}" `rendersTo` "none "
 
--- | Messages taken verbatim from @optimize-beer/config/translations/en@, so
+-- | Messages taken verbatim from a real application's translation files, so
 -- that a change to the parser cannot quietly invalidate a real translation
 -- file (which 'Noided.Web.Internal.Effect.Translate.loadFile' would then drop
 -- wholesale).
