@@ -15,7 +15,8 @@
 
 module Noided.Form.HKD.IntegrationSpec (spec) where
 
-import Data.Aeson (FromJSON, eitherDecode)
+import Data.Aeson (FromJSON, ToJSON, Value (Null), eitherDecode, object, toJSON, (.=))
+import Data.Aeson qualified as Aeson
 import Data.Either (isLeft)
 import Data.HKD
 import Data.IntMap qualified as IM
@@ -70,6 +71,8 @@ deriving via (Generically (Address FormErrors)) instance Monoid (Address FormErr
 instance HKDForm Address
 
 deriving anyclass instance FromJSON (Address FormInput)
+
+deriving anyclass instance ToJSON (Address FormInput)
 
 data User f = User
   { name :: f (InputField Text),
@@ -319,6 +322,65 @@ spec = describe "HKD Form Integration" $ do
     it "still decodes present values as FromTyped" $ do
       let Right input = eitherDecode @(Address FormInput) "{\"street\": \"S\", \"city\": \"C\"}"
       input.street `shouldBe` InputInput (FromTyped "S")
+
+  describe "JSON output" $ do
+    it "encodes nested errors, omitting fields without errors" $ do
+      let input =
+            User
+              { name = InputInput $ FromTyped "",
+                age = InputInput $ FromTyped 30,
+                address =
+                  SubformInput $
+                    Address
+                      { street = InputInput $ FromTyped "Main St",
+                        city = InputInput $ FromTyped ""
+                      },
+                tags = ListInput $ Seq.fromList [InputInput $ FromTyped "ok", InputInput $ FromTyped "toolongtag"]
+              }
+      Left err <- validateForm validateUser input
+      let blank = object ["key" .= ("Blank" :: Text), "params" .= object []]
+          expected =
+            object
+              [ "base" .= ([] :: [Aeson.Value]),
+                "fields"
+                  .= object
+                    [ "name" .= object ["base" .= [blank]],
+                      "address"
+                        .= object
+                          [ "base" .= ([] :: [Aeson.Value]),
+                            "fields" .= object ["city" .= object ["base" .= [blank]]]
+                          ],
+                      "tags"
+                        .= object
+                          [ "base" .= ([] :: [Aeson.Value]),
+                            "items"
+                              .= object
+                                [ "1"
+                                    .= object
+                                      [ "base"
+                                          .= [ object
+                                                 [ "key" .= ("TooLong" :: Text),
+                                                   "params"
+                                                       .= object
+                                                         [ "tooLongText"
+                                                             .= object ["tag" .= ("ParamFragment" :: Text), "contents" .= ("toolongtag" :: Text)]
+                                                         ]
+                                                 ]
+                                             ]
+                                      ]
+                                ]
+                          ]
+                    ]
+              ]
+      toJSON err `shouldBe` expected
+
+    it "encodes empty errors as an empty tree" $ do
+      toJSON (mempty :: FormErrors (SubformField Address))
+        `shouldBe` object ["base" .= ([] :: [Aeson.Value]), "fields" .= object []]
+
+    it "encodes inputs, encoding NotPresent as null" $ do
+      let input = Address {street = InputInput (FromTyped "S"), city = InputInput NotPresent} :: Address FormInput
+      toJSON input `shouldBe` object ["street" .= ("S" :: Text), "city" .= Null]
 
 unwrap :: FormResult (InputField a) -> a
 unwrap (InputResult a) = a

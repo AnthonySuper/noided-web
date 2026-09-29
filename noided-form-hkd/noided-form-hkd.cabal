@@ -97,6 +97,7 @@ library
         Noided.Form.HKD.Internal.Parse
         Noided.Form.HKD.Internal.Validate
         Noided.Form.HKD.Internal.Class
+        Noided.Form.HKD.Internal.Json
         Noided.Form.HKD.Internal.UrlForm
         Noided.Form.HKD.Internal.Render
 

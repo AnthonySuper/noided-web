@@ -34,6 +34,14 @@ instance (FromJSON a) => FromJSON (FieldInput a) where
   parseJSON v = FromTyped <$> parseJSON v
   omittedField = Just NotPresent
 
+-- | Encodes typed values as themselves, text form values as strings, and everything else as @null@.
+instance (ToJSON a) => ToJSON (FieldInput a) where
+  toJSON = \case
+    FromTyped a -> toJSON a
+    FromForm (TextValue t) -> toJSON t
+    FromForm (FileValue _) -> Null
+    NotPresent -> Null
+
 _FromForm :: Prism (FieldInput a) (FieldInput a) (FormValue MultipartFormData) (FormValue MultipartFormData)
 _FromForm = prism FromForm $ \case
   FromForm a -> Right a
@@ -87,6 +95,15 @@ deriving instance (Show (FormInput input)) => Show (FormInput (ListField input))
 instance (FromJSON a) => FromJSON (FormInput (InputField a)) where
   parseJSON = fmap InputInput . parseJSON
   omittedField = Just (InputInput NotPresent)
+
+instance (ToJSON a) => ToJSON (FormInput (InputField a)) where
+  toJSON (InputInput a) = toJSON a
+
+instance (ToJSON (subform FormInput)) => ToJSON (FormInput (SubformField subform)) where
+  toJSON (SubformInput s) = toJSON s
+
+instance (ToJSON (FormInput input)) => ToJSON (FormInput (ListField input)) where
+  toJSON (ListInput l) = toJSON l
 
 deriving instance (Eq a) => Eq (FormInput (InputField a))
 

@@ -23,6 +23,7 @@ import Data.HKD
 import GHC.Generics
 import Noided.Form
 import Noided.Form.HKD.Internal.Class
+import Noided.Form.HKD.Internal.Json ()
 import Noided.Form.HKD.Internal.Parse
 import Noided.Form.HKD.Internal.Render
 import Noided.Form.HKD.Internal.Type.FormLabel (FormLabelInner (SubformLabelInner))
