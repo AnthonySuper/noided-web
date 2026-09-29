@@ -1,8 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 
 module Noided.Sql.Internal.Type.PGSeries where
 
+import GHC.TypeLits (ErrorMessage (..), TypeError)
+
 import Data.HKD
+import Data.Int (Int32, Int64)
+import Data.Kind (Constraint, Type)
+import Data.Scientific (Scientific)
 import Data.Time (LocalTime, UTCTime)
 import Noided.Sql.Internal.Type.Interval
 import Noided.Sql.Internal.Class.FromItem
@@ -10,15 +18,62 @@ import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
 
--- | Maps a series element type to its step type.
--- For most types, the step has the same type as the elements.
--- For timestamp types (@UTCTime@, @LocalTime@), the step is an @interval@
--- (represented as 'Interval'), matching PostgreSQL's @generate_series@ signature.
+-- | Haskell types that PostgreSQL's @generate_series@ can produce.
+-- PostgreSQL only has @generate_series@ for @int4@, @int8@, @numeric@,
+-- @timestamp@ and @timestamptz@; anything else is a custom type error.
+type SeriesElement :: Type -> Constraint
+type family SeriesElement a where
+  SeriesElement Int32 = ()
+  SeriesElement Int64 = ()
+  SeriesElement Scientific = ()
+  SeriesElement LocalTime = ()
+  SeriesElement UTCTime = ()
+  SeriesElement a = TypeError (UnsupportedSeries a)
+
+-- | The type of the step. Integers and numerics step by themselves; timestamps step by an 'Interval'.
+type SeriesStep :: Type -> Type
+type family SeriesStep a where
+  SeriesStep Int32 = Int32
+  SeriesStep Int64 = Int64
+  SeriesStep Scientific = Scientific
+  SeriesStep LocalTime = Interval
+  SeriesStep UTCTime = Interval
+  SeriesStep a = TypeError (UnsupportedSeries a)
+
+-- | The type of the resulting column.
+type SeriesResult :: Type -> Type
+type family SeriesResult a where
+  SeriesResult Int32 = Int32
+  SeriesResult Int64 = Int64
+  SeriesResult Scientific = Scientific
+  SeriesResult LocalTime = LocalTime
+  SeriesResult UTCTime = UTCTime
+  SeriesResult a = TypeError (UnsupportedSeries a)
+
+type UnsupportedSeries a =
+  'Text "PostgreSQL has no generate_series for " ':<>: 'ShowType a ':<>: 'Text "."
+    ':$$: 'Text "Supported element types are Int32, Int64, Scientific, LocalTime and UTCTime."
+    ':$$: 'Text "Hint: cast Int16 to Int32 first. For Day, cast to LocalTime (::timestamp) first."
+
+-- | Element types for which PostgreSQL has a two-argument @generate_series@
+-- (no step). Timestamps are deliberately excluded: they need 'generateSeriesStep_'.
+type SeriesDefaultStep :: Type -> Constraint
+type family SeriesDefaultStep a where
+  SeriesDefaultStep Int32 = ()
+  SeriesDefaultStep Int64 = ()
+  SeriesDefaultStep Scientific = ()
+  SeriesDefaultStep LocalTime = TypeError (NeedsStep LocalTime)
+  SeriesDefaultStep UTCTime = TypeError (NeedsStep UTCTime)
+  SeriesDefaultStep a = TypeError (UnsupportedSeries a)
+
+type NeedsStep a =
+  'Text "PostgreSQL has no two-argument generate_series for " ':<>: 'ShowType a ':<>: 'Text "."
+    ':$$: 'Text "Use generateSeriesStep_ with an Interval step instead."
+
+-- | Maps a series element type to its step type, via 'SeriesStep'.
 type StepType :: SqlType -> SqlType
 type family StepType t where
-  StepType (SqlT n UTCTime) = SqlT n Interval
-  StepType (SqlT n LocalTime) = SqlT n Interval
-  StepType t = t
+  StepType (SqlT n a) = SqlT n (SeriesStep a)
 
 -- | Represents a call to the PostgreSQL @generate_series@ set-returning function.
 -- This can be used as a FROM item in a SELECT query.
@@ -31,8 +86,8 @@ data PGSeries (t :: SqlType)
   , pgSeriesStep :: Maybe (SqlExpr NormalQuery (StepType t))
   }
 
-instance FromItem (PGSeries t) where
-  type FromItemSelectList (PGSeries t) = Element t
+instance (SeriesElement a) => FromItem (PGSeries (SqlT n a)) where
+  type FromItemSelectList (PGSeries (SqlT n a)) = Element (SqlT n (SeriesResult a))
   fromItemAlias _ = "series"
   fromItemLateralUsage _ = SometimesLateral
   fromItemColumnAliases _ = ColumnAliases
@@ -50,11 +105,13 @@ instance FromItem (PGSeries t) where
   fromItemSelectList _ = Element "generate_series"
 
 -- | Construct a @generate_series@ FROM item with a start and stop value.
--- The step defaults to 1.
+-- The step defaults to 1. Only available for @Int32@, @Int64@ and @Scientific@;
+-- timestamp series must use 'generateSeriesStep_'.
 generateSeries_ ::
-  SqlExpr NormalQuery t ->
-  SqlExpr NormalQuery t ->
-  PGSeries t
+  (SeriesDefaultStep a) =>
+  SqlExpr NormalQuery (SqlT n a) ->
+  SqlExpr NormalQuery (SqlT n a) ->
+  PGSeries (SqlT n a)
 generateSeries_ start stop = PGSeries start stop Nothing
 
 -- | Construct a @generate_series@ FROM item with a start, stop, and step value.
@@ -62,9 +119,10 @@ generateSeries_ start stop = PGSeries start stop Nothing
 -- For timestamp types (@UTCTime@, @LocalTime@), the step must be a 'Interval'
 -- (PostgreSQL @interval@) — see 'StepType'.
 generateSeriesStep_ ::
-  SqlExpr NormalQuery t ->
-  SqlExpr NormalQuery t ->
-  SqlExpr NormalQuery (StepType t) ->
-  PGSeries t
+  (SeriesElement a) =>
+  SqlExpr NormalQuery (SqlT n a) ->
+  SqlExpr NormalQuery (SqlT n a) ->
+  SqlExpr NormalQuery (SqlT n (SeriesStep a)) ->
+  PGSeries (SqlT n a)
 generateSeriesStep_ start stop step = PGSeries start stop (Just step)
 
