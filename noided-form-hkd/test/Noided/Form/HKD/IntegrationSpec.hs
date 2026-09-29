@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -14,6 +15,8 @@
 
 module Noided.Form.HKD.IntegrationSpec (spec) where
 
+import Data.Aeson (FromJSON, eitherDecode)
+import Data.Either (isLeft)
 import Data.HKD
 import Data.IntMap qualified as IM
 import Data.Sequence qualified as Seq
@@ -66,6 +69,8 @@ deriving via (Generically (Address FormErrors)) instance Monoid (Address FormErr
 
 instance HKDForm Address
 
+deriving anyclass instance FromJSON (Address FormInput)
+
 data User f = User
   { name :: f (InputField Text),
     age :: f (InputField Int),
@@ -102,6 +107,8 @@ deriving via (Generically (User FormErrors)) instance Semigroup (User FormErrors
 deriving via (Generically (User FormErrors)) instance Monoid (User FormErrors)
 
 instance HKDForm User
+
+deriving anyclass instance FromJSON (User FormInput)
 
 shouldHaveError :: (ValidationError p) => ValidationErrors -> p -> Expectation
 errs `shouldHaveError` err =
@@ -269,6 +276,49 @@ spec = describe "HKD Form Integration" $ do
       Left err -> do
         err.baseErrors `shouldHaveError` PasswordsDoNotMatch
       Right _ -> expectationFailure "Expected mismatch error"
+
+  describe "JSON input" $ do
+    it "treats a missing key as NotPresent and reports it as a field error" $ do
+      let Right input = eitherDecode @(Address FormInput) "{\"street\": \"Main St\"}"
+      input.city `shouldBe` InputInput NotPresent
+      result <- validateForm validateAddress input
+      case result of
+        Left err -> do
+          err.innerErrors.city.innerErrors `shouldSatisfy` (not . nullErrors)
+          err.innerErrors.street.innerErrors `shouldSatisfy` nullErrors
+        Right _ -> expectationFailure "Expected a city error"
+
+    it "treats null as NotPresent" $ do
+      let Right input = eitherDecode @(Address FormInput) "{\"street\": null, \"city\": \"X\"}"
+      input.street `shouldBe` InputInput NotPresent
+      input.city `shouldBe` InputInput (FromTyped "X")
+
+    it "treats missing and null lists as empty" $ do
+      let json = "{\"name\": \"A\", \"age\": 20, \"address\": {}, \"tags\": null}"
+          Right input = eitherDecode @(User FormInput) json
+      input.tags `shouldBe` ListInput mempty
+      let Right input' = eitherDecode @(User FormInput) "{\"name\": \"A\", \"age\": 20, \"address\": {}}"
+      input'.tags `shouldBe` ListInput mempty
+
+    it "treats a missing or null subform as an empty subform" $ do
+      let Right missing = eitherDecode @(User FormInput) "{\"name\": \"A\", \"age\": 20}"
+          Right nulled = eitherDecode @(User FormInput) "{\"name\": \"A\", \"age\": 20, \"address\": null}"
+      missing.address.val.street `shouldBe` InputInput NotPresent
+      missing.address.val.city `shouldBe` InputInput NotPresent
+      nulled.address.val.city `shouldBe` InputInput NotPresent
+      result <- validateForm validateUser missing
+      case result of
+        Left err -> do
+          err.innerErrors.address.innerErrors.city.innerErrors `shouldSatisfy` (not . nullErrors)
+          err.innerErrors.name.innerErrors `shouldSatisfy` nullErrors
+        Right _ -> expectationFailure "Expected address errors"
+
+    it "still fails the decode on a type mismatch" $ do
+      eitherDecode @(Address FormInput) "{\"street\": 5}" `shouldSatisfy` isLeft
+
+    it "still decodes present values as FromTyped" $ do
+      let Right input = eitherDecode @(Address FormInput) "{\"street\": \"S\", \"city\": \"C\"}"
+      input.street `shouldBe` InputInput (FromTyped "S")
 
 unwrap :: FormResult (InputField a) -> a
 unwrap (InputResult a) = a
