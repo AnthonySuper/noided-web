@@ -9,8 +9,8 @@
 --
 -- === Getting Started
 --
--- 1.  Define your tables using HKD structures and 'Noided.Sql.Define.defineHKDTable'.
--- 2.  Use 'Noided.Sql.Define.hkdTableDef' to create table definitions.
+-- 1.  Define your tables using HKD structures and 'Noided.Sql.Define.deriveTable'.
+-- 2.  Use 'Noided.Sql.Define.tableSnakeCased' to create table definitions.
 -- 3.  Write queries using the 'Noided.Sql.Select', 'Noided.Sql.Insert', 'Noided.Sql.Update', and 'Noided.Sql.Delete' modules.
 -- 4.  Use 'Noided.Sql.SqlExpr' to write SQL expressions within your queries.
 -- 5.  Execute your queries using the 'Noided.Sql.TransactM' monad.

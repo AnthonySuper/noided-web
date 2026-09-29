@@ -3,10 +3,10 @@
 
 -- |
 -- Module: Noided.Sql.Internal.Type.Col
--- Description: Field wrapper for realm-free HKD tables.
+-- Description: Field wrapper for HKD tables.
 --
--- Unlike 'Noided.Sql.Internal.Type.Columnar.Columnar', 'Col' only computes on
--- the static column descriptor, never on the wrapper @f@. That means
+-- 'Col' only computes on the static column descriptor, never on the wrapper
+-- @f@. That means
 -- @Col (RegularColumn Text) f@ reduces to @f ('NonNullT' Text)@ for /any/ @f@,
 -- so GHC can infer @f@ from a field's value. The column's default-ness is not
 -- visible after reduction; 'Noided.Sql.Internal.TH.Table.deriveTable'

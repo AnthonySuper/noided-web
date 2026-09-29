@@ -10,7 +10,7 @@ where
 import Data.HKD (ffmap)
 import GHC.Generics
 import Noided.Row (WrappedRow)
-import Noided.Sql.Internal.HKDTableDef (GSnakeCasedNames, genericSnakeCasedNames)
+import Noided.Sql.Internal.SnakeCase (GSnakeCasedNames, genericSnakeCasedNames)
 import Noided.Sql.Internal.Type.Col
 import Noided.Sql.Internal.Type.ColumnName
 import Noided.Sql.Internal.Type.TableDefinition

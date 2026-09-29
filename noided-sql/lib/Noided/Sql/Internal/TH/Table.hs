@@ -5,7 +5,7 @@
 
 -- |
 -- Module: Noided.Sql.Internal.TH.Table
--- Description: Template Haskell for realm-free HKD tables.
+-- Description: Template Haskell for HKD tables and views.
 --
 -- Given
 --
@@ -38,9 +38,15 @@
 -- Nested HKD fields (@ProfileF f@) must themselves have been defined with
 -- 'deriveTable' earlier in the module (or imported, along with their
 -- generated @ProfileNullF@).
+--
+-- 'deriveView' generates the same things except the 'Table' instance, for
+-- select-only types. Since a view has no column defaults, its fields may
+-- also be written as a bare @f ('NonNullT' Int64)@.
 module Noided.Sql.Internal.TH.Table
   ( deriveTable,
     deriveTableWith,
+    deriveView,
+    deriveViewWith,
   )
 where
 
@@ -68,13 +74,35 @@ deriveTable = deriveTableWith [''Show, ''Eq]
 -- | Like 'deriveTable', but choose which stock classes the generated plain
 -- record derives. 'Generic' is always derived (it is needed for unwrapping).
 deriveTableWith :: [Name] -> Name -> Q [Dec]
-deriveTableWith derivs hkdName = do
-  (conName, fields) <- reifyHKD hkdName
-  plainName <- stripF hkdName
+deriveTableWith = derive TableMode
+
+-- | 'deriveViewWith' with @Show@ and @Eq@ derived for the plain record.
+deriveView :: Name -> Q [Dec]
+deriveView = deriveViewWith [''Show, ''Eq]
+
+-- | Like 'deriveView', but choose which stock classes the generated plain
+-- record derives.
+deriveViewWith :: [Name] -> Name -> Q [Dec]
+deriveViewWith = derive ViewMode
+
+-- | What is being derived: a table gets a 'Table' instance and only allows
+-- 'Col' fields; a view doesn't, and also allows bare @f st@ fields.
+data Mode = TableMode | ViewMode
+
+modeName :: Mode -> String
+modeName = \case
+  TableMode -> "deriveTable"
+  ViewMode -> "deriveView"
+
+derive :: Mode -> [Name] -> Name -> Q [Dec]
+derive mode derivs hkdName = do
+  (conName, fields) <- reifyHKD mode hkdName
+  plainName <- stripF mode hkdName
   let nullName = nullCopyName plainName
   unless (nameBase conName == nameBase hkdName) $
     fail $
-      "deriveTable: the constructor of "
+      modeName mode
+        <> ": the constructor of "
         <> nameBase hkdName
         <> " must also be named "
         <> nameBase hkdName
@@ -85,10 +113,10 @@ deriveTableWith derivs hkdName = do
         <> " uses the name "
         <> nameBase plainName
         <> " for its constructor."
-  classified <- traverse classifyField fields
-  plainFields <- traverse plainField classified
+  classified <- traverse (classifyField mode) fields
+  plainFields <- traverse (plainField mode) classified
   fVar <- newName "f"
-  nullFields <- traverse (nullField fVar) classified
+  nullFields <- traverse (nullField mode fVar) classified
   let plainDecl =
         DataD
           []
@@ -105,11 +133,11 @@ deriveTableWith derivs hkdName = do
           Nothing
           [RecC nullName nullFields]
           [DerivClause Nothing [ConT ''Generic]]
-  cols <- flattenColumns classified
+  leaves <- flattenColumns mode classified
   let hkdT = pure (ConT hkdName)
       nullT = pure (ConT nullName)
       plainT = pure (ConT plainName)
-      hasNonNull = any (isNonNullColumn . snd) cols
+      hasNonNull = any isNonNullLeaf leaves
   hkdInstances <- concat <$> traverse structuralInstances [hkdT, nullT]
   tableInstances <-
     [d|
@@ -136,16 +164,17 @@ deriveTableWith derivs hkdName = do
           |]
       else do
         let msg =
-              "Table "
-                <> nameBase hkdName
+              nameBase hkdName
                 <> " has no NON NULL columns, so a missing outer-joined row cannot be told apart from a row of NULLs. Select its columns individually instead."
         [d|
           instance (TypeError (Text $(litT (strTyLit msg)))) => UnwrapSelectList $nullT where
             type SelectListUnwrapped $nullT = Maybe $plainT
             unwrapSelectList = error "unreachable"
           |]
-  tableInstance <- tableClassInstance hkdName conName classified cols
-  pure $ plainDecl : nullDecl : hkdInstances ++ tableInstances ++ nullUnwrap ++ [tableInstance]
+  tableInstance <- case mode of
+    TableMode -> pure <$> tableClassInstance hkdName conName classified leaves
+    ViewMode -> pure []
+  pure $ plainDecl : nullDecl : hkdInstances ++ tableInstances ++ nullUnwrap ++ tableInstance
 
 -- | Instances shared by a table and its nullable copy.
 structuralInstances :: Q Type -> Q [Dec]
@@ -177,33 +206,35 @@ nullCopyName plain = mkName (nameBase plain <> "NullF")
 
 -- | A field of the nullable copy: every column nullable, nested tables
 -- pointing at their own nullable copy.
-nullField :: Name -> FieldKind -> Q VarBangType
-nullField f k = do
+nullField :: Mode -> Name -> FieldKind -> Q VarBangType
+nullField mode f k = do
   ty <- case k of
-    ColumnField _ c -> case unApp c of
-      (_, [_def, _nullability, pgT]) ->
-        pure $ VarT f `AppT` (PromotedT 'SqlT `AppT` PromotedT 'Nullable `AppT` pgT)
-      _ -> fail $ "deriveTable: could not read column type " <> pprint c
     NestedField _ sub -> do
-      subPlain <- stripF sub
+      subPlain <- stripF mode sub
       pure $ ConT (nullCopyName subPlain) `AppT` VarT f
+    _ -> do
+      (_, pgT) <- leafSqlType mode k
+      pure $ VarT f `AppT` (PromotedT 'SqlT `AppT` PromotedT 'Nullable `AppT` pgT)
   pure (mkName (nameBase (kindName k)), Bang NoSourceUnpackedness NoSourceStrictness, ty)
 
 -- | A field of a table HKD, after looking at its declared type.
 data FieldKind
   = -- | @Col c f@, with the synonym-expanded column type @c@.
     ColumnField Name Type
+  | -- | A bare @f st@ (views only), with the synonym-expanded 'SqlType' @st@.
+    SqlField Name Type
   | -- | A nested table HKD, @SubF f@.
     NestedField Name Name
 
-reifyHKD :: Name -> Q (Name, [VarBangType])
-reifyHKD n =
+reifyHKD :: Mode -> Name -> Q (Name, [VarBangType])
+reifyHKD mode n =
   reify n >>= \case
     TyConI (DataD _ _ [_] _ [RecC con fields] _) -> pure (con, fields)
     TyConI (NewtypeD _ _ [_] _ (RecC con fields) _) -> pure (con, fields)
     _ ->
       fail $
-        "deriveTable: "
+        modeName mode
+          <> ": "
           <> nameBase n
           <> " must be a single-constructor record with exactly one type parameter, like: data "
           <> nameBase n
@@ -211,49 +242,60 @@ reifyHKD n =
           <> nameBase n
           <> " { ... }"
 
-stripF :: Name -> Q Name
-stripF n =
+stripF :: Mode -> Name -> Q Name
+stripF mode n =
   case Text.stripSuffix "F" (Text.pack (nameBase n)) of
     Just s | not (Text.null s) -> pure (mkName (Text.unpack s))
-    _ -> fail $ "deriveTable: type name " <> nameBase n <> " must end with an F"
+    _ -> fail $ modeName mode <> ": type name " <> nameBase n <> " must end with an F"
 
-classifyField :: VarBangType -> Q FieldKind
-classifyField (fname, _, ty) =
-  case unApp (stripParens ty) of
-    (ConT col, [c, VarT _]) | col == ''Col -> ColumnField fname <$> expandSyns c
-    (ConT sub, [VarT _]) -> pure (NestedField fname sub)
+classifyField :: Mode -> VarBangType -> Q FieldKind
+classifyField mode (fname, _, ty) =
+  case (mode, unApp (stripParens ty)) of
+    (_, (ConT col, [c, VarT _])) | col == ''Col -> ColumnField fname <$> expandSyns c
+    (ViewMode, (VarT _, [st])) -> SqlField fname <$> expandSyns st
+    (_, (ConT sub, [VarT _])) -> pure (NestedField fname sub)
     _ ->
       fail $
-        "deriveTable: field "
+        modeName mode
+          <> ": field "
           <> nameBase fname
           <> " has type "
           <> pprint ty
-          <> ", but fields must be either `Col (Column ...) f` or a nested table `SubF f`"
+          <> ", but fields must be "
+          <> case mode of
+            TableMode -> "either `Col (Column ...) f` or a nested table `SubF f`"
+            ViewMode -> "`f (NonNullT ...)`, `Col (Column ...) f` or a nested view `SubF f`"
 
-plainField :: FieldKind -> Q VarBangType
-plainField k = do
+plainField :: Mode -> FieldKind -> Q VarBangType
+plainField mode k = do
   ty <- case k of
-    ColumnField _ c -> columnHaskellType c
-    NestedField _ sub -> ConT <$> stripF sub
+    NestedField _ sub -> ConT <$> stripF mode sub
+    _ -> do
+      (nullability, pgT) <- leafSqlType mode k
+      ht <- resolveHaskellTypeOf pgT
+      pure $
+        if isNamed "Nullable" nullability
+          then ConT ''Maybe `AppT` ht
+          else ht
   pure (mkName (nameBase (kindName k)), Bang NoSourceUnpackedness NoSourceStrictness, ty)
 
 kindName :: FieldKind -> Name
 kindName = \case
   ColumnField n _ -> n
+  SqlField n _ -> n
   NestedField n _ -> n
 
--- | The Haskell type of a column, matching 'ColumnInHaskell'.
-columnHaskellType :: Type -> Q Type
-columnHaskellType c =
-  case unApp c of
-    (h, [_def, nullability, pgT])
-      | isNamed "Column" h -> do
-          ht <- resolveHaskellTypeOf pgT
-          pure $
-            if isNamed "Nullable" nullability
-              then ConT ''Maybe `AppT` ht
-              else ht
-    _ -> fail $ "deriveTable: could not read column type " <> pprint c <> " as `Column default nullability type`"
+-- | The nullability and Postgres type of a column field, read from
+-- @Column default nullability type@ or @SqlT nullability type@.
+leafSqlType :: Mode -> FieldKind -> Q (Type, Type)
+leafSqlType mode = \case
+  ColumnField _ c -> case unApp c of
+    (h, [_def, nullability, pgT]) | isNamed "Column" h -> pure (nullability, pgT)
+    _ -> fail $ modeName mode <> ": could not read column type " <> pprint c <> " as `Column default nullability type`"
+  SqlField _ st -> case unApp st of
+    (h, [nullability, pgT]) | isNamed "SqlT" h -> pure (nullability, pgT)
+    _ -> fail $ modeName mode <> ": could not read column type " <> pprint st <> " as `SqlT nullability type`"
+  NestedField n _ -> fail $ modeName mode <> ": " <> nameBase n <> " is a nested table, not a column"
 
 -- | Try to evaluate @HaskellTypeOf t@ at splice time, so the generated record
 -- mentions the concrete type. Falls back to the type family application.
@@ -268,9 +310,10 @@ resolveHaskellTypeOf t = do
 -- them) rather than referenced through @TableColumns Sub@, so the instance is
 -- a single literal list and the user's module doesn't need
 -- @UndecidableInstances@.
-tableClassInstance :: Name -> Name -> [FieldKind] -> [(Name, Type)] -> Q Dec
-tableClassInstance hkdName conName classified cols = do
-  let colsTy =
+tableClassInstance :: Name -> Name -> [FieldKind] -> [FieldKind] -> Q Dec
+tableClassInstance hkdName conName classified leaves = do
+  let cols = [(n, c) | ColumnField n c <- leaves]
+      colsTy =
         foldr
           ( \(n, c) acc ->
               PromotedConsT
@@ -279,7 +322,7 @@ tableClassInstance hkdName conName classified cols = do
           )
           PromotedNilT
           cols
-  (pat, vars) <- flatPattern conName classified
+  (pat, vars) <- flatPattern TableMode conName classified
   body <-
     foldr
       (\v acc -> [|QueryCol $(varE v) :::% $acc|])
@@ -296,27 +339,28 @@ tableClassInstance hkdName conName classified cols = do
 
 -- | A pattern matching a row (and its nested tables) all the way down,
 -- binding one variable per column, in declaration order.
-flatPattern :: Name -> [FieldKind] -> Q (Pat, [Name])
-flatPattern con kinds = do
+flatPattern :: Mode -> Name -> [FieldKind] -> Q (Pat, [Name])
+flatPattern mode con kinds = do
   parts <- traverse go kinds
   pure (ConP con [] (map fst parts), concatMap snd parts)
   where
     go = \case
-      ColumnField n _ -> do
-        v <- newName (nameBase n)
-        pure (VarP v, [v])
       NestedField _ sub -> do
-        (subCon, subFields) <- reifyHKD sub
-        traverse classifyField subFields >>= flatPattern subCon
+        (subCon, subFields) <- reifyHKD mode sub
+        traverse (classifyField mode) subFields >>= flatPattern mode subCon
+      k -> do
+        v <- newName (nameBase (kindName k))
+        pure (VarP v, [v])
 
-flattenColumns :: [FieldKind] -> Q [(Name, Type)]
-flattenColumns = fmap concat . traverse go
+-- | Every column field, with nested tables flattened, in declaration order.
+flattenColumns :: Mode -> [FieldKind] -> Q [FieldKind]
+flattenColumns mode = fmap concat . traverse go
   where
     go = \case
-      ColumnField n c -> pure [(n, c)]
       NestedField _ sub -> do
-        (_, subFields) <- reifyHKD sub
-        traverse classifyField subFields >>= flattenColumns
+        (_, subFields) <- reifyHKD mode sub
+        traverse (classifyField mode) subFields >>= flattenColumns mode
+      k -> pure [k]
 
 -- Type utilities
 
@@ -387,7 +431,8 @@ freeVars = \case
   SigT t _ -> freeVars t
   _ -> []
 
-isNonNullColumn :: Type -> Bool
-isNonNullColumn c = case unApp c of
-  (h, [_, nullability, _]) | isNamed "Column" h -> isNamed "NonNull" nullability
+isNonNullLeaf :: FieldKind -> Bool
+isNonNullLeaf = \case
+  ColumnField _ c | (h, [_, nullability, _]) <- unApp c, isNamed "Column" h -> isNamed "NonNull" nullability
+  SqlField _ st | (h, [nullability, _]) <- unApp st, isNamed "SqlT" h -> isNamed "NonNull" nullability
   _ -> False
