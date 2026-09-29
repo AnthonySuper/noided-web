@@ -17,6 +17,7 @@ import Data.Map.Strict qualified as Map
 import Data.String
 import Data.Text (Text, pack)
 import GHC.Generics
+import Noided.Sql.Internal.Type.QuoteIdentifier (quoteIdentifierIfNeeded)
 
 -- | Type for containing column names.
 type ColumnName :: forall k. k -> Type
@@ -49,7 +50,7 @@ uniquifyName name seen =
 toUniqueName :: ColumnName a -> State UniqueNameState (UniqueColumnName a)
 toUniqueName (MkColumnName name) = state $ \seen ->
   let (uniqueName, seen') = uniquifyName name seen
-   in (UnsafeMkUniqueColumnName $ "\"" <> uniqueName <> "\"", seen')
+   in (UnsafeMkUniqueColumnName $ quoteIdentifierIfNeeded uniqueName, seen')
 
 toUniqueNames :: (FTraversable hkd) => hkd ColumnName -> hkd UniqueColumnName
 toUniqueNames = flip evalState mempty . ftraverse toUniqueName

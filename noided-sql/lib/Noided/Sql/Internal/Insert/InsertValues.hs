@@ -33,6 +33,7 @@ import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
+import Noided.Sql.Internal.Type.QuoteIdentifier (quoteIdentifierIfNeeded)
 import Noided.Sql.Internal.Type.Syntax
 
 type MapSqlTypeToMutationType :: [RowLabel SqlType] -> [RowLabel MutationType]
@@ -107,14 +108,14 @@ writeColumnListForInsert colDefs = \case
   ValuesList _ -> do
     let cols :: WrappedRow insertedLabels ColumnName
         cols = insertedColumnsList colDefs
-    let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ "\"" <> syntaxFromText n <> "\"") cols
+    let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ syntaxFromText (quoteIdentifierIfNeeded n)) cols
     " ("
     writeSyntax colSyntax
     ")"
   InsertSelect _ -> do
     let cols :: WrappedRow insertedLabels ColumnName
         cols = insertedColumnsList colDefs
-    let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ "\"" <> syntaxFromText n <> "\"") cols
+    let colSyntax = fromCommaSepSyntax $ ffoldMap (\(MkColumnName n) -> Written $ syntaxFromText (quoteIdentifierIfNeeded n)) cols
     " ("
     writeSyntax colSyntax
     ")"

@@ -34,6 +34,7 @@ import Noided.Sql.Internal.Type.MutationType
 import Noided.Sql.Internal.Type.QueryWriter (QueryWriter, writeSyntax)
 import Noided.Sql.Internal.Type.SqlExpr (CastNullability)
 import Noided.Sql.Internal.Type.SqlType
+import Noided.Sql.Internal.Type.QuoteIdentifier (quoteIdentifierIfNeeded)
 import Noided.Sql.Internal.Type.Syntax
 
 -- | A reference to which column we should update.
@@ -111,6 +112,6 @@ writeUpdateSets (ColUpdates updates) row = writeSyntax finalSyntax
     updateMap = Map.fromList $ NE.toList $ fmap toPair updates
 
     renderUpdate :: Text -> Syntax -> Syntax
-    renderUpdate name val = syntaxFromText ("\"" <> name <> "\"") <> " = " <> val
+    renderUpdate name val = syntaxFromText (quoteIdentifierIfNeeded name) <> " = " <> val
 
     finalSyntax = fromCommaSepSyntax $ foldMap (\(k, v) -> Written (renderUpdate k v)) (Map.toList updateMap)
