@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -101,7 +102,7 @@ defineTableDeriving derivs hkdName = do
         DataD
           []
           nullName
-          [PlainTV fVar BndrReq]
+          [PlainTV fVar dataBndrFlag]
           Nothing
           [RecC nullName nullFields]
           [DerivClause Nothing [ConT ''Generic]]
@@ -339,6 +340,16 @@ expandSyns ty = do
               expandSyns (foldl AppT (substTy sub rhs) rest)
         _ -> pure (foldl AppT h args')
     _ -> pure (foldl AppT h args')
+
+-- | The flag on a data declaration's type variable binder. template-haskell
+-- 2.21 (GHC 9.8) changed these from @()@ to 'BndrVis'.
+#if MIN_VERSION_template_haskell(2, 21, 0)
+dataBndrFlag :: BndrVis
+dataBndrFlag = BndrReq
+#else
+dataBndrFlag :: ()
+dataBndrFlag = ()
+#endif
 
 bndrName :: TyVarBndr a -> Name
 bndrName = \case
