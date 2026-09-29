@@ -1,1 +1,1 @@
-SELECT $1 AS "e"
+SELECT $1 AS e
