@@ -9,6 +9,8 @@
 module Noided.Sql.Internal.Delete.DeleteSpec (spec) where
 
 import Data.Coerce
+import Data.Function ((&))
+import Noided.Sql.Internal.Type.Tie
 import Data.Int (Int64)
 import Data.Text (unpack, Text)
 import Noided.Row
@@ -64,17 +66,23 @@ type IdRow = '[ "id" :=> SqlT NonNull Int64 ]
 spec :: Spec
 spec = describe "DeleteQuery" $ do
   renderGolden "simple-delete" $ 
-    deleteReturning userTable (pure ()) $ \r () -> return r
+    deleteReturning userTable noFrom_ $ \r _ -> return r
 
   renderGolden "delete-with-where" $ 
-    deleteReturning userTable (pure ()) $ \r () -> do
+    deleteReturning userTable noFrom_ $ \r _ -> do
       addWhereCondition_ (r.id ==. bindParam @Int64 123)
       return (r.id :::% EmptyWrappedRow) :: WhereM (WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "delete-with-using" $ 
-    deleteReturning userTable (addFromItem_ (fromBase_ (mkTableDef "other_users"))) $ \u other -> do
+    deleteReturning userTable (from_ (fromBase_ (mkTableDef "other_users"))) $ \u other -> do
       addWhereCondition_ (u.id ==. other.id)
       
+      return u
+
+  renderGolden "delete-using-cross-join" $
+    deleteReturning userTable (from_ (fromBase_ (mkTableDef "other_users") & crossJoin_ (mkTableDef "third_users"))) $ \u (other :-: third) -> do
+      addWhereCondition_ (u.id ==. other.id)
+      addWhereCondition_ (u.id ==. third.id)
       return u
 
 mkTableDef :: Text -> TableDefinition UserTable (WrappedRow (RowLabelsInQuery UserTable))

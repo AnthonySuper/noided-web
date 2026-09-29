@@ -12,6 +12,7 @@ import Noided.Sql.Internal.Type.Nullability (Nullability (NonNull, Nullable))
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
 import Noided.Sql.Internal.Type.SqlType
+import Noided.Sql.Internal.Type.Syntax (Syntax)
 import Noided.Sql.Internal.Type.Tie
 
 data OnClause baseSelectList joinedSelectList where
@@ -51,6 +52,11 @@ data FromClause selectList where
     (FromItem joinedItem) =>
     (QueriedRow baseFrom -> joinedItem) ->
     OnClause baseFrom (FromItemSelectList joinedItem) ->
+    FromClause baseFrom ->
+    FromClause (baseFrom :-: FromItemSelectList joinedItem)
+  CrossJoin ::
+    (FromItem joinedItem) =>
+    (QueriedRow baseFrom -> joinedItem) ->
     FromClause baseFrom ->
     FromClause (baseFrom :-: FromItemSelectList joinedItem)
   LeftJoin ::
@@ -93,6 +99,15 @@ writeFromClause ff = \case
     " AS "
     joinedItem <- writeFromItemAfterAs built
     writeOnClause oc selBase joinedItem
+    return $ selBase :-: joinedItem
+  CrossJoin buildItem fromBase -> do
+    selBase <- writeFromClause ff fromBase
+    " CROSS JOIN "
+    let built = buildItem selBase
+    when (fromItemLateralUsage built == SometimesLateral) "LATERAL "
+    writeFromItem built
+    " AS "
+    joinedItem <- writeFromItemAfterAs built
     return $ selBase :-: joinedItem
   LeftJoin buildItem oc fromBase -> do
     selBase <- writeFromClause ff fromBase
@@ -146,6 +161,21 @@ innerJoin_ ::
   FromClause baseFrom ->
   FromClause (baseFrom :-: FromItemSelectList joinedItem)
 innerJoin_ c = innerJoinLateral_ (const c)
+
+crossJoinLateral_ ::
+  (FromItem joinedItem) =>
+  (QueriedRow baseFrom -> joinedItem) ->
+  FromClause baseFrom ->
+  FromClause (baseFrom :-: FromItemSelectList joinedItem)
+crossJoinLateral_ = CrossJoin
+
+-- | @CROSS JOIN@ another item, with no join condition.
+crossJoin_ ::
+  (FromItem joinedItem) =>
+  joinedItem ->
+  FromClause baseFrom ->
+  FromClause (baseFrom :-: FromItemSelectList joinedItem)
+crossJoin_ c = crossJoinLateral_ (const c)
 
 leftJoinLateral_ ::
   (FromItem joinedItem, Nullified (FromItemSelectList joinedItem)) =>
@@ -223,3 +253,25 @@ onNullable_ ::
   ) ->
   t
 onNullable_ = on_' @Nullable
+
+-- | The optional FROM (for UPDATE) or USING (for DELETE) clause.
+-- Postgres allows only a single item here (use 'crossJoin_' to combine several), and it may not reference
+-- the row being modified, so the target row is not available when building it.
+data OptionalFrom fromRow where
+  NoFrom :: OptionalFrom ()
+  WithFrom :: FromClause selectList -> OptionalFrom (QueriedRow selectList)
+
+-- | No FROM/USING clause.
+noFrom_ :: OptionalFrom ()
+noFrom_ = NoFrom
+
+-- | Add a FROM/USING clause.
+from_ :: FromClause selectList -> OptionalFrom (QueriedRow selectList)
+from_ = WithFrom
+
+-- | Write the clause without emitting it; returns the row and the delayed syntax (if any).
+writeOptionalFrom :: OptionalFrom fromRow -> QueryWriter (fromRow, Maybe Syntax)
+writeOptionalFrom NoFrom = pure ((), Nothing)
+writeOptionalFrom (WithFrom fc) = do
+  (row, syn) <- delayWriting (writeFromClause IsFirstFromItem fc)
+  pure (row, Just syn)

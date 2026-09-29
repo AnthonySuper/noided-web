@@ -57,20 +57,10 @@ addFrom_ fi = UnsafeMkSelectM $ do
   modify $ \x -> x {fromSyntaxes = fromSyntaxes x Seq.:|> syn}
   return res
 
--- | Builds the FROM (or USING) items of an UPDATE or DELETE.
--- Postgres does not allow these to reference the target row, so it is not available here.
--- Only 'addFromItem_' is allowed; conditions belong in 'WhereM'.
-newtype FromM a = UnsafeMkFromM {unsafeGetFromM :: SelectM a}
-  deriving newtype (Functor, Applicative, Monad)
-
--- | Builds the WHERE conditions of an UPDATE or DELETE, which may reference the target row and the FROM items.
+-- | Builds the WHERE conditions of an UPDATE or DELETE, which may reference the target row and the FROM/USING item.
 -- Only 'addWhereCondition_' is allowed.
 newtype WhereM a = UnsafeMkWhereM {unsafeGetWhereM :: SelectM a}
   deriving newtype (Functor, Applicative, Monad)
-
--- | Like 'addFrom_', but for the FROM/USING items of an UPDATE or DELETE.
-addFromItem_ :: FromClause selectList -> FromM (QueriedRow selectList)
-addFromItem_ = UnsafeMkFromM . addFrom_
 
 -- | Like 'addWhere_', but for the WHERE clause of an UPDATE or DELETE.
 addWhereCondition_ :: SqlExpr NormalQuery (SqlT n Bool) -> WhereM ()
