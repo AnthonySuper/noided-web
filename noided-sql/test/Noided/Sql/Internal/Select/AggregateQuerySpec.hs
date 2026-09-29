@@ -90,6 +90,23 @@ instance FZip ArrayStats where fzipWith = gfzipWith
 instance NamedColumns ArrayStats where
   namedColumns = ArrayStats "id" "vals"
 
+data BoolStats f = BoolStats
+  { bsAny :: f (NullableT Bool),
+    bsEvery :: f (NullableT Bool)
+  }
+  deriving (Generic)
+
+instance FFunctor BoolStats where ffmap = ffmapDefault
+
+instance FFoldable BoolStats where ffoldMap = ffoldMapDefault
+
+instance FTraversable BoolStats where ftraverse = gftraverse
+
+instance FZip BoolStats where fzipWith = gfzipWith
+
+instance NamedColumns BoolStats where
+  namedColumns = BoolStats "any" "every"
+
 renderAggregateGolden ::
   (FZip sl, FTraversable sl, NamedColumns sl) =>
   String ->
@@ -107,6 +124,12 @@ spec = do
     renderAggregateGolden "Simple count and sum over a table" $
       aggregate_
         (\(Table1 _ val) -> Stats (agg $ count_ val) (agg $ sum_ val))
+        (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
+
+  describe "AggregateBoolean" $ do
+    renderAggregateGolden "any_ renders BOOL_OR" $
+      aggregate_
+        (\(Table1 _ val) -> BoolStats (agg $ any_ (val ==. UnsafeMkSqlExpr "1")) (agg $ every_ (val ==. UnsafeMkSqlExpr "1")))
         (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
 
   describe "AggregateGroupBy" $ do
