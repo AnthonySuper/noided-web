@@ -16,8 +16,8 @@ checkSyntax clause expected =
 spec :: Spec
 spec = do
   describe "OrderClause" $ do
-    let col1 = UnsafeMkSqlExpr "col1" :: SqlExpr NormalQuery (NonNullT Int)
-        col2 = UnsafeMkSqlExpr "col2" :: SqlExpr NormalQuery (NonNullT Int)
+    let col1 = unsafeMkAtom "col1" :: SqlExpr NormalQuery (NonNullT Int)
+        col2 = unsafeMkAtom "col2" :: SqlExpr NormalQuery (NonNullT Int)
 
     it "renders ASC" $ do
       checkSyntax (asc_ col1) "col1 ASC NULLS LAST"

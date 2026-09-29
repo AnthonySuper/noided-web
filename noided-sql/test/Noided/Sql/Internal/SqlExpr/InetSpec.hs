@@ -21,10 +21,10 @@ renderGolden description expr =
 spec :: Spec
 spec = do
   describe "Inet Expressions" $ do
-    let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT IPRange)
-        b = UnsafeMkSqlExpr "b" :: SqlExpr NormalQuery (NonNullT IPRange)
-        n = UnsafeMkSqlExpr "n" :: SqlExpr NormalQuery (NonNullT Int32)
-        off = UnsafeMkSqlExpr "off" :: SqlExpr NormalQuery (NonNullT Int64)
+    let a = unsafeMkAtom "a" :: SqlExpr NormalQuery (NonNullT IPRange)
+        b = unsafeMkAtom "b" :: SqlExpr NormalQuery (NonNullT IPRange)
+        n = unsafeMkAtom "n" :: SqlExpr NormalQuery (NonNullT Int32)
+        off = unsafeMkAtom "off" :: SqlExpr NormalQuery (NonNullT Int64)
 
     describe "containment operators" $ do
       renderGolden "is-contained-by" (a <<. b)

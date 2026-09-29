@@ -22,7 +22,7 @@ aggregatedSubqueryVal_ ::
   AggregateQuery EntireQuery (Element dt (SqlExpr Aggregated)) ->
   SqlExpr scope dt
 aggregatedSubqueryVal_ aggQuery =
-  UnsafeMkSqlExpr $
+  unsafeMkAtom $
     "(" <> syntaxSubquery (writeQuerySyntax aggQuery) <> ")"
 
 emptyRow :: forall i n. (PGType (PGArray i)) => SqlExpr n (NonNullT (PGArray i))

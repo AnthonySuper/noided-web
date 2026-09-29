@@ -100,31 +100,31 @@ dateTruncFieldSyntax f = syntaxFromText $ case f of
 
 -- | SQL @NOW()@: current date and time (with time zone).
 now_ :: SqlExpr scope (NonNullT UTCTime)
-now_ = UnsafeMkSqlExpr "NOW()"
+now_ = unsafeMkAtom "NOW()"
 
 -- | SQL @CURRENT_DATE@: current date.
 currentDate_ :: SqlExpr scope (NonNullT Day)
-currentDate_ = UnsafeMkSqlExpr "CURRENT_DATE"
+currentDate_ = unsafeMkAtom "CURRENT_DATE"
 
 -- | SQL @CURRENT_TIMESTAMP@: current date and time (with time zone).
 currentTimestamp_ :: SqlExpr scope (NonNullT UTCTime)
-currentTimestamp_ = UnsafeMkSqlExpr "CURRENT_TIMESTAMP"
+currentTimestamp_ = unsafeMkAtom "CURRENT_TIMESTAMP"
 
 -- | SQL @LOCALTIMESTAMP@: current date and time (without time zone).
 localTimestamp_ :: SqlExpr scope (NonNullT LocalTime)
-localTimestamp_ = UnsafeMkSqlExpr "LOCALTIMESTAMP"
+localTimestamp_ = unsafeMkAtom "LOCALTIMESTAMP"
 
 -- | SQL @CLOCK_TIMESTAMP()@: current date and time (changes during statement execution).
 clockTimestamp_ :: SqlExpr scope (NonNullT UTCTime)
-clockTimestamp_ = UnsafeMkSqlExpr "CLOCK_TIMESTAMP()"
+clockTimestamp_ = unsafeMkAtom "CLOCK_TIMESTAMP()"
 
 -- | SQL @STATEMENT_TIMESTAMP()@: current date and time at the start of the current statement.
 statementTimestamp_ :: SqlExpr scope (NonNullT UTCTime)
-statementTimestamp_ = UnsafeMkSqlExpr "STATEMENT_TIMESTAMP()"
+statementTimestamp_ = unsafeMkAtom "STATEMENT_TIMESTAMP()"
 
 -- | SQL @TRANSACTION_TIMESTAMP()@: current date and time at the start of the current transaction.
 transactionTimestamp_ :: SqlExpr scope (NonNullT UTCTime)
-transactionTimestamp_ = UnsafeMkSqlExpr "TRANSACTION_TIMESTAMP()"
+transactionTimestamp_ = unsafeMkAtom "TRANSACTION_TIMESTAMP()"
 
 -- * Date arithmetic
 
@@ -133,28 +133,28 @@ dateAddDays_ ::
   SqlExpr scope (SqlT lhsN Day) ->
   SqlExpr scope (SqlT rhsN Int32) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Day)
-dateAddDays_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") + (" <> unsafeGetSqlExpr b <> ")")
+dateAddDays_ a b = UnsafeMkSqlExpr (operand a <> " + " <> operand b)
 
 -- | SQL @date - integer@: subtract a number of days from a date.
 dateSubDays_ ::
   SqlExpr scope (SqlT lhsN Day) ->
   SqlExpr scope (SqlT rhsN Int32) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Day)
-dateSubDays_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+dateSubDays_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- | SQL @date - date@: compute the number of days between two dates.
 dateDiffDays_ ::
   SqlExpr scope (SqlT lhsN Day) ->
   SqlExpr scope (SqlT rhsN Day) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Int32)
-dateDiffDays_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+dateDiffDays_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- | SQL @date + interval@: add an interval to a date, producing a timestamp.
 dateAddInterval_ ::
   SqlExpr scope (SqlT lhsN Day) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) LocalTime)
-dateAddInterval_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") + (" <> unsafeGetSqlExpr b <> ")")
+dateAddInterval_ a b = UnsafeMkSqlExpr (operand a <> " + " <> operand b)
 
 -- * Interval arithmetic
 
@@ -163,20 +163,20 @@ intervalAdd_ ::
   SqlExpr scope (SqlT lhsN Interval) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Interval)
-intervalAdd_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") + (" <> unsafeGetSqlExpr b <> ")")
+intervalAdd_ a b = UnsafeMkSqlExpr (operand a <> " + " <> operand b)
 
 -- | SQL @interval - interval@: subtract one interval from another.
 intervalSub_ ::
   SqlExpr scope (SqlT lhsN Interval) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Interval)
-intervalSub_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+intervalSub_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- | SQL @- interval@: negate an interval.
 intervalNegate_ ::
   SqlExpr scope (SqlT n Interval) ->
   SqlExpr scope (SqlT n Interval)
-intervalNegate_ a = UnsafeMkSqlExpr ("-(" <> unsafeGetSqlExpr a <> ")")
+intervalNegate_ a = UnsafeMkSqlExpr ("-" <> operand a)
 
 -- * Timestamp arithmetic
 
@@ -185,42 +185,42 @@ timestampAddInterval_ ::
   SqlExpr scope (SqlT lhsN LocalTime) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) LocalTime)
-timestampAddInterval_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") + (" <> unsafeGetSqlExpr b <> ")")
+timestampAddInterval_ a b = UnsafeMkSqlExpr (operand a <> " + " <> operand b)
 
 -- | SQL @timestamp - interval@: subtract an interval from a timestamp.
 timestampSubInterval_ ::
   SqlExpr scope (SqlT lhsN LocalTime) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) LocalTime)
-timestampSubInterval_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+timestampSubInterval_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- | SQL @timestamp - timestamp@: compute the interval between two timestamps.
 timestampDiff_ ::
   SqlExpr scope (SqlT lhsN LocalTime) ->
   SqlExpr scope (SqlT rhsN LocalTime) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Interval)
-timestampDiff_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+timestampDiff_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- | SQL @timestamptz + interval@: add an interval to a timestamptz.
 timestamptzAddInterval_ ::
   SqlExpr scope (SqlT lhsN UTCTime) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) UTCTime)
-timestamptzAddInterval_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") + (" <> unsafeGetSqlExpr b <> ")")
+timestamptzAddInterval_ a b = UnsafeMkSqlExpr (operand a <> " + " <> operand b)
 
 -- | SQL @timestamptz - interval@: subtract an interval from a timestamptz.
 timestamptzSubInterval_ ::
   SqlExpr scope (SqlT lhsN UTCTime) ->
   SqlExpr scope (SqlT rhsN Interval) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) UTCTime)
-timestamptzSubInterval_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+timestamptzSubInterval_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- | SQL @timestamptz - timestamptz@: compute the interval between two timestamptz values.
 timestamptzDiff_ ::
   SqlExpr scope (SqlT lhsN UTCTime) ->
   SqlExpr scope (SqlT rhsN UTCTime) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Interval)
-timestamptzDiff_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
+timestamptzDiff_ a b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
 
 -- * Extraction and truncation functions
 
@@ -230,7 +230,7 @@ datePart_ ::
   SqlExpr scope (SqlT n a) ->
   SqlExpr scope (SqlT n Double)
 datePart_ field ts =
-  UnsafeMkSqlExpr ("DATE_PART('" <> datePartFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
+  unsafeMkAtom ("DATE_PART('" <> datePartFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
 
 -- | SQL @DATE_TRUNC(field, source)@: truncate a timestamp to the given precision.
 dateTrunc_ ::
@@ -238,7 +238,7 @@ dateTrunc_ ::
   SqlExpr scope (SqlT n LocalTime) ->
   SqlExpr scope (SqlT n LocalTime)
 dateTrunc_ field ts =
-  UnsafeMkSqlExpr ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
+  unsafeMkAtom ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
 
 -- | SQL @DATE_TRUNC(field, source)@: truncate a timestamptz to the given precision.
 dateTruncTz_ ::
@@ -246,7 +246,7 @@ dateTruncTz_ ::
   SqlExpr scope (SqlT n UTCTime) ->
   SqlExpr scope (SqlT n UTCTime)
 dateTruncTz_ field ts =
-  UnsafeMkSqlExpr ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
+  unsafeMkAtom ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr ts <> ")")
 
 -- | SQL @DATE_TRUNC(field, source)@: truncate an interval to the given precision.
 dateTruncInterval_ ::
@@ -254,7 +254,7 @@ dateTruncInterval_ ::
   SqlExpr scope (SqlT n Interval) ->
   SqlExpr scope (SqlT n Interval)
 dateTruncInterval_ field iv =
-  UnsafeMkSqlExpr ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr iv <> ")")
+  unsafeMkAtom ("DATE_TRUNC('" <> dateTruncFieldSyntax field <> "', " <> unsafeGetSqlExpr iv <> ")")
 
 -- * Age functions
 
@@ -264,7 +264,7 @@ age_ ::
   SqlExpr scope (SqlT lhsN LocalTime) ->
   SqlExpr scope (SqlT rhsN LocalTime) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Interval)
-age_ a b = UnsafeMkSqlExpr ("AGE(" <> unsafeGetSqlExpr a <> ", " <> unsafeGetSqlExpr b <> ")")
+age_ a b = unsafeMkAtom ("AGE(" <> unsafeGetSqlExpr a <> ", " <> unsafeGetSqlExpr b <> ")")
 
 -- | SQL @AGE(timestamptz, timestamptz)@: compute the interval between two timestamptz values,
 -- using years and months rather than just days.
@@ -272,7 +272,7 @@ ageTz_ ::
   SqlExpr scope (SqlT lhsN UTCTime) ->
   SqlExpr scope (SqlT rhsN UTCTime) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Interval)
-ageTz_ a b = UnsafeMkSqlExpr ("AGE(" <> unsafeGetSqlExpr a <> ", " <> unsafeGetSqlExpr b <> ")")
+ageTz_ a b = unsafeMkAtom ("AGE(" <> unsafeGetSqlExpr a <> ", " <> unsafeGetSqlExpr b <> ")")
 
 -- * Interval adjustment functions
 
@@ -280,19 +280,19 @@ ageTz_ a b = UnsafeMkSqlExpr ("AGE(" <> unsafeGetSqlExpr a <> ", " <> unsafeGetS
 justifyDays_ ::
   SqlExpr scope (SqlT n Interval) ->
   SqlExpr scope (SqlT n Interval)
-justifyDays_ a = UnsafeMkSqlExpr ("JUSTIFY_DAYS(" <> unsafeGetSqlExpr a <> ")")
+justifyDays_ a = unsafeMkAtom ("JUSTIFY_DAYS(" <> unsafeGetSqlExpr a <> ")")
 
 -- | SQL @JUSTIFY_HOURS(interval)@: convert multiples of 24 hours to days.
 justifyHours_ ::
   SqlExpr scope (SqlT n Interval) ->
   SqlExpr scope (SqlT n Interval)
-justifyHours_ a = UnsafeMkSqlExpr ("JUSTIFY_HOURS(" <> unsafeGetSqlExpr a <> ")")
+justifyHours_ a = unsafeMkAtom ("JUSTIFY_HOURS(" <> unsafeGetSqlExpr a <> ")")
 
 -- | SQL @JUSTIFY_INTERVAL(interval)@: adjust interval using @JUSTIFY_DAYS@ and @JUSTIFY_HOURS@.
 justifyInterval_ ::
   SqlExpr scope (SqlT n Interval) ->
   SqlExpr scope (SqlT n Interval)
-justifyInterval_ a = UnsafeMkSqlExpr ("JUSTIFY_INTERVAL(" <> unsafeGetSqlExpr a <> ")")
+justifyInterval_ a = unsafeMkAtom ("JUSTIFY_INTERVAL(" <> unsafeGetSqlExpr a <> ")")
 
 -- * Conversion functions
 
@@ -300,7 +300,7 @@ justifyInterval_ a = UnsafeMkSqlExpr ("JUSTIFY_INTERVAL(" <> unsafeGetSqlExpr a 
 toTimestamp_ ::
   SqlExpr scope (SqlT n Double) ->
   SqlExpr scope (SqlT n UTCTime)
-toTimestamp_ a = UnsafeMkSqlExpr ("TO_TIMESTAMP(" <> unsafeGetSqlExpr a <> ")")
+toTimestamp_ a = unsafeMkAtom ("TO_TIMESTAMP(" <> unsafeGetSqlExpr a <> ")")
 
 -- * Finiteness checks
 
@@ -308,22 +308,22 @@ toTimestamp_ a = UnsafeMkSqlExpr ("TO_TIMESTAMP(" <> unsafeGetSqlExpr a <> ")")
 isFiniteDate_ ::
   SqlExpr scope (SqlT n Day) ->
   SqlExpr scope (SqlT n Bool)
-isFiniteDate_ a = UnsafeMkSqlExpr ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
+isFiniteDate_ a = unsafeMkAtom ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
 
 -- | SQL @ISFINITE(timestamp)@: test for a finite timestamp (not +/-infinity).
 isFiniteTimestamp_ ::
   SqlExpr scope (SqlT n LocalTime) ->
   SqlExpr scope (SqlT n Bool)
-isFiniteTimestamp_ a = UnsafeMkSqlExpr ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
+isFiniteTimestamp_ a = unsafeMkAtom ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
 
 -- | SQL @ISFINITE(timestamptz)@: test for a finite timestamptz (not +/-infinity).
 isFiniteTimestamptz_ ::
   SqlExpr scope (SqlT n UTCTime) ->
   SqlExpr scope (SqlT n Bool)
-isFiniteTimestamptz_ a = UnsafeMkSqlExpr ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
+isFiniteTimestamptz_ a = unsafeMkAtom ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
 
 -- | SQL @ISFINITE(interval)@: test for a finite interval (not +/-infinity).
 isFiniteInterval_ ::
   SqlExpr scope (SqlT n Interval) ->
   SqlExpr scope (SqlT n Bool)
-isFiniteInterval_ a = UnsafeMkSqlExpr ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")
+isFiniteInterval_ a = unsafeMkAtom ("ISFINITE(" <> unsafeGetSqlExpr a <> ")")

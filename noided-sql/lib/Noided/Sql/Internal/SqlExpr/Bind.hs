@@ -11,4 +11,4 @@ bindParam_ ::
   (AsBindParam a) =>
   a ->
   SqlExpr scope (SqlT (BoundNullability a) (BoundType a))
-bindParam_ a = UnsafeMkSqlExpr (Syn $ \_ -> return (BoundParam a))
+bindParam_ a = unsafeMkAtom (Syn $ \_ -> return (BoundParam a))

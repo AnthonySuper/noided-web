@@ -16,14 +16,14 @@ renderExpr = unpack . renderSyntaxToTextNumberedBinds . unsafeGetSqlExpr
 
 spec :: Spec
 spec = describe "Case Expressions" $ do
-  let cond1 = UnsafeMkSqlExpr "cond1" :: SqlExpr NormalQuery (NonNullT Bool)
-      cond2 = UnsafeMkSqlExpr "cond2" :: SqlExpr NormalQuery (NonNullT Bool)
-      val1 = UnsafeMkSqlExpr "val1" :: SqlExpr NormalQuery (NonNullT Int)
-      val2 = UnsafeMkSqlExpr "val2" :: SqlExpr NormalQuery (NonNullT Int)
-      elseVal = UnsafeMkSqlExpr "elseVal" :: SqlExpr NormalQuery (NonNullT Int)
-      compared = UnsafeMkSqlExpr "x" :: SqlExpr NormalQuery (NonNullT Int)
-      match1 = UnsafeMkSqlExpr "1" :: SqlExpr NormalQuery (NonNullT Int)
-      match2 = UnsafeMkSqlExpr "2" :: SqlExpr NormalQuery (NonNullT Int)
+  let cond1 = unsafeMkAtom "cond1" :: SqlExpr NormalQuery (NonNullT Bool)
+      cond2 = unsafeMkAtom "cond2" :: SqlExpr NormalQuery (NonNullT Bool)
+      val1 = unsafeMkAtom "val1" :: SqlExpr NormalQuery (NonNullT Int)
+      val2 = unsafeMkAtom "val2" :: SqlExpr NormalQuery (NonNullT Int)
+      elseVal = unsafeMkAtom "elseVal" :: SqlExpr NormalQuery (NonNullT Int)
+      compared = unsafeMkAtom "x" :: SqlExpr NormalQuery (NonNullT Int)
+      match1 = unsafeMkAtom "1" :: SqlExpr NormalQuery (NonNullT Int)
+      match2 = unsafeMkAtom "2" :: SqlExpr NormalQuery (NonNullT Int)
 
   it "renders case_ with a single branch and else clause" $ do
     let branches = (cond1 `then_` val1) :| []

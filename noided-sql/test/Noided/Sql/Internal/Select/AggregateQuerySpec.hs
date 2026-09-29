@@ -124,16 +124,16 @@ spec = do
     renderAggregateGolden "Simple count and sum over a table" $
       aggregate_
         (\(Table1 _ val) -> Stats (agg_ $ count_ val) (agg_ $ sum_ val))
-        (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
+        (addFrom_ (fromBase_ $ select_ $ Table1 (unsafeMkAtom "id") (unsafeMkAtom "val")))
 
   describe "AggregateBoolean" $ do
     renderAggregateGolden "any_ renders BOOL_OR" $
       aggregate_
-        (\(Table1 _ val) -> BoolStats (agg_ $ any_ (val ==. UnsafeMkSqlExpr "1")) (agg_ $ every_ (val ==. UnsafeMkSqlExpr "1")))
-        (addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val")))
+        (\(Table1 _ val) -> BoolStats (agg_ $ any_ (val ==. unsafeMkAtom "1")) (agg_ $ every_ (val ==. unsafeMkAtom "1")))
+        (addFrom_ (fromBase_ $ select_ $ Table1 (unsafeMkAtom "id") (unsafeMkAtom "val")))
 
   describe "AggregateGroupBy" $ do
-    let baseQuery = addFrom_ (fromBase_ $ select_ $ Table1 (UnsafeMkSqlExpr "id") (UnsafeMkSqlExpr "val"))
+    let baseQuery = addFrom_ (fromBase_ $ select_ $ Table1 (unsafeMkAtom "id") (unsafeMkAtom "val"))
 
     renderAggregateGolden "Group by id and count vals" $
       groupBy_
@@ -144,7 +144,7 @@ spec = do
     renderAggregateGolden "Group by id with HAVING clause" $
       groupByHaving_
         (\t1 -> Element t1.t1Id)
-        (\(_ :--: t1Agg) -> agg_ (count_ t1Agg.t1Val) ==. UnsafeMkSqlExpr "5")
+        (\(_ :--: t1Agg) -> agg_ (count_ t1Agg.t1Val) ==. unsafeMkAtom "5")
         (\(Element idAgg :--: t1Agg) -> GroupedStats (coerce idAgg) (agg_ $ count_ t1Agg.t1Val))
         baseQuery
 

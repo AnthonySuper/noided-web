@@ -107,7 +107,7 @@ spec = do
         `shouldBe` ["id", "first_name", "middle_name", "post_count", "email", "phone_number"]
     it "renders a select from the view" $
       render selectFirstNames
-        `shouldBe` "SELECT user_summary.first_name AS e FROM user_summary AS user_summary WHERE ((user_summary.phone_number) = ($1))"
+        `shouldBe` "SELECT user_summary.first_name AS e FROM user_summary AS user_summary WHERE user_summary.phone_number = $1"
 
   describe "viewWithNames" $ do
     it "uses the given names" $

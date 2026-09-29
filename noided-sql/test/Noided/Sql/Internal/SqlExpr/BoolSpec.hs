@@ -24,48 +24,48 @@ spec = describe "Bool Expressions" $ do
     renderExpr false_ `shouldBe` "FALSE"
 
   it "renders not_" $ do
-    let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Bool)
-    renderExpr (not_ a) `shouldBe` "NOT (a)"
+    let a = unsafeMkAtom "a" :: SqlExpr NormalQuery (NonNullT Bool)
+    renderExpr (not_ a) `shouldBe` "NOT a"
 
   describe "binary operators" $ do
-    let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Bool)
-    let b = UnsafeMkSqlExpr "b" :: SqlExpr NormalQuery (NonNullT Bool)
+    let a = unsafeMkAtom "a" :: SqlExpr NormalQuery (NonNullT Bool)
+    let b = unsafeMkAtom "b" :: SqlExpr NormalQuery (NonNullT Bool)
 
     it "renders &&. correctly" $ do
-      renderExpr (a &&. b) `shouldBe` "(a) AND (b)"
+      renderExpr (a &&. b) `shouldBe` "a AND b"
 
     it "renders ||. correctly" $ do
-      renderExpr (a ||. b) `shouldBe` "(a) OR (b)"
+      renderExpr (a ||. b) `shouldBe` "a OR b"
 
     it "associates &&. to the right" $ do
-      let c = UnsafeMkSqlExpr "c" :: SqlExpr NormalQuery (NonNullT Bool)
-      renderExpr (a &&. b &&. c) `shouldBe` "(a) AND ((b) AND (c))"
+      let c = unsafeMkAtom "c" :: SqlExpr NormalQuery (NonNullT Bool)
+      renderExpr (a &&. b &&. c) `shouldBe` "a AND (b AND c)"
     
     it "associates ||. to the right" $ do
-      let c = UnsafeMkSqlExpr "c" :: SqlExpr NormalQuery (NonNullT Bool)
-      renderExpr (a ||. b ||. c) `shouldBe` "(a) OR ((b) OR (c))"
+      let c = unsafeMkAtom "c" :: SqlExpr NormalQuery (NonNullT Bool)
+      renderExpr (a ||. b ||. c) `shouldBe` "a OR (b OR c)"
 
   describe "comparison operators" $ do
-    let x = UnsafeMkSqlExpr "x" :: SqlExpr NormalQuery (NonNullT Int)
-    let y = UnsafeMkSqlExpr "y" :: SqlExpr NormalQuery (NonNullT Int)
+    let x = unsafeMkAtom "x" :: SqlExpr NormalQuery (NonNullT Int)
+    let y = unsafeMkAtom "y" :: SqlExpr NormalQuery (NonNullT Int)
 
-    it "renders ==." $ renderExpr (x ==. y) `shouldBe` "(x) = (y)"
-    it "renders <." $ renderExpr (x <. y) `shouldBe` "(x) < (y)"
-    it "renders >." $ renderExpr (x >. y) `shouldBe` "(x) > (y)"
-    it "renders <=." $ renderExpr (x <=. y) `shouldBe` "(x) <= (y)"
-    it "renders >=." $ renderExpr (x >=. y) `shouldBe` "(x) >= (y)"
-    it "renders /=." $ renderExpr (x /=. y) `shouldBe` "(x) <> (y)"
+    it "renders ==." $ renderExpr (x ==. y) `shouldBe` "x = y"
+    it "renders <." $ renderExpr (x <. y) `shouldBe` "x < y"
+    it "renders >." $ renderExpr (x >. y) `shouldBe` "x > y"
+    it "renders <=." $ renderExpr (x <=. y) `shouldBe` "x <= y"
+    it "renders >=." $ renderExpr (x >=. y) `shouldBe` "x >= y"
+    it "renders /=." $ renderExpr (x /=. y) `shouldBe` "x <> y"
 
   describe "null checks" $ do
-    let n = UnsafeMkSqlExpr "n" :: SqlExpr NormalQuery (NullableT Int)
-    it "renders isNull_" $ renderExpr (isNull_ n) `shouldBe` "(n) IS NULL"
-    it "renders isNotNull_" $ renderExpr (isNotNull_ n) `shouldBe` "(n) IS NOT NULL"
+    let n = unsafeMkAtom "n" :: SqlExpr NormalQuery (NullableT Int)
+    it "renders isNull_" $ renderExpr (isNull_ n) `shouldBe` "n IS NULL"
+    it "renders isNotNull_" $ renderExpr (isNotNull_ n) `shouldBe` "n IS NOT NULL"
 
   describe "exists_" $ do
     it "renders exists_ with a simple query" $ do
-      let query = return (Element (UnsafeMkSqlExpr "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
+      let query = return (Element (unsafeMkAtom "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
       renderExpr (exists_ query) `shouldBe` "EXISTS (SELECT 1 AS e)"
 
     describe "exists_ golden" $ do
-      let query = return (Element (UnsafeMkSqlExpr "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
+      let query = return (Element (unsafeMkAtom "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
       golden "exists-simple-query" (return (renderExpr (exists_ query)))

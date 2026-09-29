@@ -8,7 +8,8 @@ module Noided.Sql.Internal.Select.SelectM where
 
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State.Strict
-import Data.Foldable (for_)
+import Data.Foldable (for_, toList)
+import Data.List (intersperse)
 import Data.Functor
 import Data.HKD
 import Data.Sequence qualified as Seq
@@ -28,16 +29,16 @@ import Noided.Sql.Internal.Type.Syntax
 data SelectMState
   = SelectMState
   { fromSyntaxes :: Seq.Seq Syntax,
-    whereSyntaxes :: Seq.Seq Syntax
+    -- | Each condition, as written bare and as an operand (parenthesized unless an atom).
+    whereSyntaxes :: Seq.Seq (Syntax, Syntax)
   }
   deriving (Generic)
   deriving (Semigroup, Monoid) via (Generically SelectMState)
 
-writeAnds :: Seq.Seq Syntax -> Maybe (QueryWriter ())
-writeAnds (a Seq.:<| Seq.Empty) = Just (writeSyntax $ "(" <> a <> ")")
-writeAnds (a Seq.:<| b) =
-  (writeSyntax ("(" <> a <> ") AND ") *>)
-    <$> writeAnds b
+-- | A lone condition needs no parentheses; several are joined with AND, each as an operand.
+writeAnds :: Seq.Seq (Syntax, Syntax) -> Maybe (QueryWriter ())
+writeAnds (a Seq.:<| Seq.Empty) = Just (writeSyntax $ fst a)
+writeAnds ss@(_ Seq.:<| _) = Just (writeSyntax $ mconcat $ intersperse " AND " $ map snd $ toList ss)
 writeAnds Seq.Empty = Nothing
 
 newtype SelectM a
@@ -46,8 +47,8 @@ newtype SelectM a
   deriving newtype (Functor, Applicative, Monad)
 
 addWhere_ :: SqlExpr NormalQuery (SqlT n Bool) -> SelectM ()
-addWhere_ (UnsafeMkSqlExpr expr) = UnsafeMkSelectM $ modify $ \x ->
-  x {whereSyntaxes = whereSyntaxes x Seq.:|> expr}
+addWhere_ e = UnsafeMkSelectM $ modify $ \x ->
+  x {whereSyntaxes = whereSyntaxes x Seq.:|> (unsafeGetSqlExpr e, operand e)}
 
 addFrom_ :: FromClause selectList -> SelectM (QueriedRow selectList)
 addFrom_ fi = UnsafeMkSelectM $ do

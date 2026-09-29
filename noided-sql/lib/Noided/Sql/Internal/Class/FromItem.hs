@@ -50,7 +50,7 @@ qualifyColumnNames :: forall scope hkd. (FTraversable hkd) => Syntax -> hkd Colu
 qualifyColumnNames tableSyn = ffmap mapper . toUniqueNames
   where
     mapper :: forall t'. UniqueColumnName t' -> SqlExpr scope t'
-    mapper cn = UnsafeMkSqlExpr $ tableSyn <> "." <> syntaxFromText (getUniqueColumnName cn)
+    mapper cn = unsafeMkAtom $ tableSyn <> "." <> syntaxFromText (getUniqueColumnName cn)
 
 -- | Write the part after an AS clause for a from item.
 writeFromItemAfterAs ::
@@ -69,4 +69,4 @@ writeFromItemAfterAs item = do
       writeSyntax (fromCommaSepSyntax names)
       ")"
   return $
-    ffmap (\cn -> UnsafeMkSqlExpr $ tableName <> "." <> syntaxFromText (getUniqueColumnName cn)) aliases
+    ffmap (\cn -> unsafeMkAtom $ tableName <> "." <> syntaxFromText (getUniqueColumnName cn)) aliases

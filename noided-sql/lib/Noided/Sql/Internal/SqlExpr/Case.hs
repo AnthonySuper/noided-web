@@ -20,7 +20,7 @@ case_ ::
   SqlExpr scope evaluated ->
   SqlExpr scope evaluated
 case_ branches elseClause =
-  UnsafeMkSqlExpr $
+  unsafeMkAtom $
     "CASE "
       <> mconcat (intersperse " " (map unsafeRenderCaseBranch (NE.toList branches)))
       <> " ELSE "
@@ -33,7 +33,7 @@ caseNoElse_ ::
   NonEmpty (CaseBranch scope (SqlT n Bool) (SqlT anyN res)) ->
   SqlExpr scope (NullableT res)
 caseNoElse_ branches =
-  UnsafeMkSqlExpr $
+  unsafeMkAtom $
     "CASE "
       <> mconcat (intersperse " " (map unsafeRenderCaseBranch (NE.toList branches)))
       <> " END"
@@ -45,7 +45,7 @@ caseSimple_ ::
   SqlExpr scope evaluated ->
   SqlExpr scope evaluated
 caseSimple_ comp branches elseClause =
-  UnsafeMkSqlExpr $
+  unsafeMkAtom $
     "CASE "
       <> unsafeGetSqlExpr comp
       <> " "

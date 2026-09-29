@@ -15,31 +15,31 @@ infixl 6 <>.
   SqlExpr scope (SqlT lhsN Text) ->
   SqlExpr scope (SqlT rhsN Text) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) Text)
-a <>. b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") || (" <> unsafeGetSqlExpr b <> ")")
+a <>. b = UnsafeMkSqlExpr (operand a <> " || " <> operand b)
 
 -- | Sql @LOWER@ function.
 lower_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n Text)
-lower_ a = UnsafeMkSqlExpr ("LOWER(" <> unsafeGetSqlExpr a <> ")")
+lower_ a = unsafeMkAtom ("LOWER(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @UPPER@ function.
 upper_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n Text)
-upper_ a = UnsafeMkSqlExpr ("UPPER(" <> unsafeGetSqlExpr a <> ")")
+upper_ a = unsafeMkAtom ("UPPER(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @LENGTH@ function.
 length_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n Int32)
-length_ a = UnsafeMkSqlExpr ("LENGTH(" <> unsafeGetSqlExpr a <> ")")
+length_ a = unsafeMkAtom ("LENGTH(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @TRIM@ function.
 trim_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n Text)
-trim_ a = UnsafeMkSqlExpr ("TRIM(" <> unsafeGetSqlExpr a <> ")")
+trim_ a = unsafeMkAtom ("TRIM(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @LTRIM@ function.
 ltrim_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n Text)
-ltrim_ a = UnsafeMkSqlExpr ("LTRIM(" <> unsafeGetSqlExpr a <> ")")
+ltrim_ a = unsafeMkAtom ("LTRIM(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @RTRIM@ function.
 rtrim_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n Text)
-rtrim_ a = UnsafeMkSqlExpr ("RTRIM(" <> unsafeGetSqlExpr a <> ")")
+rtrim_ a = unsafeMkAtom ("RTRIM(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @SUBSTR@ function.
 substr_ ::
@@ -48,7 +48,7 @@ substr_ ::
   SqlExpr scope (SqlT n'' Int32) ->
   SqlExpr scope (SqlT (MostNullable n (MostNullable n' n'')) Text)
 substr_ s f c =
-  UnsafeMkSqlExpr ("SUBSTR(" <> unsafeGetSqlExpr s <> ", " <> unsafeGetSqlExpr f <> ", " <> unsafeGetSqlExpr c <> ")")
+  unsafeMkAtom ("SUBSTR(" <> unsafeGetSqlExpr s <> ", " <> unsafeGetSqlExpr f <> ", " <> unsafeGetSqlExpr c <> ")")
 
 -- | Sql @REPLACE@ function.
 replace_ ::
@@ -57,4 +57,4 @@ replace_ ::
   SqlExpr scope (SqlT n'' Text) ->
   SqlExpr scope (SqlT (MostNullable n (MostNullable n' n'')) Text)
 replace_ s f t =
-  UnsafeMkSqlExpr ("REPLACE(" <> unsafeGetSqlExpr s <> ", " <> unsafeGetSqlExpr f <> ", " <> unsafeGetSqlExpr t <> ")")
+  unsafeMkAtom ("REPLACE(" <> unsafeGetSqlExpr s <> ", " <> unsafeGetSqlExpr f <> ", " <> unsafeGetSqlExpr t <> ")")

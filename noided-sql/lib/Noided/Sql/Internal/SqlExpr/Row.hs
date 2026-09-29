@@ -14,7 +14,7 @@ import Noided.Sql.Internal.Type.Syntax
 -- Haskell form of @rowLike@.
 row_ :: (FFoldable rowLike) => rowLike (SqlExpr scope) -> SqlExpr scope (NonNullT (PGRow rowLike))
 row_ expr =
-  UnsafeMkSqlExpr $
+  unsafeMkAtom $
     "ROW("
       <> fromCommaSepSyntax (ffoldMap toExpr expr)
       <> ")"

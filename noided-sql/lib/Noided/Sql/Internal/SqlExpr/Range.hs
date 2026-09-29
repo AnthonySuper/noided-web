@@ -12,11 +12,11 @@ contains_ ::
   SqlExpr scope (SqlT n1 (Range a)) ->
   SqlExpr scope (SqlT n2 a) ->
   SqlExpr scope (SqlT (MostNullable n1 n2) Bool)
-contains_ r e = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr r <> ") @> (" <> unsafeGetSqlExpr e <> ")")
+contains_ r e = UnsafeMkSqlExpr (operand r <> " @> " <> operand e)
 
 -- | Element is contained by range operator (@ <@ @)
 isContainedBy_ ::
   SqlExpr scope (SqlT n1 a) ->
   SqlExpr scope (SqlT n2 (Range a)) ->
   SqlExpr scope (SqlT (MostNullable n1 n2) Bool)
-isContainedBy_ e r = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr e <> ") <@ (" <> unsafeGetSqlExpr r <> ")")
+isContainedBy_ e r = UnsafeMkSqlExpr (operand e <> " <@ " <> operand r)

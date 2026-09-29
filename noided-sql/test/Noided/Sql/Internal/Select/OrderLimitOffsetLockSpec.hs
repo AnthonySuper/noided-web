@@ -64,7 +64,7 @@ renderGolden description ol =
 spec :: Spec
 spec = do
   describe "OrderLimitOffsetLock" $ do
-    let col1 = UnsafeMkSqlExpr "col1" :: SqlExpr NormalQuery (NonNullT Int64)
+    let col1 = unsafeMkAtom "col1" :: SqlExpr NormalQuery (NonNullT Int64)
 
     describe "SelectM" $ do
       let simpleSelect = select_ (Table1 col1 col1)
