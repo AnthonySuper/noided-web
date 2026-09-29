@@ -8,6 +8,7 @@ import Data.String
 import Data.Text (Text)
 import GHC.Generics
 import Noided.Sql.Internal.Type.QueryWriter
+import Noided.Sql.Internal.Type.QuoteIdentifier (quoteIdentifierIfNeeded)
 
 data TableName = NameTable {schemaName :: !(Maybe Text), tableName :: !Text}
   deriving (Show, Read, Eq, Ord, Generic)
@@ -21,9 +22,6 @@ instance IsString TableName where
 writeTableName :: TableName -> QueryWriter ()
 writeTableName (NameTable sn tn) = do
   for_ sn $ \e -> do
-    writeText "\""
-    writeText e
-    writeText "\"."
-  writeText "\""
-  writeText tn
-  writeText "\""
+    writeText (quoteIdentifierIfNeeded e)
+    writeText "."
+  writeText (quoteIdentifierIfNeeded tn)

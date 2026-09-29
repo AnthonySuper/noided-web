@@ -8,6 +8,7 @@ module Noided.Sql.Internal.Type.QueryWriter
     writeText,
     writeSyntax,
     toUniqueAlias,
+    toUniqueAliasWith,
     toQuotedUniqueAlias,
     delayWriting,
     syntaxSubquery,
@@ -23,6 +24,7 @@ import Data.Map.Strict qualified as Map
 import Data.String
 import Data.Text (Text, pack)
 import Noided.Sql.Internal.Type.ColumnName (uniquifyName)
+import Noided.Sql.Internal.Type.QuoteIdentifier (quoteIdentifierIfNeeded)
 import Noided.Sql.Internal.Type.Syntax
 
 type QueryWriterState = Map.Map Text Int
@@ -75,18 +77,20 @@ toQueryWrite = QueryWrite
 -- Note that if the syntax is nested, an appropriate nesting suffix will also be added.
 -- Does not write anything to the query.
 toUniqueAlias :: Text -> QueryWriter Syntax
-toUniqueAlias alias = toQueryWrite $ do
+toUniqueAlias = toUniqueAliasWith id
+
+-- | Like 'toUniqueAlias', but applies a function to the final name (including any nesting suffix).
+toUniqueAliasWith :: (Text -> Text) -> Text -> QueryWriter Syntax
+toUniqueAliasWith finish alias = toQueryWrite $ do
   r <- get
   let (nestedAlias, r') = uniquifyName alias r
   put r'
   nesting <- ask
   return $ Syn $ \_ ->
     let suffix = if nesting > 0 then pack ("_nested_" <> show nesting <> "_deep") else mempty
-     in pure (RawSyntax $ nestedAlias <> suffix)
+     in pure (RawSyntax $ finish $ nestedAlias <> suffix)
 
--- | Like 'toUniqueAlias', but also adds quotes around the value.
+-- | Like 'toUniqueAlias', but also adds quotes around the value if Postgres requires them.
 -- Useful when qualifying table names and such.
 toQuotedUniqueAlias :: Text -> QueryWriter Syntax
-toQuotedUniqueAlias alias = do
-  un <- toUniqueAlias alias
-  return $ "\"" <> un <> "\""
+toQuotedUniqueAlias = toUniqueAliasWith quoteIdentifierIfNeeded

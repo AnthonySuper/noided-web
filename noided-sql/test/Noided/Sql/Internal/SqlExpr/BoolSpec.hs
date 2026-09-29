@@ -63,4 +63,4 @@ spec = describe "Bool Expressions" $ do
   describe "exists_" $ do
     it "renders exists_ with a simple query" $ do
       let query = return (Element (UnsafeMkSqlExpr "1")) :: SelectM (Element (NonNullT Int) (SqlExpr NormalQuery))
-      renderExpr (exists_ query) `shouldBe` "EXISTS (SELECT 1 AS \"e\")"
+      renderExpr (exists_ query) `shouldBe` "EXISTS (SELECT 1 AS e)"
