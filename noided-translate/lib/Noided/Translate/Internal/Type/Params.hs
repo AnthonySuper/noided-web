@@ -7,9 +7,10 @@
 module Noided.Translate.Internal.Type.Params where
 
 import Data.Aeson
+import Data.Aeson.Types (typeMismatch)
 import Data.Map.Strict qualified as Map
 import Data.Proxy
-import Data.Scientific (Scientific)
+import Data.Scientific (Scientific, floatingOrInteger)
 import Data.Text (Text, pack)
 import GHC.Generics
 import GHC.IsList
@@ -22,7 +23,21 @@ data TranslateParam
   | ParamInt Integer
   | ParamFloat Double
   deriving (Show, Read, Eq, Ord, Generic)
-  deriving (ToJSON, FromJSON) via (Generically TranslateParam)
+
+-- | Params encode as plain JSON strings and numbers.
+instance ToJSON TranslateParam where
+  toJSON = \case
+    ParamFragment t -> toJSON t
+    ParamInt i -> toJSON i
+    ParamFloat d -> toJSON d
+
+-- | Strings decode as fragments, and numbers as 'ParamInt' if they are integral, or 'ParamFloat' otherwise.
+-- Because of this, @ParamFloat 2@ does not survive a round trip (it decodes as @ParamInt 2@).
+instance FromJSON TranslateParam where
+  parseJSON = \case
+    String t -> pure $ ParamFragment t
+    Number n -> pure $ either ParamFloat ParamInt (floatingOrInteger n)
+    v -> typeMismatch "string or number" v
 
 paramToPluralizationForm :: TranslateParam -> Maybe PluralizationForm
 paramToPluralizationForm = \case

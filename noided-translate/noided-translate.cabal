@@ -115,6 +115,7 @@ test-suite noided-translate-test
     other-modules:
         Noided.Translate.Internal.Type.MessageSpec
         Noided.Translate.Internal.Type.MessagesSpec
+        Noided.Translate.Internal.Type.ParamsSpec
         Noided.Translate.Internal.RenderSpec
         Noided.Translate.SpecHelper
 

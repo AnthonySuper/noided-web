@@ -360,11 +360,7 @@ spec = describe "HKD Form Integration" $ do
                                       [ "base"
                                           .= [ object
                                                  [ "key" .= ("TooLong" :: Text),
-                                                   "params"
-                                                       .= object
-                                                         [ "tooLongText"
-                                                             .= object ["tag" .= ("ParamFragment" :: Text), "contents" .= ("toolongtag" :: Text)]
-                                                         ]
+                                                   "params" .= object ["tooLongText" .= ("toolongtag" :: Text)]
                                                  ]
                                              ]
                                       ]
