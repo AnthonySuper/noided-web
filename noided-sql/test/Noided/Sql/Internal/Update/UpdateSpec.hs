@@ -9,6 +9,8 @@
 module Noided.Sql.Internal.Update.UpdateSpec (spec) where
 
 import Data.Coerce
+import Data.Function ((&))
+import Noided.Sql.Internal.Type.Tie
 import Data.Int (Int64)
 import Data.Text (unpack, Text)
 import Noided.Row
@@ -66,21 +68,24 @@ renderGolden description query =
 spec :: Spec
 spec = describe "UpdateQuery" $ do
   renderGolden "simple-update" $
-    updateReturning userTable $ \r -> do
+    updateReturning userTable noFrom_ $ \r _ -> do
       return (#name |= MutateVal (bindParam @Text "New Name"), r)
 
   renderGolden "update-with-where" $
-    updateReturning userTable $ \r -> do
-      addWhere_ (r.id ==. bindParam @Int64 123)
-      return (#score |= MutateVal (bindParam @Int64 100), r.id :::% EmptyWrappedRow) :: SelectM (ColumnUpdates UserTable, WrappedRow IdRow (SqlExpr NormalQuery))
+    updateReturning userTable noFrom_ $ \r _ -> do
+      addWhereCondition_ (r.id ==. bindParam @Int64 123)
+      return (#score |= MutateVal (bindParam @Int64 100), r.id :::% EmptyWrappedRow) :: WhereM (ColumnUpdates UserTable, WrappedRow IdRow (SqlExpr NormalQuery))
 
   renderGolden "update-from-another-table" $
-    updateReturning userTable $ \u -> do
-      -- Join with another table (self-join for simplicity of test definition)
-      other <- addFrom_ (fromBase_ (mkTableDef "other_users"))
+    updateReturning userTable (from_ (fromBase_ (mkTableDef "other_users"))) $ \u other -> do
+      addWhereCondition_ (u.id ==. other.id)
       
-      addWhere_ (u.id ==. other.id)
-      
+      return (#score |= MutateVal other.score, u)
+
+  renderGolden "update-from-cross-join" $
+    updateReturning userTable (from_ (fromBase_ (mkTableDef "other_users") & crossJoin_ (mkTableDef "third_users"))) $ \u (other :-: third) -> do
+      addWhereCondition_ (u.id ==. other.id)
+      addWhereCondition_ (u.id ==. third.id)
       return (#score |= MutateVal other.score, u)
 
 mkTableDef :: Text -> TableDefinition UserTable (WrappedRow (RowLabelsInQuery UserTable))

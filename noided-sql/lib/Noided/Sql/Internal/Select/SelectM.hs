@@ -57,6 +57,15 @@ addFrom_ fi = UnsafeMkSelectM $ do
   modify $ \x -> x {fromSyntaxes = fromSyntaxes x Seq.:|> syn}
   return res
 
+-- | Builds the WHERE conditions of an UPDATE or DELETE, which may reference the target row and the FROM/USING item.
+-- Only 'addWhereCondition_' is allowed.
+newtype WhereM a = UnsafeMkWhereM {unsafeGetWhereM :: SelectM a}
+  deriving newtype (Functor, Applicative, Monad)
+
+-- | Like 'addWhere_', but for the WHERE clause of an UPDATE or DELETE.
+addWhereCondition_ :: SqlExpr NormalQuery (SqlT n Bool) -> WhereM ()
+addWhereCondition_ = UnsafeMkWhereM . addWhere_
+
 select_ :: (FZip t, FTraversable t, NamedColumns t) => t (SqlExpr NormalQuery) -> SelectM (t (SqlExpr NormalQuery))
 select_ = return
 

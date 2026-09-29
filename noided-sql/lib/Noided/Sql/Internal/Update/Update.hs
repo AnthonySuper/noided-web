@@ -8,12 +8,12 @@ module Noided.Sql.Internal.Update.Update where
 
 import Control.Monad.Trans.State.Strict
 import Data.Foldable (for_)
-import Data.Sequence qualified as Seq
 import Noided.Sql.Internal.Class.DecodeSelectList
 import Noided.Sql.Internal.Class.FromItem
 import Noided.Sql.Internal.Class.Query
 import Noided.Sql.Internal.Class.SelectList
 import Noided.Sql.Internal.Class.UnwrapSelectList
+import Noided.Sql.Internal.Select.FromClause
 import Noided.Sql.Internal.Select.SelectM
 import Noided.Sql.Internal.Type.QueryWriter
 import Noided.Sql.Internal.Type.SqlExpr
@@ -26,17 +26,23 @@ data UpdateQuery returning where
   Update ::
     (SelectList tableSelectList) =>
     TableDefinition tableCols tableSelectList ->
-    (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols, returning)) ->
+    OptionalFrom fromRow ->
+    (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols, returning)) ->
     UpdateQuery returning
 
 instance Functor UpdateQuery where
-  fmap f (Update td q) = Update td (fmap (fmap f) . q)
+  fmap f (Update td from q) = Update td from (\t r -> fmap (fmap f) (q t r))
 
 -- | Construct an UPDATE query returning results.
+--
+-- The 'OptionalFrom' is the @FROM@ item (use 'noFrom_' for none, or 'crossJoin_' to combine several). Postgres does not let
+-- it reference the row being updated, so the target row is not available there. The second stage gets the target row and the FROM row, and
+-- may add @WHERE@ conditions (including correlated subqueries), the @SET@ values, and the @RETURNING@ value.
 updateReturning ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
-  (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols, returning)) ->
+  OptionalFrom fromRow ->
+  (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols, returning)) ->
   UpdateQuery returning
 updateReturning = Update
 
@@ -44,25 +50,28 @@ updateReturning = Update
 update ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
-  (QueriedRow tableSelectList -> SelectM (ColumnUpdates tableCols)) ->
+  OptionalFrom fromRow ->
+  (QueriedRow tableSelectList -> fromRow -> WhereM (ColumnUpdates tableCols)) ->
   UpdateQuery ()
-update td q = Update td (fmap (,()) . q)
+update td from q = Update td from (\t r -> (,()) <$> q t r)
 
 updateReturningAll ::
   (SelectList tableSelectList) =>
   TableDefinition tableCols tableSelectList ->
+  OptionalFrom fromRow ->
   ( QueriedRow tableSelectList ->
-    SelectM (ColumnUpdates tableCols)
+    fromRow ->
+    WhereM (ColumnUpdates tableCols)
   ) ->
   UpdateQuery (QueriedRow tableSelectList)
-updateReturningAll td buildUpdates =
-  updateReturning td $ \res -> (,res) <$> buildUpdates res
+updateReturningAll td from buildUpdates =
+  updateReturning td from $ \res fr -> (,res) <$> buildUpdates res fr
 
 writeUpdateQuery ::
   (SelectList returningList) =>
   UpdateQuery (QueriedRow returningList) ->
   QueryWriter ()
-writeUpdateQuery (Update td q) = do
+writeUpdateQuery (Update td fromM q) = do
   "UPDATE "
   writeTableName td.tableName
   " AS "
@@ -70,22 +79,20 @@ writeUpdateQuery (Update td q) = do
   writeSyntax ln
   let targetRow = qualifyColumnNames ln td.selectedNames
 
-  -- Run the SelectM action to get updates, returning, and state (FROM/WHERE)
-  ((updates, returningList), finalState) <- runStateT (unsafeGetSelectM (q targetRow)) mempty
+  -- The FROM items are built first, without access to the target row.
+  (fromRow, fromSyn) <- writeOptionalFrom fromM
+  ((updates, returningList), whereState) <- runStateT (unsafeGetSelectM (unsafeGetWhereM (q targetRow fromRow))) mempty
 
   " SET "
   writeUpdateSets updates td.columnNames
 
   -- FROM clause
-  let froms = fromSyntaxes finalState
-  if Seq.null froms
-    then pure ()
-    else do
-      " FROM "
-      writeSyntax $ fromCommaSepSyntax $ foldMap Written froms
+  for_ fromSyn $ \syn -> do
+    " FROM "
+    writeSyntax syn
 
   -- WHERE clause
-  for_ (writeAnds (whereSyntaxes finalState)) $ \act -> do
+  for_ (writeAnds (whereSyntaxes whereState)) $ \act -> do
     " WHERE "
     act
 
