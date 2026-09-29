@@ -72,7 +72,8 @@ common deps
         scientific,
         iproute,
         postgresql-binary,
-        bytestring
+        bytestring,
+        binary
 
 common extensions
     default-extensions:
