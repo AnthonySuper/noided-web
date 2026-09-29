@@ -16,14 +16,14 @@ where
 
 import Control.Monad.State.Class
 import Control.Monad.Trans.Reader
-import Control.Monad.Trans.State.Strict (StateT (StateT), evalStateT)
+import Control.Monad.Trans.State.Strict (StateT, evalStateT)
 import Control.Monad.Trans.Writer.CPS (Writer, runWriter)
 import Control.Monad.Writer.Class
 import Data.Map.Strict qualified as Map
 import Data.String
 import Data.Text (Text, pack)
+import Noided.Sql.Internal.Type.ColumnName (uniquifyName)
 import Noided.Sql.Internal.Type.Syntax
-import Optics.Core
 
 type QueryWriterState = Map.Map Text Int
 
@@ -77,11 +77,8 @@ toQueryWrite = QueryWrite
 toUniqueAlias :: Text -> QueryWriter Syntax
 toUniqueAlias alias = toQueryWrite $ do
   r <- get
-  let nestedAlias =
-        case Map.lookup alias r of
-          Nothing -> alias
-          Just i -> alias <> pack ("_" <> show i)
-  modify (at alias % non 0 %~ (+ 1))
+  let (nestedAlias, r') = uniquifyName alias r
+  put r'
   nesting <- ask
   return $ Syn $ \_ ->
     let suffix = if nesting > 0 then pack ("_nested_" <> show nesting <> "_deep") else mempty
