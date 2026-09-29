@@ -8,10 +8,10 @@
 --
 -- Given
 --
--- > data UserF nt f = UserF
--- >   { id :: Col (IdentityColumn Int64) nt f,
--- >     name :: Col (RegularColumn Text) nt f,
--- >     profile :: ProfileF nt f
+-- > data UserF f = UserF
+-- >   { id :: Col (IdentityColumn Int64) f,
+-- >     name :: Col (RegularColumn Text) f,
+-- >     profile :: ProfileF f
 -- >   }
 -- >   deriving (Generic)
 -- >
@@ -21,18 +21,21 @@
 --
 -- * @data User = User { id :: Int64, name :: Text, profile :: Profile }@, a
 --   real record (so you need @DuplicateRecordFields@ in the defining module);
--- * @type UserQ = UserF 'NotNulled@;
--- * 'FFunctor', 'FFoldable', 'FTraversable', 'FRepeat', 'FZip' for @UserF nt@;
--- * 'NamedColumns', 'DecodeSelectList', 'Nullified' for both tags, with
---   @AsNullified (UserF tag) = UserF 'Nulled@;
--- * @SelectListUnwrapped (UserF 'NotNulled) = User@ and
---   @SelectListUnwrapped (UserF 'Nulled) = Maybe User@ (a custom type error
---   if the table has no NON NULL column to detect a missing row with);
+-- * @data UserNullF f = UserNullF { id :: f (NullableT Int64), ..., profile :: ProfileNullF f }@,
+--   the nullable copy used for the nullable side of outer joins;
+-- * 'FFunctor', 'FFoldable', 'FTraversable', 'FRepeat', 'FZip',
+--   'NamedColumns', 'DecodeSelectList' for both @UserF@ and @UserNullF@;
+-- * 'Nullified' with @AsNullified UserF = UserNullF@ (and the copy mapping
+--   to itself);
+-- * @SelectListUnwrapped UserF = User@ and
+--   @SelectListUnwrapped UserNullF = Maybe User@ (a custom type error if the
+--   table has no NON NULL column to detect a missing row with);
 -- * @instance PlainTable UserF@, carrying the flattened column definitions
 --   (defaults included) recovered from the /declared/ field types.
 --
 -- Nested HKD fields (@ProfileF f@) must themselves have been defined with
--- 'defineTable' earlier in the module (or imported).
+-- 'defineTable' earlier in the module (or imported, along with their
+-- generated @ProfileNullF@).
 module Noided.Sql.Internal.TH.PlainTable
   ( defineTable,
     defineTableDeriving,
@@ -43,18 +46,20 @@ import Control.Monad (unless)
 import Data.HKD
 import Data.Text qualified as Text
 import GHC.Generics (Generic)
+import GHC.TypeLits (ErrorMessage (Text), TypeError)
 import Language.Haskell.TH
 import Noided.Row
 import Noided.Sql.Internal.Class.AsHaskellValue
 import Noided.Sql.Internal.Class.DecodeSelectList
-import Noided.Sql.Internal.Class.NamedColumns
 import Noided.Sql.Internal.Class.DenullRow
+import Noided.Sql.Internal.Class.NamedColumns
 import Noided.Sql.Internal.Class.Nullified
 import Noided.Sql.Internal.Class.UnwrapSelectList
-import GHC.TypeLits (ErrorMessage (Text), TypeError)
 import Noided.Sql.Internal.HKDTableDef (camelToSnake)
 import Noided.Sql.Internal.Type.Col
 import Noided.Sql.Internal.Type.ColumnName
+import Noided.Sql.Internal.Type.Nullability
+import Noided.Sql.Internal.Type.SqlType
 
 -- | 'defineTableDeriving' with @Show@ and @Eq@ derived for the plain record.
 defineTable :: Name -> Q [Dec]
@@ -66,6 +71,7 @@ defineTableDeriving :: [Name] -> Name -> Q [Dec]
 defineTableDeriving derivs hkdName = do
   (conName, fields) <- reifyHKD hkdName
   plainName <- stripF hkdName
+  let nullName = nullCopyName plainName
   unless (nameBase conName == nameBase hkdName) $
     fail $
       "defineTable: the constructor of "
@@ -81,6 +87,8 @@ defineTableDeriving derivs hkdName = do
         <> " for its constructor."
   classified <- traverse classifyField fields
   plainFields <- traverse plainField classified
+  fVar <- newName "f"
+  nullFields <- traverse (nullField fVar) classified
   let plainDecl =
         DataD
           []
@@ -89,52 +97,41 @@ defineTableDeriving derivs hkdName = do
           Nothing
           [RecC plainName plainFields]
           [DerivClause Nothing (map ConT (''Generic : derivs))]
+      nullDecl =
+        DataD
+          []
+          nullName
+          [PlainTV fVar BndrReq]
+          Nothing
+          [RecC nullName nullFields]
+          [DerivClause Nothing [ConT ''Generic]]
   cols <- flattenColumns classified
   let hkdT = pure (ConT hkdName)
+      nullT = pure (ConT nullName)
       plainT = pure (ConT plainName)
-      synName = mkName (nameBase plainName <> "Q")
       hasNonNull = any (isNonNullColumn . snd) cols
-  -- Structural instances hold for every tag.
-  hkdInstances <-
+  hkdInstances <- concat <$> traverse structuralInstances [hkdT, nullT]
+  tableInstances <-
     [d|
-      instance FFunctor ($hkdT nt) where
-        ffmap = ffmapDefault
+      instance UnwrapSelectList $hkdT where
+        type SelectListUnwrapped $hkdT = $plainT
 
-      instance FFoldable ($hkdT nt) where
-        ffoldMap = ffoldMapDefault
+      instance Nullified $hkdT where
+        type AsNullified $hkdT = $nullT
 
-      instance FTraversable ($hkdT nt) where
-        ftraverse = gftraverse
-
-      instance FRepeat ($hkdT nt) where
-        frepeat = gfrepeat
-
-      instance FZip ($hkdT nt) where
-        fzipWith = gfzipWith
-
-      instance DecodeSelectList ($hkdT NotNulled)
-
-      instance DecodeSelectList ($hkdT Nulled)
-
-      instance UnwrapSelectList ($hkdT NotNulled) where
-        type SelectListUnwrapped ($hkdT NotNulled) = $plainT
-
-      instance Nullified ($hkdT NotNulled) where
-        type AsNullified ($hkdT NotNulled) = $hkdT Nulled
-
-      instance Nullified ($hkdT Nulled) where
-        type AsNullified ($hkdT Nulled) = $hkdT Nulled
+      instance Nullified $nullT where
+        type AsNullified $nullT = $nullT
         nullifyRow = id
 
-      instance DenullRow $hkdT
+      instance DenullRow $nullT where
+        type Denulled $nullT = $hkdT
       |]
-  namedInstances <- namedColumnsInstances hkdT
-  nulledUnwrap <-
+  nullUnwrap <-
     if hasNonNull
       then
         [d|
-          instance UnwrapSelectList ($hkdT Nulled) where
-            type SelectListUnwrapped ($hkdT Nulled) = Maybe $plainT
+          instance UnwrapSelectList $nullT where
+            type SelectListUnwrapped $nullT = Maybe $plainT
             unwrapSelectList = fmap unwrapSelectList . denullRow
           |]
       else do
@@ -143,13 +140,54 @@ defineTableDeriving derivs hkdName = do
                 <> nameBase hkdName
                 <> " has no NON NULL columns, so a missing outer-joined row cannot be told apart from a row of NULLs. Select its columns individually instead."
         [d|
-          instance (TypeError (Text $(litT (strTyLit msg)))) => UnwrapSelectList ($hkdT Nulled) where
-            type SelectListUnwrapped ($hkdT Nulled) = Maybe $plainT
+          instance (TypeError (Text $(litT (strTyLit msg)))) => UnwrapSelectList $nullT where
+            type SelectListUnwrapped $nullT = Maybe $plainT
             unwrapSelectList = error "unreachable"
           |]
-  let synDecl = TySynD synName [] (ConT hkdName `AppT` PromotedT 'NotNulled)
   tableInstance <- plainTableInstance hkdName cols
-  pure $ plainDecl : synDecl : hkdInstances ++ namedInstances ++ nulledUnwrap ++ [tableInstance]
+  pure $ plainDecl : nullDecl : hkdInstances ++ tableInstances ++ nullUnwrap ++ [tableInstance]
+
+-- | Instances shared by a table and its nullable copy.
+structuralInstances :: Q Type -> Q [Dec]
+structuralInstances t =
+  [d|
+    instance FFunctor $t where
+      ffmap = ffmapDefault
+
+    instance FFoldable $t where
+      ffoldMap = ffoldMapDefault
+
+    instance FTraversable $t where
+      ftraverse = gftraverse
+
+    instance FRepeat $t where
+      frepeat = gfrepeat
+
+    instance FZip $t where
+      fzipWith = gfzipWith
+
+    instance NamedColumns $t
+
+    instance DecodeSelectList $t
+    |]
+
+-- | @Post@ -> @PostNullF@.
+nullCopyName :: Name -> Name
+nullCopyName plain = mkName (nameBase plain <> "NullF")
+
+-- | A field of the nullable copy: every column nullable, nested tables
+-- pointing at their own nullable copy.
+nullField :: Name -> FieldKind -> Q VarBangType
+nullField f k = do
+  ty <- case k of
+    ColumnField _ c -> case unApp c of
+      (_, [_def, _nullability, pgT]) ->
+        pure $ VarT f `AppT` (PromotedT 'SqlT `AppT` PromotedT 'Nullable `AppT` pgT)
+      _ -> fail $ "defineTable: could not read column type " <> pprint c
+    NestedField _ sub -> do
+      subPlain <- stripF sub
+      pure $ ConT (nullCopyName subPlain) `AppT` VarT f
+  pure (mkName (nameBase (kindName k)), Bang NoSourceUnpackedness NoSourceStrictness, ty)
 
 -- | A field of a plain HKD, after looking at its declared type.
 data FieldKind
@@ -161,15 +199,15 @@ data FieldKind
 reifyHKD :: Name -> Q (Name, [VarBangType])
 reifyHKD n =
   reify n >>= \case
-    TyConI (DataD _ _ [_, _] _ [RecC con fields] _) -> pure (con, fields)
-    TyConI (NewtypeD _ _ [_, _] _ (RecC con fields) _) -> pure (con, fields)
+    TyConI (DataD _ _ [_] _ [RecC con fields] _) -> pure (con, fields)
+    TyConI (NewtypeD _ _ [_] _ (RecC con fields) _) -> pure (con, fields)
     _ ->
       fail $
         "defineTable: "
           <> nameBase n
-          <> " must be a single-constructor record with exactly two type parameters, like: data "
+          <> " must be a single-constructor record with exactly one type parameter, like: data "
           <> nameBase n
-          <> " nt f = "
+          <> " f = "
           <> nameBase n
           <> " { ... }"
 
@@ -182,15 +220,15 @@ stripF n =
 classifyField :: VarBangType -> Q FieldKind
 classifyField (fname, _, ty) =
   case unApp (stripParens ty) of
-    (ConT col, [c, VarT _, VarT _]) | col == ''Col -> ColumnField fname <$> expandSyns c
-    (ConT sub, [VarT _, VarT _]) -> pure (NestedField fname sub)
+    (ConT col, [c, VarT _]) | col == ''Col -> ColumnField fname <$> expandSyns c
+    (ConT sub, [VarT _]) -> pure (NestedField fname sub)
     _ ->
       fail $
         "defineTable: field "
           <> nameBase fname
           <> " has type "
           <> pprint ty
-          <> ", but fields must be either `Col (Column ...) nt f` or a nested table `SubF nt f`"
+          <> ", but fields must be either `Col (Column ...) f` or a nested table `SubF f`"
 
 plainField :: FieldKind -> Q VarBangType
 plainField k = do
@@ -329,24 +367,3 @@ isNonNullColumn :: Type -> Bool
 isNonNullColumn c = case unApp c of
   (h, [_, nullability, _]) | isNamed "Column" h -> isNamed "NonNull" nullability
   _ -> False
-
--- | 'NamedColumns' for both tags, plus tag defaulting for hand-built rows.
---
--- A row built by hand, @PostF { id = p.id, ... }@, leaves its tag ambiguous:
--- @ApplyTag nt0 'NonNull ~ 'NonNull@ does not determine @nt0@. Every query
--- over the row needs @NamedColumns (PostF nt0)@, so we make that the place
--- where the tag defaults: the INCOHERENT @nt ~ 'NotNulled@ instance is chosen
--- while @nt0@ is still unknown, and the concrete @'Nulled@ instance (also
--- INCOHERENT, so it does not block that choice) wins once the tag is known.
---
--- Consequences: a hand-built row meant to be @'Nulled@ must say so
--- (@PostF \@Nulled ...@), and code polymorphic in the tag needs an explicit
--- @NamedColumns (PostF nt)@ constraint.
-namedColumnsInstances :: Q Type -> Q [Dec]
-namedColumnsInstances hkdT =
-  [d|
-    instance {-# INCOHERENT #-} (nt ~ NotNulled) => NamedColumns ($hkdT nt) where
-      namedColumns = gnamedColumns
-
-    instance {-# INCOHERENT #-} NamedColumns ($hkdT Nulled)
-    |]

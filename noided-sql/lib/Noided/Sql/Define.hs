@@ -77,8 +77,6 @@ module Noided.Sql.Define
 
     -- * Plain HKD tables (prototype)
     Col,
-    NullTag (..),
-    ApplyTag,
     DenullRow (..),
     PlainTable (..),
     defineTable,

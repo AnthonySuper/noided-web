@@ -35,7 +35,9 @@ class (SelectList sl, SelectList (AsNullified sl)) => Nullified (sl :: (SqlType 
 class GNullified i o where
   gNullifyRow :: i p -> o p
 
-instance (GNullified i o) => GNullified (M1 c d i) (M1 c d o) where
+-- | Metadata is matched separately on each side, since a generated nullable
+-- copy has different type and constructor names.
+instance (GNullified i o) => GNullified (M1 c d i) (M1 c d' o) where
   gNullifyRow (M1 a) = M1 (gNullifyRow a)
 
 instance (GNullified i1 o1, GNullified i2 o2) => GNullified (i1 :*: i2) (o1 :*: o2) where

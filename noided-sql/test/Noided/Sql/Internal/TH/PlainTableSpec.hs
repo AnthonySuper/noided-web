@@ -25,37 +25,37 @@ import Test.Hspec
 import Prelude hiding (id)
 
 -- A nested table.
-data ProfileF nt f = ProfileF
-  { bio :: Col (RegularColumn Text) nt f,
-    websiteUrl :: Col (Column NoDefault Nullable Text) nt f
+data ProfileF f = ProfileF
+  { bio :: Col (RegularColumn Text) f,
+    websiteUrl :: Col (Column NoDefault Nullable Text) f
   }
   deriving (Generic)
 
 $(defineTable ''ProfileF)
 
-data UserF nt f = UserF
-  { id :: Col (IdentityColumn Int64) nt f,
-    name :: Col (RegularColumn Text) nt f,
-    nick :: Col (Column MayBeDefault Nullable Text) nt f,
-    profile :: ProfileF nt f
+data UserF f = UserF
+  { id :: Col (IdentityColumn Int64) f,
+    name :: Col (RegularColumn Text) f,
+    nick :: Col (Column MayBeDefault Nullable Text) f,
+    profile :: ProfileF f
   }
   deriving (Generic)
 
 $(defineTable ''UserF)
 
-data PostF nt f = PostF
-  { id :: Col (IdentityColumn Int64) nt f,
-    userId :: Col (RegularColumn Int64) nt f,
-    title :: Col (RegularColumn Text) nt f
+data PostF f = PostF
+  { id :: Col (IdentityColumn Int64) f,
+    userId :: Col (RegularColumn Int64) f,
+    title :: Col (RegularColumn Text) f
   }
   deriving (Generic)
 
 $(defineTable ''PostF)
 
-usersTable :: TableDefinition (TableColumns UserF) UserQ
+usersTable :: TableDefinition (TableColumns UserF) UserF
 usersTable = plainTableDef "users"
 
-postsTable :: TableDefinition (TableColumns PostF) PostQ
+postsTable :: TableDefinition (TableColumns PostF) PostF
 postsTable = plainTableDef "posts"
 
 render :: (Query q) => q -> Text
@@ -68,12 +68,12 @@ selectNames = do
   addWhere_ (u.name ==. bindParam ("bob" :: Text))
   pure (Element u.profile.bio)
 
-userPosts :: SelectM ((UserQ :-: PostQ) (SqlExpr NormalQuery))
+userPosts :: SelectM ((UserF :-: PostF) (SqlExpr NormalQuery))
 userPosts =
   addFrom_ $
     fromBase_ usersTable & innerJoin_ postsTable `on_` (\u p -> u.id ==. p.userId)
 
--- | Left join: the joined side is @PostF 'Nulled@, with bare field access
+-- | Left join: the joined side is the generated @PostNullF@, with bare field access
 -- whose types are already nullable. No annotation on the row itself.
 userPostTitles = do
   (u :-: p) <-
@@ -89,7 +89,7 @@ userPostTitles = do
   pure (Element u.name :*: Element titleOrPlaceholder)
 
 -- | Nested table under a left join: every nested column is nullable too.
-leftJoinedProfile :: SelectM ((PostQ :-: UserF Nulled) (SqlExpr NormalQuery))
+leftJoinedProfile :: SelectM ((PostF :-: UserNullF) (SqlExpr NormalQuery))
 leftJoinedProfile = do
   (p :-: u) <-
     addFrom_ $
@@ -99,28 +99,23 @@ leftJoinedProfile = do
   addWhere_ (isNotNull_ bio)
   pure (p :-: u)
 
--- | Building a row by hand with no annotation. @f@ is inferred from the
--- field values; the ambiguous tag defaults to 'NotNulled' (see
--- 'namedColumnsInstances' in the TH module).
+-- | Building a row by hand with no annotation: @f@ is inferred from the
+-- field values, and there is no other type parameter to be ambiguous.
 handBuiltRow = do
   u <- addFrom_ (fromBase_ usersTable)
   p <- addFrom_ (fromBase_ postsTable)
   pure PostF {id = p.id, userId = u.id, title = u.name}
 
--- | The defaulted row executes as a plain 'Post' (this only typechecks if the
--- tag defaulted to 'NotNulled').
+-- | The hand-built row executes as a plain 'Post'.
 handBuiltRowQuery :: TransactM e (Vector Post)
 handBuiltRowQuery = queryVector handBuiltRow
 
--- | A hand-built row meant to be 'Nulled' has to say so; positional
--- construction with a type application does that (record syntax with a type
--- application parses as an ambiguous record update).
-handBuiltNulledRow :: SelectM (PostF Nulled (SqlExpr NormalQuery))
+-- | A hand-built row of the nullable copy, also with no annotation.
 handBuiltNulledRow = do
   (_ :-: p) <-
     addFrom_ $
       fromBase_ usersTable & leftJoin_ postsTable `on_` (\u p -> u.id ==. p.userId)
-  pure (PostF @Nulled p.id p.userId p.title)
+  pure PostNullF {id = p.id, userId = p.userId, title = p.title}
 
 insertUser :: InsertQuery (Element (SqlT NonNull Int64) (SqlExpr NormalQuery))
 insertUser =
@@ -136,7 +131,7 @@ insertUser =
 
 -- Decoded rows, as the decoder would produce them.
 
-decodedUser :: UserF NotNulled HaskellT
+decodedUser :: UserF HaskellT
 decodedUser =
   UserF
     { id = HaskT 1,
@@ -155,35 +150,35 @@ plainUser =
     }
 
 -- | What a matched left-joined user decodes to: every column read nullably.
-matchedNulledUser :: UserF Nulled HaskellT
+matchedNulledUser :: UserNullF HaskellT
 matchedNulledUser =
-  UserF
+  UserNullF
     { id = HaskT (Just 1),
       name = HaskT (Just "bob"),
       nick = HaskT Nothing,
-      profile = ProfileF {bio = HaskT (Just "hi"), websiteUrl = HaskT (Just "x.com")}
+      profile = ProfileNullF {bio = HaskT (Just "hi"), websiteUrl = HaskT (Just "x.com")}
     }
 
 -- | What an unmatched left-joined user decodes to.
-unmatchedNulledUser :: UserF Nulled HaskellT
+unmatchedNulledUser :: UserNullF HaskellT
 unmatchedNulledUser =
-  UserF
+  UserNullF
     { id = HaskT Nothing,
       name = HaskT Nothing,
       nick = HaskT Nothing,
-      profile = ProfileF {bio = HaskT Nothing, websiteUrl = HaskT Nothing}
+      profile = ProfileNullF {bio = HaskT Nothing, websiteUrl = HaskT Nothing}
     }
 
 -- | A matched user whose nested profile columns are given.
--- (Record update syntax is ambiguous here: 'UserF' and 'User' share field
--- names under DuplicateRecordFields.)
-nulledUserWith :: HaskellT (NullableT Text) -> HaskellT (NullableT Text) -> UserF Nulled HaskellT
+-- (Record update syntax is ambiguous here: 'UserF', 'UserNullF' and 'User'
+-- share field names under DuplicateRecordFields.)
+nulledUserWith :: HaskellT (NullableT Text) -> HaskellT (NullableT Text) -> UserNullF HaskellT
 nulledUserWith bio url =
-  UserF
+  UserNullF
     { id = HaskT (Just 1),
       name = HaskT (Just "bob"),
       nick = HaskT Nothing,
-      profile = ProfileF {bio = bio, websiteUrl = url}
+      profile = ProfileNullF {bio = bio, websiteUrl = url}
     }
 
 spec :: Spec
@@ -195,7 +190,7 @@ spec = do
     it "renders an inner join" $
       render userPosts
         `shouldBe` "SELECT \"users\".\"id\" AS \"id\", \"users\".\"name\" AS \"name\", \"users\".\"nick\" AS \"nick\", \"users\".\"bio\" AS \"bio\", \"users\".\"website_url\" AS \"websiteUrl\", \"posts\".\"id\" AS \"id_1\", \"posts\".\"user_id\" AS \"userId\", \"posts\".\"title\" AS \"title\" FROM \"users\" AS \"users\" INNER JOIN \"posts\" AS \"posts\" ON ((\"users\".\"id\") = (\"posts\".\"user_id\"))"
-    it "renders a hand-built row with no annotation (tag defaults to NotNulled)" $
+    it "renders a hand-built row with no annotation" $
       render handBuiltRow
         `shouldBe` "SELECT \"posts\".\"id\" AS \"id\", \"users\".\"id\" AS \"userId\", \"users\".\"name\" AS \"title\" FROM \"users\" AS \"users\", \"posts\" AS \"posts\""
     it "renders an insert" $
@@ -225,12 +220,12 @@ spec = do
     it "treats a NULL in any declared-NON NULL column (even nested) as a missing row" $
       unwrapSelectList (nulledUserWith (HaskT Nothing) (HaskT (Just "x.com")))
         `shouldBe` Nothing
-    it "renders a hand-built Nulled row" $
+    it "renders a hand-built nullable-copy row with no annotation" $
       render handBuiltNulledRow
         `shouldBe` "SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"userId\", \"posts\".\"title\" AS \"title\" FROM \"users\" AS \"users\" LEFT JOIN \"posts\" AS \"posts\" ON ((\"users\".\"id\") = (\"posts\".\"user_id\"))"
     it "unwraps a left join to (row, Maybe row)" $ do
-      let joined :: (UserQ :-: PostF Nulled) HaskellT
-          joined = decodedUser :-: PostF {id = HaskT Nothing, userId = HaskT Nothing, title = HaskT Nothing}
+      let joined :: (UserF :-: PostNullF) HaskellT
+          joined = decodedUser :-: PostNullF {id = HaskT Nothing, userId = HaskT Nothing, title = HaskT Nothing}
           (u :--: mp) = unwrapSelectList joined
       u `shouldBe` plainUser
       mp `shouldBe` Nothing
