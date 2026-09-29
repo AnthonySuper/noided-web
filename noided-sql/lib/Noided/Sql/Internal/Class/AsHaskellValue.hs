@@ -19,7 +19,8 @@ import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.PGArray
 import Noided.Sql.Internal.Type.PGTSQuery
 import Noided.Sql.Internal.Type.PGTSVector
-import Noided.Sql.Internal.Type.TSText
+import Noided.Sql.Internal.Type.TSBinary
+import Noided.Sql.Internal.Type.TSValue
 import Noided.Sql.Internal.Type.SqlType
 import PostgreSQL.Binary.Range (Range)
 
@@ -86,15 +87,15 @@ instance AsHaskellValue UTCTime where
 instance AsHaskellValue LocalTime where
   decodeHaskellValue _ = Dec.timestamp
 
--- | Decoded as the text form of the tsvector.
+-- | Decoded into a structured 'TSVector'.
 instance AsHaskellValue PGTSVector where
-  type HaskellTypeOf PGTSVector = Text
-  decodeHaskellValue _ = Dec.custom Nothing "tsvector" (Just (3614, 3643)) [] (\_ -> decodeTSVectorText)
+  type HaskellTypeOf PGTSVector = TSVector
+  decodeHaskellValue _ = Dec.custom Nothing "tsvector" (Just (3614, 3643)) [] (\_ -> decodeTSVector)
 
--- | Decoded as the text form of the tsquery.
+-- | Decoded into a structured 'TSQuery'.
 instance AsHaskellValue PGTSQuery where
-  type HaskellTypeOf PGTSQuery = Text
-  decodeHaskellValue _ = Dec.custom Nothing "tsquery" (Just (3615, 3645)) [] (\_ -> decodeTSQueryText)
+  type HaskellTypeOf PGTSQuery = TSQuery
+  decodeHaskellValue _ = Dec.custom Nothing "tsquery" (Just (3615, 3645)) [] (\_ -> decodeTSQuery)
 
 instance AsHaskellValue IPRange where
   decodeHaskellValue _ = Dec.inet
