@@ -4,8 +4,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 -- |
--- Module: Noided.Sql.Internal.TH.PlainTable
--- Description: Template Haskell for plain (realm-free) HKD tables.
+-- Module: Noided.Sql.Internal.TH.Table
+-- Description: Template Haskell for realm-free HKD tables.
 --
 -- Given
 --
@@ -16,7 +16,7 @@
 -- >   }
 -- >   deriving (Generic)
 -- >
--- > $(defineTable ''UserF)
+-- > $(deriveTable ''UserF)
 --
 -- this generates:
 --
@@ -31,16 +31,16 @@
 -- * @SelectListUnwrapped UserF = User@ and
 --   @SelectListUnwrapped UserNullF = Maybe User@ (a custom type error if the
 --   table has no NON NULL column to detect a missing row with);
--- * @instance PlainTable UserF@, carrying the flattened column definitions
+-- * @instance Table UserF@, carrying the flattened column definitions
 --   (defaults included) recovered from the /declared/ field types, and a
 --   'toColumnRow' that flattens a row into them.
 --
 -- Nested HKD fields (@ProfileF f@) must themselves have been defined with
--- 'defineTable' earlier in the module (or imported, along with their
+-- 'deriveTable' earlier in the module (or imported, along with their
 -- generated @ProfileNullF@).
-module Noided.Sql.Internal.TH.PlainTable
-  ( defineTable,
-    defineTableDeriving,
+module Noided.Sql.Internal.TH.Table
+  ( deriveTable,
+    deriveTableWith,
   )
 where
 
@@ -61,20 +61,20 @@ import Noided.Sql.Internal.Type.Col
 import Noided.Sql.Internal.Type.Nullability
 import Noided.Sql.Internal.Type.SqlType
 
--- | 'defineTableDeriving' with @Show@ and @Eq@ derived for the plain record.
-defineTable :: Name -> Q [Dec]
-defineTable = defineTableDeriving [''Show, ''Eq]
+-- | 'deriveTableWith' with @Show@ and @Eq@ derived for the plain record.
+deriveTable :: Name -> Q [Dec]
+deriveTable = deriveTableWith [''Show, ''Eq]
 
--- | Like 'defineTable', but choose which stock classes the generated plain
+-- | Like 'deriveTable', but choose which stock classes the generated plain
 -- record derives. 'Generic' is always derived (it is needed for unwrapping).
-defineTableDeriving :: [Name] -> Name -> Q [Dec]
-defineTableDeriving derivs hkdName = do
+deriveTableWith :: [Name] -> Name -> Q [Dec]
+deriveTableWith derivs hkdName = do
   (conName, fields) <- reifyHKD hkdName
   plainName <- stripF hkdName
   let nullName = nullCopyName plainName
   unless (nameBase conName == nameBase hkdName) $
     fail $
-      "defineTable: the constructor of "
+      "deriveTable: the constructor of "
         <> nameBase hkdName
         <> " must also be named "
         <> nameBase hkdName
@@ -144,7 +144,7 @@ defineTableDeriving derivs hkdName = do
             type SelectListUnwrapped $nullT = Maybe $plainT
             unwrapSelectList = error "unreachable"
           |]
-  tableInstance <- plainTableInstance hkdName conName classified cols
+  tableInstance <- tableClassInstance hkdName conName classified cols
   pure $ plainDecl : nullDecl : hkdInstances ++ tableInstances ++ nullUnwrap ++ [tableInstance]
 
 -- | Instances shared by a table and its nullable copy.
@@ -183,17 +183,17 @@ nullField f k = do
     ColumnField _ c -> case unApp c of
       (_, [_def, _nullability, pgT]) ->
         pure $ VarT f `AppT` (PromotedT 'SqlT `AppT` PromotedT 'Nullable `AppT` pgT)
-      _ -> fail $ "defineTable: could not read column type " <> pprint c
+      _ -> fail $ "deriveTable: could not read column type " <> pprint c
     NestedField _ sub -> do
       subPlain <- stripF sub
       pure $ ConT (nullCopyName subPlain) `AppT` VarT f
   pure (mkName (nameBase (kindName k)), Bang NoSourceUnpackedness NoSourceStrictness, ty)
 
--- | A field of a plain HKD, after looking at its declared type.
+-- | A field of a table HKD, after looking at its declared type.
 data FieldKind
   = -- | @Col c f@, with the synonym-expanded column type @c@.
     ColumnField Name Type
-  | -- | A nested plain HKD, @SubF f@.
+  | -- | A nested table HKD, @SubF f@.
     NestedField Name Name
 
 reifyHKD :: Name -> Q (Name, [VarBangType])
@@ -203,7 +203,7 @@ reifyHKD n =
     TyConI (NewtypeD _ _ [_] _ (RecC con fields) _) -> pure (con, fields)
     _ ->
       fail $
-        "defineTable: "
+        "deriveTable: "
           <> nameBase n
           <> " must be a single-constructor record with exactly one type parameter, like: data "
           <> nameBase n
@@ -215,7 +215,7 @@ stripF :: Name -> Q Name
 stripF n =
   case Text.stripSuffix "F" (Text.pack (nameBase n)) of
     Just s | not (Text.null s) -> pure (mkName (Text.unpack s))
-    _ -> fail $ "defineTable: type name " <> nameBase n <> " must end with an F"
+    _ -> fail $ "deriveTable: type name " <> nameBase n <> " must end with an F"
 
 classifyField :: VarBangType -> Q FieldKind
 classifyField (fname, _, ty) =
@@ -224,7 +224,7 @@ classifyField (fname, _, ty) =
     (ConT sub, [VarT _]) -> pure (NestedField fname sub)
     _ ->
       fail $
-        "defineTable: field "
+        "deriveTable: field "
           <> nameBase fname
           <> " has type "
           <> pprint ty
@@ -253,7 +253,7 @@ columnHaskellType c =
             if isNamed "Nullable" nullability
               then ConT ''Maybe `AppT` ht
               else ht
-    _ -> fail $ "defineTable: could not read column type " <> pprint c <> " as `Column default nullability type`"
+    _ -> fail $ "deriveTable: could not read column type " <> pprint c <> " as `Column default nullability type`"
 
 -- | Try to evaluate @HaskellTypeOf t@ at splice time, so the generated record
 -- mentions the concrete type. Falls back to the type family application.
@@ -264,12 +264,12 @@ resolveHaskellTypeOf t = do
     [TySynInstD (TySynEqn _ _ rhs)] | null (freeVars rhs) -> rhs
     _ -> ConT ''HaskellTypeOf `AppT` t
 
--- | The @PlainTable@ instance. Nested tables are flattened here (by reifying
+-- | The @Table@ instance. Nested tables are flattened here (by reifying
 -- them) rather than referenced through @TableColumns Sub@, so the instance is
 -- a single literal list and the user's module doesn't need
 -- @UndecidableInstances@.
-plainTableInstance :: Name -> Name -> [FieldKind] -> [(Name, Type)] -> Q Dec
-plainTableInstance hkdName conName classified cols = do
+tableClassInstance :: Name -> Name -> [FieldKind] -> [(Name, Type)] -> Q Dec
+tableClassInstance hkdName conName classified cols = do
   let colsTy =
         foldr
           ( \(n, c) acc ->
@@ -289,7 +289,7 @@ plainTableInstance hkdName conName classified cols = do
     InstanceD
       Nothing
       []
-      (ConT ''PlainTable `AppT` ConT hkdName)
+      (ConT ''Table `AppT` ConT hkdName)
       [ TySynInstD (TySynEqn Nothing (ConT ''TableColumns `AppT` ConT hkdName) colsTy),
         FunD 'toColumnRow [Clause [pat] (NormalB body) []]
       ]

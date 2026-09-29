@@ -8,7 +8,7 @@
 {-# LANGUAGE NoFieldSelectors #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-module Noided.Sql.Internal.TH.PlainTableSpec (spec) where
+module Noided.Sql.Internal.TH.TableSpec (spec) where
 
 import Data.Int (Int64)
 import Data.Text (Text)
@@ -31,7 +31,7 @@ data ProfileF f = ProfileF
   }
   deriving (Generic)
 
-$(defineTable ''ProfileF)
+$(deriveTable ''ProfileF)
 
 data UserF f = UserF
   { id :: Col (IdentityColumn Int64) f,
@@ -41,7 +41,7 @@ data UserF f = UserF
   }
   deriving (Generic)
 
-$(defineTable ''UserF)
+$(deriveTable ''UserF)
 
 data PostF f = PostF
   { id :: Col (IdentityColumn Int64) f,
@@ -50,18 +50,18 @@ data PostF f = PostF
   }
   deriving (Generic)
 
-$(defineTable ''PostF)
+$(deriveTable ''PostF)
 
 usersTable :: TableDefinition (TableColumns UserF) UserF
-usersTable = defineTableSnakeCased "users"
+usersTable = tableSnakeCased "users"
 
 postsTable :: TableDefinition (TableColumns PostF) PostF
-postsTable = defineTableSnakeCased "posts"
+postsTable = tableSnakeCased "posts"
 
 -- | The same shape as 'usersTable', with explicit column names.
 legacyUsersTable :: TableDefinition (TableColumns UserF) UserF
 legacyUsersTable =
-  defineTableWithNames
+  tableWithNames
     "tbl_usr"
     UserF
       { id = "usr_id",
@@ -213,7 +213,7 @@ nulledUserWith bio url =
 
 spec :: Spec
 spec = do
-  describe "plain HKD tables" $ do
+  describe "tables" $ do
     it "renders a select with bare field access (nested fields are not prefixed)" $
       render selectNames
         `shouldBe` "SELECT \"users\".\"bio\" AS \"e\" FROM \"users\" AS \"users\" WHERE ((\"users\".\"name\") = ($1))"
@@ -234,7 +234,7 @@ spec = do
     it "flattens any row into its columns, not just names" $
       flength (toColumnRow decodedUser) `shouldBe` 5
 
-  describe "plain HKD tables with explicit column names" $ do
+  describe "tables with explicit column names" $ do
     it "flattens the given names in declaration order" $
       ffoldMap (\(MkColumnName n) -> [n]) legacyUsersTable.columnNames
         `shouldBe` ["usr_id", "usr_nm", "usr_nick", "usr_bio", "usr_url"]
@@ -245,7 +245,7 @@ spec = do
       render insertLegacyUser
         `shouldBe` "INSERT INTO \"tbl_usr\" AS to_insert (\"usr_nm\", \"usr_bio\") VALUES ($1, $2) RETURNING to_insert.\"usr_id\" AS \"e\""
 
-  describe "left joins on plain HKD tables" $ do
+  describe "left joins on tables" $ do
     it "renders bare nullable field access, COALESCE and IS NULL" $
       render userPostTitles
         `shouldBe` "SELECT \"users\".\"name\" AS \"e\", COALESCE(\"posts\".\"title\",$1) AS \"e_1\" FROM \"users\" AS \"users\" LEFT JOIN \"posts\" AS \"posts\" ON ((\"users\".\"id\") = (\"posts\".\"user_id\")) WHERE (((\"posts\".\"id\") IS NULL) OR ((\"posts\".\"title\") = ($2)))"

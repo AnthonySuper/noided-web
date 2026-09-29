@@ -1,8 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Noided.Sql.Internal.PlainTableDef
-  ( defineTableSnakeCased,
-    defineTableWithNames,
+module Noided.Sql.Internal.TableDef
+  ( tableSnakeCased,
+    tableWithNames,
     tableColumnNames,
   )
 where
@@ -17,32 +17,32 @@ import Noided.Sql.Internal.Type.TableDefinition
 import Noided.Sql.Internal.Type.TableName (TableName)
 
 -- | Build a 'TableDefinition' for a table defined with
--- 'Noided.Sql.Internal.TH.PlainTable.defineTable', naming every column after
+-- 'Noided.Sql.Internal.TH.Table.deriveTable', naming every column after
 -- its field, snake_cased.
 --
 -- > usersTable :: TableDefinition (TableColumns UserF) UserF
--- > usersTable = defineTableSnakeCased "users"
-defineTableSnakeCased ::
+-- > usersTable = tableSnakeCased "users"
+tableSnakeCased ::
   forall t.
-  ( PlainTable t,
+  ( Table t,
     Generic (t ColumnName),
     GSnakeCasedNames (Rep (t ColumnName))
   ) =>
   TableName ->
   TableDefinition (TableColumns t) t
-defineTableSnakeCased tn =
-  defineTableWithNames tn (to (genericSnakeCasedNames @(Rep (t ColumnName))))
+tableSnakeCased tn =
+  tableWithNames tn (to (genericSnakeCasedNames @(Rep (t ColumnName))))
 
 -- | Build a 'TableDefinition' with explicit column names.
 --
 -- > usersTable :: TableDefinition (TableColumns UserF) UserF
--- > usersTable = defineTableWithNames "tbl_usr" UserF {id = "usr_id", name = "usr_nm"}
-defineTableWithNames ::
-  (PlainTable t) =>
+-- > usersTable = tableWithNames "tbl_usr" UserF {id = "usr_id", name = "usr_nm"}
+tableWithNames ::
+  (Table t) =>
   TableName ->
   t ColumnName ->
   TableDefinition (TableColumns t) t
-defineTableWithNames tn names =
+tableWithNames tn names =
   DefineTable
     { tableName = tn,
       columnNames = tableColumnNames names,
@@ -50,5 +50,5 @@ defineTableWithNames tn names =
     }
 
 -- | A table's column names, flattened in declaration order.
-tableColumnNames :: (PlainTable t) => t ColumnName -> WrappedRow (TableColumns t) ColumnName
+tableColumnNames :: (Table t) => t ColumnName -> WrappedRow (TableColumns t) ColumnName
 tableColumnNames = ffmap (MkColumnName . getColumnName . getQueryCol) . toColumnRow

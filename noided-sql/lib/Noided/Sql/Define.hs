@@ -75,15 +75,15 @@ module Noided.Sql.Define
     hkdTableDef,
     HKDTableDef,
 
-    -- * Plain HKD tables (prototype)
+    -- * Defining tables (realm-free HKDs)
     Col,
     DenullRow (..),
-    PlainTable (..),
+    Table (..),
     QueryCol (..),
-    defineTable,
-    defineTableDeriving,
-    defineTableSnakeCased,
-    defineTableWithNames,
+    deriveTable,
+    deriveTableWith,
+    tableSnakeCased,
+    tableWithNames,
     tableColumnNames,
 
     -- * HKD Table Helpers
@@ -142,10 +142,10 @@ import Noided.Sql.Internal.HKDTableDef (HKDTableDef, hkdTableDef)
 import Noided.Sql.Internal.HKDViewDef (hkdViewDef)
 import Noided.Sql.Internal.TH.HKDTable
 import Noided.Sql.Internal.TH.HKDView
-import Noided.Sql.Internal.TH.PlainTable
+import Noided.Sql.Internal.TH.Table
 import Noided.Sql.Internal.Type.Col
 import Noided.Sql.Internal.Class.DenullRow
-import Noided.Sql.Internal.PlainTableDef
+import Noided.Sql.Internal.TableDef
 import Noided.Sql.Internal.Type.ColumnType
 import Noided.Sql.Internal.Type.Columnar
 import Noided.Sql.Internal.Type.Nullability
