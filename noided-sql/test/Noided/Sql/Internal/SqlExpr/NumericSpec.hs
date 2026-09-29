@@ -20,8 +20,8 @@ renderGolden description expr =
 spec :: Spec
 spec = do
   describe "Numeric Expressions" $ do
-    let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Int32)
-        b = UnsafeMkSqlExpr "b" :: SqlExpr NormalQuery (NonNullT Int32)
+    let a = unsafeMkAtom "a" :: SqlExpr NormalQuery (NonNullT Int32)
+        b = unsafeMkAtom "b" :: SqlExpr NormalQuery (NonNullT Int32)
 
     renderGolden "addition" (a +. b)
     renderGolden "subtraction" (a -. b)

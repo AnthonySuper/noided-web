@@ -19,27 +19,27 @@ renderTS = renderSyntaxToTextNumberedBinds . unsafeGetSqlExpr
 spec :: Spec
 spec = do
   describe "Full-Text Search Expressions" $ do
-    let v = UnsafeMkSqlExpr "v" :: SqlExpr NormalQuery (NonNullT PGTSVector)
-        v2 = UnsafeMkSqlExpr "v2" :: SqlExpr NormalQuery (NonNullT PGTSVector)
-        q = UnsafeMkSqlExpr "q" :: SqlExpr NormalQuery (NonNullT PGTSQuery)
-        q2 = UnsafeMkSqlExpr "q2" :: SqlExpr NormalQuery (NonNullT PGTSQuery)
-        cfg = UnsafeMkSqlExpr "cfg" :: SqlExpr NormalQuery (NonNullT PGRegConfig)
-        txt = UnsafeMkSqlExpr "txt" :: SqlExpr NormalQuery (NonNullT Text)
+    let v = unsafeMkAtom "v" :: SqlExpr NormalQuery (NonNullT PGTSVector)
+        v2 = unsafeMkAtom "v2" :: SqlExpr NormalQuery (NonNullT PGTSVector)
+        q = unsafeMkAtom "q" :: SqlExpr NormalQuery (NonNullT PGTSQuery)
+        q2 = unsafeMkAtom "q2" :: SqlExpr NormalQuery (NonNullT PGTSQuery)
+        cfg = unsafeMkAtom "cfg" :: SqlExpr NormalQuery (NonNullT PGRegConfig)
+        txt = unsafeMkAtom "txt" :: SqlExpr NormalQuery (NonNullT Text)
 
     it "renders match operator" $ do
-      renderTS (v @@. q) `shouldBe` "(v) @@ (q)"
+      renderTS (v @@. q) `shouldBe` "v @@ q"
 
     it "renders tsvector concatenation" $ do
-      renderTS (concatTSVector_ v v2) `shouldBe` "(v) || (v2)"
+      renderTS (concatTSVector_ v v2) `shouldBe` "v || v2"
 
     it "renders tsquery AND" $ do
-      renderTS (tsAnd_ q q2) `shouldBe` "(q) & (q2)"
+      renderTS (tsAnd_ q q2) `shouldBe` "q & q2"
 
     it "renders tsquery OR" $ do
-      renderTS (tsOr_ q q2) `shouldBe` "(q) | (q2)"
+      renderTS (tsOr_ q q2) `shouldBe` "q | q2"
 
     it "renders tsquery NOT" $ do
-      renderTS (tsNot_ q) `shouldBe` "! (q)"
+      renderTS (tsNot_ q) `shouldBe` "! q"
 
     it "renders to_tsvector" $ do
       renderTS (toTSVector_ txt) `shouldBe` "to_tsvector(txt)"
@@ -84,11 +84,11 @@ spec = do
       renderTS (tsRankCd_ v q) `shouldBe` "ts_rank_cd(v, q)"
 
     it "binds and casts a regconfig" $ do
-      renderTS (regConfig_ "english") `shouldBe` "($1)::regconfig"
+      renderTS (regConfig_ "english") `shouldBe` "$1::regconfig"
 
     it "can use a regconfig with a config function" $ do
-      renderTS (toTSVectorWithConfig_ (regConfig_ "english") txt) `shouldBe` "to_tsvector(($1)::regconfig, txt)"
+      renderTS (toTSVectorWithConfig_ (regConfig_ "english") txt) `shouldBe` "to_tsvector($1::regconfig, txt)"
 
     it "binds and casts tsvector and tsquery text" $ do
-      renderTS (tsVectorFromText_ "a:1") `shouldBe` "($1)::tsvector"
-      renderTS (tsQueryFromText_ "a & b") `shouldBe` "($1)::tsquery"
+      renderTS (tsVectorFromText_ "a:1") `shouldBe` "$1::tsvector"
+      renderTS (tsQueryFromText_ "a & b") `shouldBe` "$1::tsquery"

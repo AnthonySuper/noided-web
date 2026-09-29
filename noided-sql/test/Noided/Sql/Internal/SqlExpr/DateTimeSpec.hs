@@ -18,12 +18,12 @@ renderExpr = unpack . renderSyntaxToTextNumberedBinds . unsafeGetSqlExpr
 spec :: Spec
 spec = do
   describe "DateTime Expressions" $ do
-    let d = UnsafeMkSqlExpr "d" :: SqlExpr NormalQuery (NonNullT Day)
-        ts = UnsafeMkSqlExpr "ts" :: SqlExpr NormalQuery (NonNullT LocalTime)
-        tstz = UnsafeMkSqlExpr "tstz" :: SqlExpr NormalQuery (NonNullT UTCTime)
-        iv = UnsafeMkSqlExpr "iv" :: SqlExpr NormalQuery (NonNullT Interval)
-        ndays = UnsafeMkSqlExpr "n" :: SqlExpr NormalQuery (NonNullT Int32)
-        ep = UnsafeMkSqlExpr "ep" :: SqlExpr NormalQuery (NonNullT Double)
+    let d = unsafeMkAtom "d" :: SqlExpr NormalQuery (NonNullT Day)
+        ts = unsafeMkAtom "ts" :: SqlExpr NormalQuery (NonNullT LocalTime)
+        tstz = unsafeMkAtom "tstz" :: SqlExpr NormalQuery (NonNullT UTCTime)
+        iv = unsafeMkAtom "iv" :: SqlExpr NormalQuery (NonNullT Interval)
+        ndays = unsafeMkAtom "n" :: SqlExpr NormalQuery (NonNullT Int32)
+        ep = unsafeMkAtom "ep" :: SqlExpr NormalQuery (NonNullT Double)
 
     describe "current date and time" $ do
       it "renders now_" $ renderExpr now_ `shouldBe` "NOW()"
@@ -35,25 +35,25 @@ spec = do
       it "renders transactionTimestamp_" $ renderExpr transactionTimestamp_ `shouldBe` "TRANSACTION_TIMESTAMP()"
 
     describe "date arithmetic" $ do
-      it "renders dateAddDays_" $ renderExpr (dateAddDays_ d ndays) `shouldBe` "(d) + (n)"
-      it "renders dateSubDays_" $ renderExpr (dateSubDays_ d ndays) `shouldBe` "(d) - (n)"
-      it "renders dateDiffDays_" $ renderExpr (dateDiffDays_ d d) `shouldBe` "(d) - (d)"
-      it "renders dateAddInterval_" $ renderExpr (dateAddInterval_ d iv) `shouldBe` "(d) + (iv)"
+      it "renders dateAddDays_" $ renderExpr (dateAddDays_ d ndays) `shouldBe` "d + n"
+      it "renders dateSubDays_" $ renderExpr (dateSubDays_ d ndays) `shouldBe` "d - n"
+      it "renders dateDiffDays_" $ renderExpr (dateDiffDays_ d d) `shouldBe` "d - d"
+      it "renders dateAddInterval_" $ renderExpr (dateAddInterval_ d iv) `shouldBe` "d + iv"
 
     describe "interval arithmetic" $ do
-      it "renders intervalAdd_" $ renderExpr (intervalAdd_ iv iv) `shouldBe` "(iv) + (iv)"
-      it "renders intervalSub_" $ renderExpr (intervalSub_ iv iv) `shouldBe` "(iv) - (iv)"
-      it "renders intervalNegate_" $ renderExpr (intervalNegate_ iv) `shouldBe` "-(iv)"
+      it "renders intervalAdd_" $ renderExpr (intervalAdd_ iv iv) `shouldBe` "iv + iv"
+      it "renders intervalSub_" $ renderExpr (intervalSub_ iv iv) `shouldBe` "iv - iv"
+      it "renders intervalNegate_" $ renderExpr (intervalNegate_ iv) `shouldBe` "-iv"
 
     describe "timestamp arithmetic" $ do
-      it "renders timestampAddInterval_" $ renderExpr (timestampAddInterval_ ts iv) `shouldBe` "(ts) + (iv)"
-      it "renders timestampSubInterval_" $ renderExpr (timestampSubInterval_ ts iv) `shouldBe` "(ts) - (iv)"
-      it "renders timestampDiff_" $ renderExpr (timestampDiff_ ts ts) `shouldBe` "(ts) - (ts)"
+      it "renders timestampAddInterval_" $ renderExpr (timestampAddInterval_ ts iv) `shouldBe` "ts + iv"
+      it "renders timestampSubInterval_" $ renderExpr (timestampSubInterval_ ts iv) `shouldBe` "ts - iv"
+      it "renders timestampDiff_" $ renderExpr (timestampDiff_ ts ts) `shouldBe` "ts - ts"
 
     describe "timestamptz arithmetic" $ do
-      it "renders timestamptzAddInterval_" $ renderExpr (timestamptzAddInterval_ tstz iv) `shouldBe` "(tstz) + (iv)"
-      it "renders timestamptzSubInterval_" $ renderExpr (timestamptzSubInterval_ tstz iv) `shouldBe` "(tstz) - (iv)"
-      it "renders timestamptzDiff_" $ renderExpr (timestamptzDiff_ tstz tstz) `shouldBe` "(tstz) - (tstz)"
+      it "renders timestamptzAddInterval_" $ renderExpr (timestamptzAddInterval_ tstz iv) `shouldBe` "tstz + iv"
+      it "renders timestamptzSubInterval_" $ renderExpr (timestamptzSubInterval_ tstz iv) `shouldBe` "tstz - iv"
+      it "renders timestamptzDiff_" $ renderExpr (timestamptzDiff_ tstz tstz) `shouldBe` "tstz - tstz"
 
     describe "extraction and truncation" $ do
       it "renders datePart_ for timestamp" $ renderExpr (datePart_ DPYear ts) `shouldBe` "DATE_PART('year', ts)"

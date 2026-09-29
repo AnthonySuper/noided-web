@@ -16,13 +16,13 @@ infixl 7 *., /.
   SqlExpr scope (SqlT rhsN a) ->
   SqlExpr scope (SqlT (MostNullable lhsN rhsN) a)
 
-a +. b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") + (" <> unsafeGetSqlExpr b <> ")")
-a -. b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") - (" <> unsafeGetSqlExpr b <> ")")
-a *. b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") * (" <> unsafeGetSqlExpr b <> ")")
-a /. b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") / (" <> unsafeGetSqlExpr b <> ")")
+a +. b = UnsafeMkSqlExpr (operand a <> " + " <> operand b)
+a -. b = UnsafeMkSqlExpr (operand a <> " - " <> operand b)
+a *. b = UnsafeMkSqlExpr (operand a <> " * " <> operand b)
+a /. b = UnsafeMkSqlExpr (operand a <> " / " <> operand b)
 
 abs_ :: (SqlNumeric a) => SqlExpr scope (SqlT n a) -> SqlExpr scope (SqlT n a)
-abs_ a = UnsafeMkSqlExpr ("ABS(" <> unsafeGetSqlExpr a <> ")")
+abs_ a = unsafeMkAtom ("ABS(" <> unsafeGetSqlExpr a <> ")")
 
 negate_ :: (SqlNumeric a) => SqlExpr scope (SqlT n a) -> SqlExpr scope (SqlT n a)
-negate_ a = UnsafeMkSqlExpr ("-(" <> unsafeGetSqlExpr a <> ")")
+negate_ a = UnsafeMkSqlExpr ("-" <> operand a)

@@ -47,14 +47,14 @@ instance GNullified U1 U1 where
   gNullifyRow U1 = U1
 
 instance GNullified (K1 R (SqlExpr scope (SqlT n a))) (K1 R (SqlExpr scope (SqlT Nullable a))) where
-  gNullifyRow (K1 (UnsafeMkSqlExpr e)) = K1 (UnsafeMkSqlExpr e)
+  gNullifyRow (K1 e) = K1 (unsafeRetypeSqlExpr e)
 
 instance (Nullified sl, f ~ SqlExpr scope, sl' ~ AsNullified sl) => GNullified (K1 R (sl f)) (K1 R (sl' f)) where
   gNullifyRow (K1 a) = K1 (nullifyRow a)
 
 instance Nullified (Element (SqlT n a)) where
   type AsNullified (Element (SqlT n a)) = Element (SqlT Nullable a)
-  nullifyRow (Element e) = Element (UnsafeMkSqlExpr (unsafeGetSqlExpr e))
+  nullifyRow (Element e) = Element (unsafeRetypeSqlExpr e)
 
 instance (Nullified l, Nullified r) => Nullified (l :-: r) where
   type AsNullified (l :-: r) = AsNullified l :-: AsNullified r

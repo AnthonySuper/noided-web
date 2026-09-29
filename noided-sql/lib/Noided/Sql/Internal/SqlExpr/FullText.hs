@@ -20,36 +20,36 @@ infix 4 @@.
   SqlExpr scope (SqlT n PGTSVector) ->
   SqlExpr scope (SqlT n' PGTSQuery) ->
   SqlExpr scope (SqlT (MostNullable n n') Bool)
-a @@. b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") @@ (" <> unsafeGetSqlExpr b <> ")")
+a @@. b = UnsafeMkSqlExpr (operand a <> " @@ " <> operand b)
 
 -- | tsvector concatenation operator @||@.
 concatTSVector_ ::
   SqlExpr scope (SqlT n PGTSVector) ->
   SqlExpr scope (SqlT n' PGTSVector) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSVector)
-concatTSVector_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") || (" <> unsafeGetSqlExpr b <> ")")
+concatTSVector_ a b = UnsafeMkSqlExpr (operand a <> " || " <> operand b)
 
 -- | tsquery AND operator @&@.
 tsAnd_ ::
   SqlExpr scope (SqlT n PGTSQuery) ->
   SqlExpr scope (SqlT n' PGTSQuery) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
-tsAnd_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") & (" <> unsafeGetSqlExpr b <> ")")
+tsAnd_ a b = UnsafeMkSqlExpr (operand a <> " & " <> operand b)
 
 -- | tsquery OR operator @|@.
 tsOr_ ::
   SqlExpr scope (SqlT n PGTSQuery) ->
   SqlExpr scope (SqlT n' PGTSQuery) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
-tsOr_ a b = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr a <> ") | (" <> unsafeGetSqlExpr b <> ")")
+tsOr_ a b = UnsafeMkSqlExpr (operand a <> " | " <> operand b)
 
 -- | tsquery NOT operator @!@.
 tsNot_ :: SqlExpr scope (SqlT n PGTSQuery) -> SqlExpr scope (SqlT n PGTSQuery)
-tsNot_ a = UnsafeMkSqlExpr ("! (" <> unsafeGetSqlExpr a <> ")")
+tsNot_ a = UnsafeMkSqlExpr ("! " <> operand a)
 
 -- | Sql @to_tsvector@ function.
 toTSVector_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n PGTSVector)
-toTSVector_ a = UnsafeMkSqlExpr ("to_tsvector(" <> unsafeGetSqlExpr a <> ")")
+toTSVector_ a = unsafeMkAtom ("to_tsvector(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @to_tsvector@ function with config.
 toTSVectorWithConfig_ ::
@@ -57,11 +57,11 @@ toTSVectorWithConfig_ ::
   SqlExpr scope (SqlT n' Text) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSVector)
 toTSVectorWithConfig_ c a =
-  UnsafeMkSqlExpr ("to_tsvector(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
+  unsafeMkAtom ("to_tsvector(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @to_tsquery@ function.
 toTSQuery_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n PGTSQuery)
-toTSQuery_ a = UnsafeMkSqlExpr ("to_tsquery(" <> unsafeGetSqlExpr a <> ")")
+toTSQuery_ a = unsafeMkAtom ("to_tsquery(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @to_tsquery@ function with config.
 toTSQueryWithConfig_ ::
@@ -69,11 +69,11 @@ toTSQueryWithConfig_ ::
   SqlExpr scope (SqlT n' Text) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
 toTSQueryWithConfig_ c a =
-  UnsafeMkSqlExpr ("to_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
+  unsafeMkAtom ("to_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @plainto_tsquery@ function.
 plainToTSQuery_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n PGTSQuery)
-plainToTSQuery_ a = UnsafeMkSqlExpr ("plainto_tsquery(" <> unsafeGetSqlExpr a <> ")")
+plainToTSQuery_ a = unsafeMkAtom ("plainto_tsquery(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @plainto_tsquery@ function with config.
 plainToTSQueryWithConfig_ ::
@@ -81,11 +81,11 @@ plainToTSQueryWithConfig_ ::
   SqlExpr scope (SqlT n' Text) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
 plainToTSQueryWithConfig_ c a =
-  UnsafeMkSqlExpr ("plainto_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
+  unsafeMkAtom ("plainto_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @phraseto_tsquery@ function.
 phraseToTSQuery_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n PGTSQuery)
-phraseToTSQuery_ a = UnsafeMkSqlExpr ("phraseto_tsquery(" <> unsafeGetSqlExpr a <> ")")
+phraseToTSQuery_ a = unsafeMkAtom ("phraseto_tsquery(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @phraseto_tsquery@ function with config.
 phraseToTSQueryWithConfig_ ::
@@ -93,11 +93,11 @@ phraseToTSQueryWithConfig_ ::
   SqlExpr scope (SqlT n' Text) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
 phraseToTSQueryWithConfig_ c a =
-  UnsafeMkSqlExpr ("phraseto_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
+  unsafeMkAtom ("phraseto_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @websearch_to_tsquery@ function.
 websearchToTSQuery_ :: SqlExpr scope (SqlT n Text) -> SqlExpr scope (SqlT n PGTSQuery)
-websearchToTSQuery_ a = UnsafeMkSqlExpr ("websearch_to_tsquery(" <> unsafeGetSqlExpr a <> ")")
+websearchToTSQuery_ a = unsafeMkAtom ("websearch_to_tsquery(" <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @websearch_to_tsquery@ function with config.
 websearchToTSQueryWithConfig_ ::
@@ -105,7 +105,7 @@ websearchToTSQueryWithConfig_ ::
   SqlExpr scope (SqlT n' Text) ->
   SqlExpr scope (SqlT (MostNullable n n') PGTSQuery)
 websearchToTSQueryWithConfig_ c a =
-  UnsafeMkSqlExpr ("websearch_to_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
+  unsafeMkAtom ("websearch_to_tsquery(" <> unsafeGetSqlExpr c <> ", " <> unsafeGetSqlExpr a <> ")")
 
 -- | Sql @setweight@ function.
 setWeight_ ::
@@ -113,7 +113,7 @@ setWeight_ ::
   PGFullTextSearchWeight ->
   SqlExpr scope (SqlT n PGTSVector)
 setWeight_ v w =
-  UnsafeMkSqlExpr ("setweight(" <> unsafeGetSqlExpr v <> ", '" <> pgFullTextSearchWeightSyntax w <> "')")
+  unsafeMkAtom ("setweight(" <> unsafeGetSqlExpr v <> ", '" <> pgFullTextSearchWeightSyntax w <> "')")
 
 -- | Sql @ts_rank@ function.
 tsRank_ ::
@@ -121,7 +121,7 @@ tsRank_ ::
   SqlExpr scope (SqlT n' PGTSQuery) ->
   SqlExpr scope (SqlT (MostNullable n n') Float)
 tsRank_ v q =
-  UnsafeMkSqlExpr ("ts_rank(" <> unsafeGetSqlExpr v <> ", " <> unsafeGetSqlExpr q <> ")")
+  unsafeMkAtom ("ts_rank(" <> unsafeGetSqlExpr v <> ", " <> unsafeGetSqlExpr q <> ")")
 
 -- | Sql @ts_rank_cd@ function.
 tsRankCd_ ::
@@ -129,7 +129,7 @@ tsRankCd_ ::
   SqlExpr scope (SqlT n' PGTSQuery) ->
   SqlExpr scope (SqlT (MostNullable n n') Float)
 tsRankCd_ v q =
-  UnsafeMkSqlExpr ("ts_rank_cd(" <> unsafeGetSqlExpr v <> ", " <> unsafeGetSqlExpr q <> ")")
+  unsafeMkAtom ("ts_rank_cd(" <> unsafeGetSqlExpr v <> ", " <> unsafeGetSqlExpr q <> ")")
 
 -- | Build a @regconfig@ from its name, e.g. @regConfig_ "english"@.
 -- The name is bound as a parameter and cast with @::regconfig@.
@@ -145,4 +145,4 @@ tsQueryFromText_ :: Text -> SqlExpr scope (NonNullT PGTSQuery)
 tsQueryFromText_ = castBoundText "tsquery"
 
 castBoundText :: Syntax -> Text -> SqlExpr scope (NonNullT r)
-castBoundText ty t = UnsafeMkSqlExpr ("(" <> unsafeGetSqlExpr (bindParam_ t) <> ")::" <> ty)
+castBoundText ty t = UnsafeMkSqlExpr (operand (bindParam_ t) <> "::" <> ty)

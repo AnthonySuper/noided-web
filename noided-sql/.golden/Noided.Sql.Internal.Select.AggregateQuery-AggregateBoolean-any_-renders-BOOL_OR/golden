@@ -1,1 +1,1 @@
-SELECT BOOL_OR((subq.val) = (1)) AS "any", EVERY((subq.val) = (1)) AS every FROM (SELECT id AS id, val AS val) AS subq
+SELECT BOOL_OR(subq.val = 1) AS "any", EVERY(subq.val = 1) AS every FROM (SELECT id AS id, val AS val) AS subq

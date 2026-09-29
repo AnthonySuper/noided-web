@@ -216,10 +216,10 @@ spec = do
   describe "tables" $ do
     it "renders a select with bare field access (nested fields are not prefixed)" $
       render selectNames
-        `shouldBe` "SELECT users.bio AS e FROM users AS users WHERE ((users.name) = ($1))"
+        `shouldBe` "SELECT users.bio AS e FROM users AS users WHERE users.name = $1"
     it "renders an inner join" $
       render userPosts
-        `shouldBe` "SELECT users.id AS id, users.name AS name, users.nick AS nick, users.bio AS bio, users.website_url AS \"websiteUrl\", posts.id AS id_1, posts.user_id AS \"userId\", posts.title AS title FROM users AS users INNER JOIN posts AS posts ON ((users.id) = (posts.user_id))"
+        `shouldBe` "SELECT users.id AS id, users.name AS name, users.nick AS nick, users.bio AS bio, users.website_url AS \"websiteUrl\", posts.id AS id_1, posts.user_id AS \"userId\", posts.title AS title FROM users AS users INNER JOIN posts AS posts ON (users.id = posts.user_id)"
     it "renders a hand-built row with no annotation" $
       render handBuiltRow
         `shouldBe` "SELECT posts.id AS id, users.id AS \"userId\", users.name AS title FROM users AS users, posts AS posts"
@@ -240,7 +240,7 @@ spec = do
         `shouldBe` ["usr_id", "usr_nm", "usr_nick", "usr_bio", "usr_url"]
     it "renders a select with the given names" $
       render selectLegacyNames
-        `shouldBe` "SELECT tbl_usr.usr_bio AS e FROM tbl_usr AS tbl_usr WHERE ((tbl_usr.usr_nm) = ($1))"
+        `shouldBe` "SELECT tbl_usr.usr_bio AS e FROM tbl_usr AS tbl_usr WHERE tbl_usr.usr_nm = $1"
     it "renders an insert with the given names" $
       render insertLegacyUser
         `shouldBe` "INSERT INTO tbl_usr AS to_insert (usr_nm, usr_bio) VALUES ($1, $2) RETURNING to_insert.usr_id AS e"
@@ -248,10 +248,10 @@ spec = do
   describe "left joins on tables" $ do
     it "renders bare nullable field access, COALESCE and IS NULL" $
       render userPostTitles
-        `shouldBe` "SELECT users.name AS e, COALESCE(posts.title,$1) AS e_1 FROM users AS users LEFT JOIN posts AS posts ON ((users.id) = (posts.user_id)) WHERE (((posts.id) IS NULL) OR ((posts.title) = ($2)))"
+        `shouldBe` "SELECT users.name AS e, COALESCE(posts.title,$1) AS e_1 FROM users AS users LEFT JOIN posts AS posts ON (users.id = posts.user_id) WHERE (posts.id IS NULL) OR (posts.title = $2)"
     it "renders a nested table under a left join" $
       render leftJoinedProfile
-        `shouldBe` "SELECT posts.id AS id, posts.user_id AS \"userId\", posts.title AS title, users.id AS id_1, users.name AS name, users.nick AS nick, users.bio AS bio, users.website_url AS \"websiteUrl\" FROM posts AS posts LEFT JOIN users AS users ON ((users.id) = (posts.user_id)) WHERE ((users.bio) IS NOT NULL)"
+        `shouldBe` "SELECT posts.id AS id, posts.user_id AS \"userId\", posts.title AS title, users.id AS id_1, users.name AS name, users.nick AS nick, users.bio AS bio, users.website_url AS \"websiteUrl\" FROM posts AS posts LEFT JOIN users AS users ON (users.id = posts.user_id) WHERE users.bio IS NOT NULL"
     it "decodes a matched left-joined row to Just" $
       unwrapSelectList matchedNulledUser `shouldBe` Just plainUser
     it "decodes an unmatched left-joined row to Nothing" $
@@ -265,7 +265,7 @@ spec = do
         `shouldBe` Nothing
     it "renders a hand-built nullable-copy row with no annotation" $
       render handBuiltNulledRow
-        `shouldBe` "SELECT posts.id AS id, posts.user_id AS \"userId\", posts.title AS title FROM users AS users LEFT JOIN posts AS posts ON ((users.id) = (posts.user_id))"
+        `shouldBe` "SELECT posts.id AS id, posts.user_id AS \"userId\", posts.title AS title FROM users AS users LEFT JOIN posts AS posts ON (users.id = posts.user_id)"
     it "unwraps a left join to (row, Maybe row)" $ do
       let joined :: (UserF :-: PostNullF) HaskellT
           joined = decodedUser :-: PostNullF {id = HaskT Nothing, userId = HaskT Nothing, title = HaskT Nothing}

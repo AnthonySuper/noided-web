@@ -20,7 +20,7 @@ renderGolden description expr =
 
 spec :: Spec
 spec = describe "Row Expressions" $ do
-  let a = UnsafeMkSqlExpr "a" :: SqlExpr NormalQuery (NonNullT Int)
-      b = UnsafeMkSqlExpr "b" :: SqlExpr NormalQuery (NonNullT Text)
+  let a = unsafeMkAtom "a" :: SqlExpr NormalQuery (NonNullT Int)
+      b = unsafeMkAtom "b" :: SqlExpr NormalQuery (NonNullT Text)
   renderGolden "row-single" (row_ (Element a))
   renderGolden "row-tuple" (row_ (Element a :-: Element b))

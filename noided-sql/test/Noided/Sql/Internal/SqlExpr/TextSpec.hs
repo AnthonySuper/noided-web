@@ -20,10 +20,10 @@ renderGolden description expr =
 spec :: Spec
 spec = do
   describe "Text Expressions" $ do
-    let s = UnsafeMkSqlExpr "s" :: SqlExpr NormalQuery (NonNullT Text)
-        s2 = UnsafeMkSqlExpr "s2" :: SqlExpr NormalQuery (NonNullT Text)
-        i1 = UnsafeMkSqlExpr "1" :: SqlExpr NormalQuery (NonNullT Int32)
-        i2 = UnsafeMkSqlExpr "2" :: SqlExpr NormalQuery (NonNullT Int32)
+    let s = unsafeMkAtom "s" :: SqlExpr NormalQuery (NonNullT Text)
+        s2 = unsafeMkAtom "s2" :: SqlExpr NormalQuery (NonNullT Text)
+        i1 = unsafeMkAtom "1" :: SqlExpr NormalQuery (NonNullT Int32)
+        i2 = unsafeMkAtom "2" :: SqlExpr NormalQuery (NonNullT Int32)
 
     renderGolden "concatenation" (s <>. s2)
     renderGolden "lower" (lower_ s)
