@@ -84,9 +84,9 @@ avg_ = unsafeBuildSingleArgAgg "AVG"
 every_ :: SqlExpr valScope (SqlT n Bool) -> AggregateExpr valScope (NullableT Bool)
 every_ = unsafeBuildSingleArgAgg "EVERY"
 
--- | Sql @ANY@ aggregate function (also known as @BOOL_OR@).
+-- | Boolean OR aggregate. Renders @BOOL_OR@, as Postgres has no @ANY@ aggregate (@ANY@ is reserved for array/subquery comparisons).
 any_ :: SqlExpr valScope (SqlT n Bool) -> AggregateExpr valScope (NullableT Bool)
-any_ = unsafeBuildSingleArgAgg "ANY"
+any_ = unsafeBuildSingleArgAgg "BOOL_OR"
 
 -- | Sql @BOOL_AND@ aggregate function.
 boolAnd_ :: SqlExpr valScope (SqlT n Bool) -> AggregateExpr valScope (NullableT Bool)
