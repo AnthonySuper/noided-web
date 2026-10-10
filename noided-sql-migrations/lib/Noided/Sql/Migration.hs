@@ -27,13 +27,11 @@ import Noided.Sql.Migration.Internal
 quoteIdentifier :: Text -> Text
 quoteIdentifier t = "\"" <> T.replace "\"" "\"\"" t <> "\""
 
--- | Run a 'Session' inside @BEGIN; … COMMIT;@.
+-- | Run a 'Session' inside a SERIALIZABLE transaction (@BEGIN ISOLATION LEVEL SERIALIZABLE; … COMMIT;@).
 -- If it fails with a 'SessionError', send @ROLLBACK@ (ignoring any error from doing so) and rethrow the original error.
---
--- Plain @BEGIN@ is enough here: the session-level advisory lock already ensures only one migration process runs at a time.
 inTransaction :: Session a -> Session a
 inTransaction sess = do
-  Session.script "BEGIN;"
+  Session.script "BEGIN ISOLATION LEVEL SERIALIZABLE;"
   (sess <* Session.script "COMMIT;") `catchError` \e -> do
     Session.script "ROLLBACK;" `catchError` \_ -> pure ()
     throwError e
