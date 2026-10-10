@@ -104,7 +104,7 @@ dumpSchema migrationsDir conn = do
       schema <- readProcess "pg_dump" pgDumpArgs ""
 
       -- Get applied migrations to generate INSERTS
-      appliedRes <- C.use conn (inTransaction (getAppliedMigrations config))
+      appliedRes <- C.use conn (getAppliedMigrations config)
       let insertStatements = case appliedRes of
             Right applied ->
               if Set.null applied

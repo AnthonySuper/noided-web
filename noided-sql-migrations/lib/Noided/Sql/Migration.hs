@@ -1,7 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Noided.Sql.Migration where
+module Noided.Sql.Migration
+  ( runMigrationsInTransactions,
+    rollbackMigrationsInTransactions,
+    getAppliedMigrations,
+  )
+where
 
 import Control.Monad (unless, when)
 import Control.Monad.Except (catchError, throwError)
