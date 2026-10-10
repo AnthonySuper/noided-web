@@ -16,7 +16,6 @@ import Hasql.Connection qualified as C
 import Hasql.Connection.Settings qualified as S
 import Noided.Sql.Migration
 import Noided.Sql.Migration.Internal
-import Noided.Sql.TransactM
 import Options.Applicative
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
@@ -71,13 +70,10 @@ handleMigrate dir = withConnection $ \conn -> do
 
   res <- runMigrationsInTransactions config migrations conn
   case res of
-    SessionErr err -> do
+    Left err -> do
       putStrLn $ "Session error: " <> show err
       exitFailure
-    TransactErr () -> do
-      putStrLn "Transaction failed"
-      exitFailure
-    TransactOK () -> do
+    Right () -> do
       putStrLn "Migrations applied successfully"
       dumpSchema dir conn
 
@@ -88,13 +84,10 @@ handleRollback dir n = withConnection $ \conn -> do
 
   res <- rollbackMigrationsInTransactions config migrations n conn
   case res of
-    SessionErr err -> do
+    Left err -> do
       putStrLn $ "Session error: " <> show err
       exitFailure
-    TransactErr () -> do
-      putStrLn "Transaction failed"
-      exitFailure
-    TransactOK () -> do
+    Right () -> do
       putStrLn "Rollback successful"
       dumpSchema dir conn
 
@@ -111,9 +104,9 @@ dumpSchema migrationsDir conn = do
       schema <- readProcess "pg_dump" pgDumpArgs ""
 
       -- Get applied migrations to generate INSERTS
-      appliedRes <- transactSerialized noStatementCallback (getAppliedMigrations config) conn
+      appliedRes <- C.use conn (inTransaction (getAppliedMigrations config))
       let insertStatements = case appliedRes of
-            TransactOK applied ->
+            Right applied ->
               if Set.null applied
                 then ""
                 else
