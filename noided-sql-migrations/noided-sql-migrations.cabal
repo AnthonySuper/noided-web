@@ -15,23 +15,19 @@ common deps
     build-depends:
         base >=4.18 && <=5,
         text,
-        bytestring,
+        containers,
         directory,
         filepath,
-        time,
-        hasql >= 1.10 && < 1.11,
-        noided-sql,
-        mtl,
-        transformers,
-        containers,
-        vector,
-        process
+        hasql >= 1.10 && < 1.11
 
 library
     import:           warnings, deps
     exposed-modules:
         Noided.Sql.Migration
         Noided.Sql.Migration.Internal
+    build-depends:
+        mtl,
+        vector
     hs-source-dirs:   lib
     default-language: GHC2021
 
@@ -41,7 +37,7 @@ executable noided-migrate
     build-depends:
         noided-sql-migrations,
         optparse-applicative,
-        text,
-        vector
+        time,
+        process
     hs-source-dirs:   app
     default-language: GHC2021

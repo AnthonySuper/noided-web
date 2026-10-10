@@ -1,11 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Noided.Sql.Migration where
+module Noided.Sql.Migration
+  ( runMigrationsInTransactions,
+    rollbackMigrationsInTransactions,
+    getAppliedMigrations,
+  )
+where
 
-import Control.Monad (foldM, unless, void, when)
+import Control.Monad (unless, when)
+import Control.Monad.Except (catchError, throwError)
 import Data.Char (ord)
-import Data.Functor.Contravariant (contramap)
 import Data.Int (Int64)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -15,10 +20,11 @@ import Data.Vector qualified as V
 import Hasql.Connection qualified as C
 import Hasql.Decoders qualified as Dec
 import Hasql.Encoders qualified as Enc
-import Noided.Sql.Internal.Type.SqlQuery (SqlQuery (..), unsafeQueryFromScript)
-import Noided.Sql.Internal.Type.TransactM (execQueryRaw)
+import Hasql.Errors (SessionError)
+import Hasql.Session (Session)
+import Hasql.Session qualified as Session
+import Hasql.Statement qualified as Statement
 import Noided.Sql.Migration.Internal
-import Noided.Sql.TransactM
 
 -- | Quote a SQL identifier (e.g. table name) using PostgreSQL double-quote syntax.
 -- All embedded double-quote characters are escaped by doubling them.
@@ -26,189 +32,166 @@ import Noided.Sql.TransactM
 quoteIdentifier :: Text -> Text
 quoteIdentifier t = "\"" <> T.replace "\"" "\"\"" t <> "\""
 
+-- | Run a 'Session' inside a SERIALIZABLE transaction (@BEGIN ISOLATION LEVEL SERIALIZABLE; … COMMIT;@).
+-- If it fails with a 'SessionError', send @ROLLBACK@ (ignoring any error from doing so) and rethrow the original error.
+inTransaction :: Session a -> Session a
+inTransaction sess = do
+  Session.script "BEGIN ISOLATION LEVEL SERIALIZABLE;"
+  (sess <* Session.script "COMMIT;") `catchError` \e -> do
+    Session.script "ROLLBACK;" `catchError` \_ -> pure ()
+    throwError e
+
+-- | Run each session on the connection in order, stopping at the first failure.
+runUntilFailure :: C.Connection -> [Session ()] -> IO (Either SessionError ())
+runUntilFailure _ [] = pure (Right ())
+runUntilFailure conn (sess : rest) = do
+  res <- C.use conn sess
+  case res of
+    Left e -> pure (Left e)
+    Right () -> runUntilFailure conn rest
+
+-- | Run an action while holding the advisory lock for the tracking table.
+withAdvisoryLock :: MigrationConfig -> C.Connection -> IO (Either SessionError ()) -> IO (Either SessionError ())
+withAdvisoryLock config conn action = do
+  -- 1. Acquire advisory lock (session-level)
+  lockRes <- C.use conn (inTransaction (acquireAdvisoryLock config))
+  case lockRes of
+    Left e -> pure (Left e)
+    Right () -> do
+      -- 2. Run the action
+      res <- action
+      -- 3. Release advisory lock
+      _ <- C.use conn (inTransaction (releaseAdvisoryLock config))
+      pure res
+
 -- | Run pending migrations, each in its own transaction.
 -- This function uses a PostgreSQL advisory lock to ensure that only one
 -- migration process runs at a time for a given tracking table.
-runMigrationsInTransactions :: MigrationConfig -> [Migration] -> C.Connection -> IO (TransactionResult err ())
-runMigrationsInTransactions config migrations conn = do
-  -- 1. Acquire advisory lock (session-level)
-  lockRes <- transactSerialized noStatementCallback (acquireAdvisoryLock config) conn
-  case lockRes of
-    TransactOK () -> do
-      -- 2. Run migrations logic
-      res <- runMigrationsLogic config migrations conn
-      -- 3. Release advisory lock
-      _ <- transactSerialized noStatementCallback (releaseAdvisoryLock config) conn
-      pure res
-    err -> pure (void err)
+runMigrationsInTransactions :: MigrationConfig -> [Migration] -> C.Connection -> IO (Either SessionError ())
+runMigrationsInTransactions config migrations conn =
+  withAdvisoryLock config conn (runMigrationsLogic config migrations conn)
 
-runMigrationsLogic :: MigrationConfig -> [Migration] -> C.Connection -> IO (TransactionResult err ())
+runMigrationsLogic :: MigrationConfig -> [Migration] -> C.Connection -> IO (Either SessionError ())
 runMigrationsLogic config migrations conn = do
-  appliedRes <-
-    transactSerialized
-      noStatementCallback
-      ( do
-          ensureMigrationTable config
-          getAppliedMigrations config
-      )
-      conn
-
+  appliedRes <- C.use conn (inTransaction (ensureMigrationTable config *> getAppliedMigrations config))
   case appliedRes of
-    TransactOK applied -> do
+    Left e -> pure (Left e)
+    Right applied -> do
       let pending = filter (\m -> not (Set.member (migrationId m) applied)) migrations
-      foldM
-        ( \acc migration ->
-            case acc of
-              TransactOK () ->
-                if upNoTransaction migration
-                  then unsafeFakeTransaction noStatementCallback (applyMigration config migration) conn
-                  else transactSerialized noStatementCallback (applyMigration config migration) conn
-              _ -> pure acc
-        )
-        (TransactOK ())
-        pending
-    SessionErr e -> pure $ SessionErr e
-    TransactErr e -> pure $ TransactErr e
+      runUntilFailure conn $
+        [ if upNoTransaction migration
+            then applyMigration config migration
+            else inTransaction (applyMigration config migration)
+        | migration <- pending
+        ]
 
 -- | Roll back the last N migrations.
-rollbackMigrationsInTransactions :: MigrationConfig -> [Migration] -> Int -> C.Connection -> IO (TransactionResult err ())
-rollbackMigrationsInTransactions config migrations n conn = do
-  -- 1. Acquire advisory lock (session-level)
-  lockRes <- transactSerialized noStatementCallback (acquireAdvisoryLock config) conn
-  case lockRes of
-    TransactOK () -> do
-      -- 2. Run rollback logic
-      res <- rollbackMigrationLogic config migrations n conn
-      -- 3. Release advisory lock
-      _ <- transactSerialized noStatementCallback (releaseAdvisoryLock config) conn
-      pure res
-    err -> pure (void err)
+rollbackMigrationsInTransactions :: MigrationConfig -> [Migration] -> Int -> C.Connection -> IO (Either SessionError ())
+rollbackMigrationsInTransactions config migrations n conn =
+  withAdvisoryLock config conn (rollbackMigrationLogic config migrations n conn)
 
-rollbackMigrationLogic :: MigrationConfig -> [Migration] -> Int -> C.Connection -> IO (TransactionResult err ())
+rollbackMigrationLogic :: MigrationConfig -> [Migration] -> Int -> C.Connection -> IO (Either SessionError ())
 rollbackMigrationLogic config migrations n conn = do
-  appliedRes <-
-    transactSerialized
-      noStatementCallback
-      ( do
-          ensureMigrationTable config
-          getAppliedMigrations config
-      )
-      conn
-
+  appliedRes <- C.use conn (inTransaction (ensureMigrationTable config *> getAppliedMigrations config))
   case appliedRes of
-    TransactOK applied -> do
+    Left e -> pure (Left e)
+    Right applied -> do
       -- We only want to roll back migrations that ARE applied, in reverse order
       let toRollback = take n $ reverse $ filter (\m -> Set.member (migrationId m) applied) migrations
-      foldM
-        ( \acc migration ->
-            case acc of
-              TransactOK () ->
-                if downNoTransaction migration
-                  then unsafeFakeTransaction noStatementCallback (rollbackMigration config migration) conn
-                  else transactSerialized noStatementCallback (rollbackMigration config migration) conn
-              _ -> pure acc
-        )
-        (TransactOK ())
-        toRollback
-    SessionErr e -> pure $ SessionErr e
-    TransactErr e -> pure $ TransactErr e
+      runUntilFailure conn $
+        [ if downNoTransaction migration
+            then rollbackMigration config migration
+            else inTransaction (rollbackMigration config migration)
+        | migration <- toRollback
+        ]
+
+-- | Run a hand-written SQL statement.
+-- It is unpreparable because the tracking table name is spliced into the SQL via 'quoteIdentifier'.
+runStatement :: params -> Text -> Enc.Params params -> Dec.Result result -> Session result
+runStatement params sql encoder decoder = Session.statement params (Statement.unpreparable sql encoder decoder)
 
 -- | Acquire a session-level advisory lock based on the tracking table name.
-acquireAdvisoryLock :: MigrationConfig -> TransactM err ()
+acquireAdvisoryLock :: MigrationConfig -> Session ()
 acquireAdvisoryLock MigrationConfig {..} =
-  execQueryRaw $
-    UnsafeSqlQ
-      { syntax = "SELECT pg_advisory_lock(" <> T.pack (show (lockId trackingTableName)) <> ");",
-        paramsInspected = [],
-        params = Enc.noParams,
-        decoder = Dec.noResult
-      }
+  runStatement
+    ()
+    ("SELECT pg_advisory_lock(" <> T.pack (show (lockId trackingTableName)) <> ");")
+    Enc.noParams
+    Dec.noResult
 
 -- | Release a session-level advisory lock.
-releaseAdvisoryLock :: MigrationConfig -> TransactM err ()
+releaseAdvisoryLock :: MigrationConfig -> Session ()
 releaseAdvisoryLock MigrationConfig {..} =
-  execQueryRaw $
-    UnsafeSqlQ
-      { syntax = "SELECT pg_advisory_unlock(" <> T.pack (show (lockId trackingTableName)) <> ");",
-        paramsInspected = [],
-        params = Enc.noParams,
-        decoder = Dec.noResult
-      }
+  runStatement
+    ()
+    ("SELECT pg_advisory_unlock(" <> T.pack (show (lockId trackingTableName)) <> ");")
+    Enc.noParams
+    Dec.noResult
 
 -- | Generate a stable 64-bit lock ID from the tracking table name.
 lockId :: Text -> Int64
 lockId = T.foldl' (\h c -> 31 * h + fromIntegral (ord c)) 82395162
 
 -- | Ensure the tracking table exists.
-ensureMigrationTable :: MigrationConfig -> TransactM err ()
+ensureMigrationTable :: MigrationConfig -> Session ()
 ensureMigrationTable MigrationConfig {..} =
-  execQueryRaw $
-    UnsafeSqlQ
-      { syntax = "CREATE TABLE IF NOT EXISTS " <> quoteIdentifier trackingTableName <> " (filename TEXT PRIMARY KEY);",
-        paramsInspected = [],
-        params = Enc.noParams,
-        decoder = Dec.noResult
-      }
+  runStatement
+    ()
+    ("CREATE TABLE IF NOT EXISTS " <> quoteIdentifier trackingTableName <> " (filename TEXT PRIMARY KEY);")
+    Enc.noParams
+    Dec.noResult
 
 -- | Get the set of versions that have already been applied.
-getAppliedMigrations :: MigrationConfig -> TransactM err (Set Text)
+getAppliedMigrations :: MigrationConfig -> Session (Set Text)
 getAppliedMigrations MigrationConfig {..} = do
   versions <-
-    execQueryRaw $
-      UnsafeSqlQ
-        { syntax = "SELECT filename FROM " <> quoteIdentifier trackingTableName,
-          paramsInspected = [],
-          params = Enc.noParams,
-          decoder = Dec.rowVector (Dec.column (Dec.nonNullable Dec.text))
-        }
+    runStatement
+      ()
+      ("SELECT filename FROM " <> quoteIdentifier trackingTableName)
+      Enc.noParams
+      (Dec.rowVector (Dec.column (Dec.nonNullable Dec.text)))
   pure $ Set.fromList (V.toList versions)
 
 -- | Run a single migration and record it in the tracking table.
 -- This function is idempotent: it checks if the migration has already been applied.
-applyMigration :: MigrationConfig -> Migration -> TransactM err ()
+applyMigration :: MigrationConfig -> Migration -> Session ()
 applyMigration config@MigrationConfig {..} migration@Migration {..} = do
   alreadyApplied <- isMigrationApplied config (migrationId migration)
   unless alreadyApplied $ do
     -- 1. Execute the migration SQL
-    execQueryRaw $ unsafeQueryFromScript upContent
+    Session.script upContent
 
     -- 2. Record the migration in the tracking table
-    execQueryRaw $
-      UnsafeSqlQ
-        { syntax = "INSERT INTO " <> quoteIdentifier trackingTableName <> " (filename) VALUES ($1);",
-          paramsInspected = [version],
-          params = contramap (const $ migrationId migration) (Enc.param (Enc.nonNullable Enc.text)),
-          decoder = Dec.noResult
-        }
+    runStatement
+      (migrationId migration)
+      ("INSERT INTO " <> quoteIdentifier trackingTableName <> " (filename) VALUES ($1);")
+      (Enc.param (Enc.nonNullable Enc.text))
+      Dec.noResult
 
 -- | Roll back a single migration and remove it from the tracking table.
-rollbackMigration :: MigrationConfig -> Migration -> TransactM err ()
+rollbackMigration :: MigrationConfig -> Migration -> Session ()
 rollbackMigration config@MigrationConfig {..} migration@Migration {..} = do
   alreadyApplied <- isMigrationApplied config (migrationId migration)
   when alreadyApplied $ do
     -- 1. Execute the migration SQL (if provided)
     case downContent of
-      Just content -> execQueryRaw $ unsafeQueryFromScript content
+      Just content -> Session.script content
       Nothing -> pure ()
 
     -- 2. Remove the migration from the tracking table
-    execQueryRaw $
-      UnsafeSqlQ
-        { syntax = "DELETE FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;",
-          paramsInspected = [version],
-          params = contramap (const $ migrationId migration) (Enc.param (Enc.nonNullable Enc.text)),
-          decoder = Dec.noResult
-        }
+    runStatement
+      (migrationId migration)
+      ("DELETE FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;")
+      (Enc.param (Enc.nonNullable Enc.text))
+      Dec.noResult
 
 -- | Check if a specific migration version has already been applied.
-isMigrationApplied :: MigrationConfig -> Text -> TransactM err Bool
+isMigrationApplied :: MigrationConfig -> Text -> Session Bool
 isMigrationApplied MigrationConfig {..} v = do
   res <-
-    execQueryRaw $
-      UnsafeSqlQ
-        { syntax = "SELECT 1 FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;",
-          paramsInspected = [v],
-          params = contramap (const v) (Enc.param (Enc.nonNullable Enc.text)),
-          decoder = Dec.rowVector (Dec.column (Dec.nonNullable Dec.int4))
-        }
+    runStatement
+      v
+      ("SELECT 1 FROM " <> quoteIdentifier trackingTableName <> " WHERE filename = $1;")
+      (Enc.param (Enc.nonNullable Enc.text))
+      (Dec.rowVector (Dec.column (Dec.nonNullable Dec.int4)))
   pure $ not (V.null res)
