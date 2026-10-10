@@ -11,12 +11,12 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import Data.Time (defaultTimeLocale, formatTime, getCurrentTime)
-import Hasql.Connection (acquire)
 import Hasql.Connection qualified as C
 import Hasql.Connection.Settings qualified as S
 import Noided.Sql.Migration
 import Noided.Sql.Migration.Internal
 import Options.Applicative
+import Pqi.Ffi qualified
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
 import System.Exit (exitFailure)
@@ -152,7 +152,7 @@ withConnection runAction = do
                  S.dbname (T.pack n)
                ]
 
-  connRes <- acquire connSettings
+  connRes <- C.acquire Pqi.Ffi.adapter connSettings
   case connRes of
     Left err -> do
       putStrLn $ "Failed to connect to database: " <> show err

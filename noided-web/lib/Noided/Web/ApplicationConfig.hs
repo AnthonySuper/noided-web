@@ -25,6 +25,7 @@ import Noided.Web.Internal.Type.ApplicationConfig
 import Noided.Web.Internal.Type.DBSettings
 import Noided.Web.Internal.Type.Logger
 import Noided.Web.Internal.Type.ServerEnv
+import Pqi.Ffi qualified
 import System.IO (stdout)
 
 -- | Use an application config to gain access to an interpreter with some common effects.
@@ -60,7 +61,7 @@ configToPool :: ApplicationConfig -> IO (Pool.Pool Connection)
 configToPool cfg =
   Pool.newPool $
     Pool.defaultPoolConfig
-      (either (error . show) id <$> acquire (getHasqlSettings cfg.dbSettings))
+      (either (error . show) id <$> acquire Pqi.Ffi.adapter (getHasqlSettings cfg.dbSettings))
       release
       30.0 -- Keep resources for 30 seconds
       10 -- 10 resources per stripe
